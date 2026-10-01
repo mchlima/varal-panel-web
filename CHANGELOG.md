@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.5.0](https://github.com/mchlima/varal-panel-web/compare/v0.4.0...v0.5.0) (2026-10-01)
+
+
+### Features
+
+* **cash:** telas de receber, desconto, paga antes e caixas (fase 6) ([#21](https://github.com/mchlima/varal-panel-web/issues/21)) ([994030a](https://github.com/mchlima/varal-panel-web/commit/994030ab5358acbc12fec86d0193d12c09c3ff5b))
+* **credit:** telas do fiado no painel (fase 6) ([#23](https://github.com/mchlima/varal-panel-web/issues/23)) ([46a152a](https://github.com/mchlima/varal-panel-web/commit/46a152a3710547f7bbb36d33c1acb0e9abc66290))
+
 ## [0.4.0](https://github.com/mchlima/varal-panel-web/compare/v0.3.0...v0.4.0) (2026-10-01)
 
 
