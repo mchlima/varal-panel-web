@@ -767,6 +767,57 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/cash-registers/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Caixa com movimentos, pagamentos e esperado por forma */
+        get: operations["CashController_getRegister"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/cash-registers/{id}/close": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Fecha o caixa com o valor conferido de cada forma; diferença exige observação (RN-05.20, RN-05.21, CA-05.07) */
+        post: operations["CashController_closeRegister"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/cash-registers/{id}/movements": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Sangria (`withdrawal`, até o dinheiro esperado) ou suprimento (`deposit`), com motivo (RN-05.18) */
+        post: operations["CashController_move"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/categories": {
         parameters: {
             query?: never;
@@ -971,6 +1022,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/payments/{id}/reverse": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Estorna um pagamento, com motivo, com turno e caixa abertos; comanda paga volta a `closing` (RN-05.13 a RN-05.15) */
+        post: operations["CashController_reverse"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/products": {
         parameters: {
             query?: never;
@@ -1023,6 +1091,24 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/shifts/{id}/cash-registers": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Caixas do turno com o esperado por forma de pagamento */
+        get: operations["CashController_listRegisters"];
+        put?: never;
+        /** Abre um caixa no turno com fundo de troco; vários podem ficar abertos (RN-05.16, RN-05.17) */
+        post: operations["CashController_openRegister"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/shifts/{id}/close": {
         parameters: {
             query?: never;
@@ -1069,6 +1155,23 @@ export interface paths {
         put?: never;
         /** Abre uma comanda aberta com o próximo número do turno (RN-04.09) */
         post: operations["OperationController_createTab"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/shifts/{id}/tabs/pay-first": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Comanda paga antes: comanda, pedido e pagamentos numa operação; nasce `paid` e só então o pedido vai às estações (RN-05.12, CA-04.10) */
+        post: operations["CashController_payFirst"];
         delete?: never;
         options?: never;
         head?: never;
@@ -1246,6 +1349,24 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/tabs/{id}/discount": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /** Aplica ou substitui o desconto da comanda em `open` ou `closing`: valor ou percentual, com motivo (RN-05.01 a RN-05.03) */
+        put: operations["CashController_setDiscount"];
+        post?: never;
+        /** Remove o desconto da comanda, com motivo (RN-05.01) */
+        delete: operations["CashController_removeDiscount"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/tabs/{id}/orders": {
         parameters: {
             query?: never;
@@ -1257,6 +1378,23 @@ export interface paths {
         put?: never;
         /** Envia um pedido à comanda aberta: 1 a 50 itens, cada item vai à estação de preparo (RN-04.16 a RN-04.19) */
         post: operations["OperationController_createOrder"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/tabs/{id}/payments": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Registra um pagamento da comanda em `closing`: Pix e cartões até o saldo, dinheiro com troco; com saldo zero a comanda fica `paid` (RN-05.04 a RN-05.10) */
+        post: operations["CashController_pay"];
         delete?: never;
         options?: never;
         head?: never;
@@ -1425,7 +1563,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** Fluxo de etapas da unidade */
+        /** Fluxo de etapas da unidade: dono e colaboradores da unidade (leitura; só o dono altera) */
         get: operations["UnitsController_getWorkflow"];
         /** Salva o fluxo completo de uma vez (RN-03.05 a RN-03.07) */
         put: operations["UnitsController_saveWorkflow"];
@@ -1684,6 +1822,110 @@ export interface components {
             /** @description Versão da comanda que o aparelho tem (opcional). Diferente da atual: 409 `TAB_CHANGED` com `details.currentVersion`. */
             version?: number;
         };
+        /** @description Dinheiro esperado = fundo + pagamentos + suprimentos − sangrias (RN-05.19). */
+        CashBreakdown: {
+            depositsCents: number;
+            openingFloatCents: number;
+            /** @description Pagamentos em dinheiro aplicados, sem estornos. */
+            paymentsCents: number;
+            withdrawalsCents: number;
+        };
+        CashMovement: {
+            amountCents: number;
+            /** Format: uuid */
+            cashRegisterId: string;
+            /** Format: date-time */
+            createdAt: string;
+            createdBy: components["schemas"]["ActorRef"];
+            /** Format: uuid */
+            id: string;
+            reason: string;
+            type: components["schemas"]["CashMovementType"];
+        };
+        CashMovementRequestInput: {
+            amountCents: number;
+            /** @description Motivo, obrigatório (RN-05.18). */
+            reason: string;
+            type: components["schemas"]["CashMovementType"];
+            /** @description Versão que o app tem do registro. Se outro aparelho alterou antes, a API responde 409 `VERSION_CONFLICT` com `details.currentVersion`. Opcional. */
+            version?: number;
+        };
+        /**
+         * @description `withdrawal`: sangria; `deposit`: suprimento (RN-05.18).
+         * @enum {string}
+         */
+        CashMovementType: "withdrawal" | "deposit";
+        /** @description Caixa do turno com o esperado por forma. */
+        CashRegister: {
+            cash: components["schemas"]["CashBreakdown"];
+            closedAt: string | null;
+            closedBy: components["schemas"]["ActorRef"] | null;
+            closingNote: string | null;
+            /** @description Conferência gravada no fechamento (vazia enquanto aberto). */
+            counts: components["schemas"]["CashRegisterCount"][];
+            /** @description Esperado por forma, na ordem `cash`, `pix`, `credit_card`, `debit_card` (tabela da seção 5). */
+            expected: components["schemas"]["CashRegisterExpected"][];
+            /** Format: uuid */
+            id: string;
+            name: string;
+            /** Format: date-time */
+            openedAt: string;
+            /** @description Responsável: quem abriu (RN-05.17). */
+            openedBy: components["schemas"]["ActorRef"];
+            openingFloatCents: number;
+            /** Format: uuid */
+            shiftId: string;
+            status: components["schemas"]["CashRegisterStatus"];
+            /** Format: uuid */
+            unitId: string;
+            version: number;
+        };
+        CashRegisterCount: {
+            /** @description Informado − esperado (RN-05.20). */
+            differenceCents: number;
+            expectedCents: number;
+            informedCents: number;
+            method: components["schemas"]["PaymentMethod"];
+        };
+        CashRegisterDetail: {
+            cash: components["schemas"]["CashBreakdown"];
+            closedAt: string | null;
+            closedBy: components["schemas"]["ActorRef"] | null;
+            closingNote: string | null;
+            /** @description Conferência gravada no fechamento (vazia enquanto aberto). */
+            counts: components["schemas"]["CashRegisterCount"][];
+            /** @description Esperado por forma, na ordem `cash`, `pix`, `credit_card`, `debit_card` (tabela da seção 5). */
+            expected: components["schemas"]["CashRegisterExpected"][];
+            /** Format: uuid */
+            id: string;
+            movements: components["schemas"]["CashMovement"][];
+            name: string;
+            /** Format: date-time */
+            openedAt: string;
+            /** @description Responsável: quem abriu (RN-05.17). */
+            openedBy: components["schemas"]["ActorRef"];
+            openingFloatCents: number;
+            /** @description Pagamentos recebidos neste caixa, inclusive os estornados. */
+            payments: components["schemas"]["Payment"][];
+            /** Format: uuid */
+            shiftId: string;
+            status: components["schemas"]["CashRegisterStatus"];
+            /** Format: uuid */
+            unitId: string;
+            version: number;
+        };
+        CashRegisterExpected: {
+            expectedCents: number;
+            method: components["schemas"]["PaymentMethod"];
+        };
+        CashRegisterList: {
+            data: components["schemas"]["CashRegister"][];
+        };
+        /**
+         * @description `open` recebe pagamentos e movimentos; `closed` não volta a abrir (RN-05.21).
+         * @enum {string}
+         */
+        CashRegisterStatus: "open" | "closed";
         Category: {
             active: boolean;
             /**
@@ -1709,6 +1951,17 @@ export interface components {
             currentPassword: string;
             /** @description Nova senha: de 8 a 128 caracteres. */
             newPassword: string;
+        };
+        CloseCashRegisterRequestInput: {
+            /** @description Valor conferido de cada forma (`cash`, `pix`, `credit_card`, `debit_card`), uma vez cada (RN-05.20). */
+            counts: {
+                informedCents: number;
+                method: components["schemas"]["PaymentMethod"];
+            }[];
+            /** @description Observação; obrigatória quando alguma diferença não é zero. */
+            note?: string;
+            /** @description Versão que o app tem do registro. Se outro aparelho alterou antes, a API responde 409 `VERSION_CONFLICT` com `details.currentVersion`. Opcional. */
+            version?: number;
         };
         CreateAdminUserRequestInput: {
             email: string;
@@ -1807,6 +2060,21 @@ export interface components {
             subscriptionStatus: "pilot" | "active";
             /** @description Nome da primeira unidade. */
             unitName: string;
+        };
+        /** @description `amountCents` para Pix e cartões; `tenderedCents` para dinheiro. */
+        CreatePaymentRequestInput: {
+            /** @description Pix e cartões: valor, nunca maior que o saldo (RN-05.08). */
+            amountCents?: number;
+            /**
+             * Format: uuid
+             * @description Caixa que recebe (RN-05.05). Opcional com um único caixa aberto no turno; obrigatório com mais de um (`CASH_REGISTER_REQUIRED`).
+             */
+            cashRegisterId?: string;
+            method: components["schemas"]["PaymentMethod"];
+            /** @description Dinheiro: valor entregue pelo cliente. Aplica-se o menor entre ele e o saldo; o resto é troco (RN-05.09). */
+            tenderedCents?: number;
+            /** @description Versão da comanda que o aparelho tem (opcional). Diferente da atual: 409 `TAB_CHANGED` com `details.currentVersion`. */
+            version?: number;
         };
         CreateProductRequestInput: {
             active?: boolean;
@@ -1954,6 +2222,48 @@ export interface components {
                 /** @description Mensagem em português, pode ser mostrada ao usuário. */
                 message: string;
             };
+        };
+        /** @description Caixa fechado, com a conferência em `counts` (sala `unit`, spec 05). */
+        EventCashRegisterClosed: {
+            data: components["schemas"]["CashRegister"];
+            /** Format: date-time */
+            occurredAt: string;
+            /** Format: uuid */
+            organizationId: string;
+            /** @constant */
+            type: "cash_register.closed";
+            /** Format: uuid */
+            unitId: string;
+            /** @description Versão do recurso. O app ignora eventos com versão menor que a do estado que já tem. */
+            version: number;
+        };
+        /** @description Caixa aberto no turno (sala `unit`, spec 05). `version` é a do caixa. */
+        EventCashRegisterOpened: {
+            data: components["schemas"]["CashRegister"];
+            /** Format: date-time */
+            occurredAt: string;
+            /** Format: uuid */
+            organizationId: string;
+            /** @constant */
+            type: "cash_register.opened";
+            /** Format: uuid */
+            unitId: string;
+            /** @description Versão do recurso. O app ignora eventos com versão menor que a do estado que já tem. */
+            version: number;
+        };
+        /** @description Esperado do caixa mudou: pagamento, estorno, sangria ou suprimento (sala `unit`, spec 05). */
+        EventCashRegisterUpdated: {
+            data: components["schemas"]["CashRegister"];
+            /** Format: date-time */
+            occurredAt: string;
+            /** Format: uuid */
+            organizationId: string;
+            /** @constant */
+            type: "cash_register.updated";
+            /** Format: uuid */
+            unitId: string;
+            /** @description Versão do recurso. O app ignora eventos com versão menor que a do estado que já tem. */
+            version: number;
         };
         /** @description Qualquer outra alteração no cardápio da unidade. `version` é a versão do cardápio (`GET /units/{id}/menu`): o app recarrega o cardápio se a versão dele for menor. */
         EventMenuUpdated: {
@@ -2158,7 +2468,7 @@ export interface components {
             /** @description Versão do recurso. O app ignora eventos com versão menor que a do estado que já tem. */
             version: number;
         };
-        /** @description Comanda com situação, totais e `version` novos (sala `unit`): pedido novo, item cancelado, pedir a conta, reabrir, cancelar. */
+        /** @description Comanda com situação, totais, saldo, contadores e `version` novos (sala `unit`): pedido novo, item cancelado, pedir a conta, reabrir, cancelar, desconto, pagamento e estorno (spec 05), e mudança de etapa que altere `readyItemCount` ou `lateItemCount`. */
         EventTabUpdated: {
             data: components["schemas"]["TabSummary"];
             /** Format: date-time */
@@ -2387,6 +2697,12 @@ export interface components {
             required: boolean;
             sortOrder: number;
         };
+        OpenCashRegisterRequestInput: {
+            /** @description Padrão: "Caixa 1", "Caixa 2"… (RN-05.17). */
+            name?: string;
+            /** @description Fundo de troco em dinheiro, zero ou mais (RN-05.17). */
+            openingFloatCents: number;
+        };
         OpenShiftRequestInput: {
             /** @description Obrigatório no turno contratado; não vale na venda direta (RN-04.05). */
             agreement?: {
@@ -2402,10 +2718,10 @@ export interface components {
             type: components["schemas"]["ShiftType"];
         };
         /**
-         * @description Códigos de erro da operação (spec 04): turno, comandas, pedidos e itens. `SHIFT_OPEN` (spec 03) e `ORGANIZATION_SUSPENDED`/`ORGANIZATION_CANCELED` (spec 02) também aparecem nestas rotas.
+         * @description Códigos de erro da operação (specs 04 e 05): turno, comandas, pedidos, itens, descontos, pagamentos e caixas. `SHIFT_OPEN` (spec 03) e `ORGANIZATION_SUSPENDED`/`ORGANIZATION_CANCELED` (spec 02) também aparecem nestas rotas.
          * @enum {string}
          */
-        OperationErrorCode: "SHIFT_ALREADY_OPEN" | "UNIT_INACTIVE" | "SHIFT_CLOSED" | "SHIFT_HAS_PENDING_ITEMS" | "INVALID_SHIFT_PRICE" | "TAB_NOT_OPEN" | "TAB_NOT_CLOSING" | "TAB_CLOSED" | "TAB_HAS_ACTIVE_ITEMS" | "TAB_CHANGED" | "ORDER_REJECTED" | "ITEM_CHANGED" | "ITEM_CANCELED" | "ITEM_IN_FINAL_STAGE" | "NO_PREVIOUS_STAGE" | "INVALID_QUANTITY";
+        OperationErrorCode: "SHIFT_ALREADY_OPEN" | "UNIT_INACTIVE" | "SHIFT_CLOSED" | "SHIFT_HAS_PENDING_ITEMS" | "INVALID_SHIFT_PRICE" | "TAB_NOT_OPEN" | "TAB_NOT_CLOSING" | "TAB_CLOSED" | "TAB_HAS_ACTIVE_ITEMS" | "TAB_CHANGED" | "ORDER_REJECTED" | "ITEM_CHANGED" | "ITEM_CANCELED" | "ITEM_IN_FINAL_STAGE" | "NO_PREVIOUS_STAGE" | "INVALID_QUANTITY" | "NO_CASH_REGISTER_OPEN" | "CASH_REGISTER_REQUIRED" | "INVALID_CASH_REGISTER" | "CASH_REGISTER_CLOSED" | "CASH_REGISTER_NAME_TAKEN" | "WITHDRAWAL_EXCEEDS_CASH" | "CLOSING_NOTE_REQUIRED" | "PAYMENT_EXCEEDS_BALANCE" | "TAB_NOTHING_TO_PAY" | "PAYMENT_INSUFFICIENT" | "PAYMENT_ALREADY_REVERSED" | "TAB_PAYMENTS_EXCEED_TOTAL" | "TAB_HAS_PAYMENTS" | "TAB_PAID" | "TAB_PAY_FIRST";
         Order: {
             completedAt: string | null;
             createdBy: components["schemas"]["ActorRef"];
@@ -2723,6 +3039,76 @@ export interface components {
             /** @description Estações que o usuário pode abrir nesta unidade, ativas e em ordem: todas para o dono, as liberadas para o colaborador. */
             stations: components["schemas"]["StationSummary"][];
         };
+        PayFirstPaymentInput: {
+            /** @description Pix e cartões: valor, nunca maior que o saldo (RN-05.08). */
+            amountCents?: number;
+            method: components["schemas"]["PaymentMethod"];
+            /** @description Dinheiro: valor entregue pelo cliente. Aplica-se o menor entre ele e o saldo; o resto é troco (RN-05.09). */
+            tenderedCents?: number;
+        };
+        /** @description Comanda paga antes (RN-05.12): comanda, pedido e pagamentos numa única operação. O pedido só vai às estações com o pagamento registrado (CA-04.10). */
+        PayFirstRequestInput: {
+            /**
+             * Format: uuid
+             * @description Caixa que recebe (RN-05.05). Opcional com um único caixa aberto no turno; obrigatório com mais de um (`CASH_REGISTER_REQUIRED`).
+             */
+            cashRegisterId?: string;
+            /** @description Nome do cliente, de 1 a 40 caracteres (RN-04.10). */
+            customerName: string;
+            items: {
+                /** @default [] */
+                modifierIds: string[];
+                /** @description Observação livre, até 140 caracteres. */
+                note?: string | null;
+                /** Format: uuid */
+                productId: string;
+                quantity: number;
+            }[];
+            /** @description Pagamentos, aplicados na ordem enviada. A soma precisa cobrir o total; senão nada é gravado (CA-05.09). */
+            payments: components["schemas"]["PayFirstPaymentInput"][];
+        };
+        /** @description Pagamento registrado (spec 05, seção 4). */
+        Payment: {
+            /** @description Valor aplicado à comanda (RN-05.09). */
+            amountCents: number;
+            /** Format: uuid */
+            cashRegisterId: string;
+            /** @description Só dinheiro: troco (`tenderedCents − amountCents`), exibido em destaque. */
+            changeCents: number | null;
+            /** Format: date-time */
+            createdAt: string;
+            customerName: string;
+            /** Format: uuid */
+            id: string;
+            /** @description Quitação de fiado (spec 06). */
+            isCreditSettlement: boolean;
+            method: components["schemas"]["PaymentMethod"];
+            receivedBy: components["schemas"]["ActorRef"];
+            reversalReason: string | null;
+            /** @description Estornado (RN-05.15): o pagamento continua registrado e sai do saldo e do caixa. */
+            reversedAt: string | null;
+            reversedBy: components["schemas"]["ActorRef"] | null;
+            /**
+             * Format: uuid
+             * @description Turno em que o dinheiro entrou.
+             */
+            shiftId: string;
+            /** Format: uuid */
+            tabId: string;
+            tabNumber: number;
+            /** @description Só dinheiro: valor entregue pelo cliente. */
+            tenderedCents: number | null;
+        };
+        /**
+         * @description Forma de pagamento, só registrada (RN-05.04): `pix`, `cash` (dinheiro, com troco), `credit_card`, `debit_card`.
+         * @enum {string}
+         */
+        PaymentMethod: "pix" | "cash" | "credit_card" | "debit_card";
+        PaymentResult: {
+            payment: components["schemas"]["Payment"];
+            /** @description A comanda depois do pagamento (`paid` com saldo zero). */
+            tab: components["schemas"]["Tab"];
+        };
         /**
          * @description Permissão do admin da plataforma (`recurso:ação`, spec 02, seção 3.2). Catálogo fixo no código da API (RN-02.03).
          * @enum {string}
@@ -2772,6 +3158,20 @@ export interface components {
              * @description Data e hora da publicação. Ausente ou no passado: publica agora; no futuro: agenda.
              */
             publishAt?: string;
+        };
+        /** @description Aplica ou substitui o desconto da comanda (RN-05.01). */
+        PutDiscountRequestInput: {
+            /** @description Motivo, obrigatório (RN-05.01). */
+            reason: string;
+            /**
+             * @description `amount` (centavos) ou `percent`.
+             * @enum {string}
+             */
+            type: "amount" | "percent";
+            /** @description Centavos (`amount`) ou percentual de 1 a 100 (`percent`), calculado sobre o subtotal e arredondado para baixo (RN-05.03). */
+            value: number;
+            /** @description Versão da comanda que o aparelho tem (opcional). Diferente da atual: 409 `TAB_CHANGED` com `details.currentVersion`. */
+            version?: number;
         };
         PutShiftPricesRequestInput: {
             /** @description A tabela inteira; substitui a anterior. */
@@ -2837,11 +3237,21 @@ export interface components {
              */
             room: string;
         };
+        RemoveDiscountRequestInput: {
+            /** @description Motivo da remoção (RN-05.01). */
+            reason: string;
+            /** @description Versão da comanda que o aparelho tem (opcional). Diferente da atual: 409 `TAB_CHANGED` com `details.currentVersion`. */
+            version?: number;
+        };
         ResetPasswordRequestInput: {
             /** @description Nova senha: de 8 a 128 caracteres. */
             password: string;
             /** @description Token do link (fragmento `#token=`). */
             token: string;
+        };
+        ReversePaymentRequestInput: {
+            /** @description Motivo do estorno (RN-05.13). */
+            reason: string;
         };
         Role: {
             /** @description Só papéis personalizados sem usuários podem ser excluídos (RN-02.04, RN-02.07). */
@@ -2923,7 +3333,7 @@ export interface components {
         };
         /** @description `details` do 409 `SHIFT_HAS_PENDING_ITEMS` ao fechar o turno (RN-04.07, CA-04.09). */
         ShiftPendingItems: {
-            /** @description Caixas ainda abertos (spec 05; vazio até os caixas existirem). */
+            /** @description Caixas do turno ainda abertos (spec 05). */
             cashRegisters: {
                 /** Format: uuid */
                 id: string;
@@ -3114,9 +3524,13 @@ export interface components {
         };
         /** @description Comanda com pedidos, itens e totais. */
         Tab: {
+            /** @description Saldo a receber: `totalCents − paidCents` (RN-05.07). */
+            balanceCents: number;
             closedAt: string | null;
             customerName: string;
             discountCents: number;
+            /** @description Motivo do desconto (RN-05.01). */
+            discountReason: string | null;
             discountType: components["schemas"]["DiscountType"] | null;
             discountValue: number | null;
             /** Format: uuid */
@@ -3132,6 +3546,10 @@ export interface components {
             openedBy: components["schemas"]["ActorRef"];
             /** @description Pedidos, do primeiro ao último. */
             orders: components["schemas"]["Order"][];
+            /** @description Soma dos pagamentos não estornados (RN-05.07). */
+            paidCents: number;
+            /** @description Pagamentos da comanda, inclusive os estornados, do primeiro ao último. */
+            payments: components["schemas"]["Payment"][];
             /** @description Unidades na etapa anterior à final (prontas para entregar): o sinal do cartão no varal. */
             readyItemCount: number;
             /** Format: uuid */
@@ -3164,9 +3582,13 @@ export interface components {
         TabStatus: "open" | "closing" | "paid" | "on_credit" | "settled" | "canceled";
         /** @description Cartão da comanda no varal do balcão. */
         TabSummary: {
+            /** @description Saldo a receber: `totalCents − paidCents` (RN-05.07). */
+            balanceCents: number;
             closedAt: string | null;
             customerName: string;
             discountCents: number;
+            /** @description Motivo do desconto (RN-05.01). */
+            discountReason: string | null;
             discountType: components["schemas"]["DiscountType"] | null;
             discountValue: number | null;
             /** Format: uuid */
@@ -3180,6 +3602,8 @@ export interface components {
             /** Format: date-time */
             openedAt: string;
             openedBy: components["schemas"]["ActorRef"];
+            /** @description Soma dos pagamentos não estornados (RN-05.07). */
+            paidCents: number;
             /** @description Unidades na etapa anterior à final (prontas para entregar): o sinal do cartão no varal. */
             readyItemCount: number;
             /** Format: uuid */
@@ -5967,6 +6391,226 @@ export interface operations {
             };
         };
     };
+    CashController_getRegister: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CashRegisterDetail"];
+                };
+            };
+            /** @description `UNAUTHENTICATED`: sem sessão do app ou sessão encerrada. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description `FORBIDDEN`: só o dono ou quem opera o caixa na unidade (RN-05.16). */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description `NOT_FOUND`: não existe ou é de outra organização. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Erro no formato `ErrorResponse` (spec 01, seção 5). */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    CashController_closeRegister: {
+        parameters: {
+            query?: never;
+            header?: {
+                /** @description UUID gerado no aparelho. Repetir a mesma chave devolve a mesma resposta por 24 h, sem repetir a ação. */
+                "Idempotency-Key"?: string;
+            };
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CloseCashRegisterRequestInput"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CashRegister"];
+                };
+            };
+            /** @description `CLOSING_NOTE_REQUIRED` (`details.counts` com as diferenças) ou `VALIDATION_FAILED`. */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description `UNAUTHENTICATED`: sem sessão do app ou sessão encerrada. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description `FORBIDDEN`: só o dono ou quem opera o caixa na unidade (RN-05.16). */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description `NOT_FOUND`: não existe ou é de outra organização. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /**
+             * @description `CASH_REGISTER_CLOSED` ou `VERSION_CONFLICT`.
+             *
+             *     `IDEMPOTENCY_KEY_REUSED` (mesma chave com outro corpo) ou `IDEMPOTENCY_REQUEST_IN_PROGRESS`.
+             */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Erro no formato `ErrorResponse` (spec 01, seção 5). */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    CashController_move: {
+        parameters: {
+            query?: never;
+            header?: {
+                /** @description UUID gerado no aparelho. Repetir a mesma chave devolve a mesma resposta por 24 h, sem repetir a ação. */
+                "Idempotency-Key"?: string;
+            };
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CashMovementRequestInput"];
+            };
+        };
+        responses: {
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CashRegisterDetail"];
+                };
+            };
+            /** @description `UNAUTHENTICATED`: sem sessão do app ou sessão encerrada. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description `FORBIDDEN`: só o dono ou quem opera o caixa na unidade (RN-05.16). */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description `NOT_FOUND`: não existe ou é de outra organização. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /**
+             * @description `WITHDRAWAL_EXCEEDS_CASH`, `CASH_REGISTER_CLOSED` ou `VERSION_CONFLICT`.
+             *
+             *     `IDEMPOTENCY_KEY_REUSED` (mesma chave com outro corpo) ou `IDEMPOTENCY_REQUEST_IN_PROGRESS`.
+             */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Erro no formato `ErrorResponse` (spec 01, seção 5). */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
     MenuController_createCategory: {
         parameters: {
             query?: never;
@@ -6853,6 +7497,83 @@ export interface operations {
             };
         };
     };
+    CashController_reverse: {
+        parameters: {
+            query?: never;
+            header?: {
+                /** @description UUID gerado no aparelho. Repetir a mesma chave devolve a mesma resposta por 24 h, sem repetir a ação. */
+                "Idempotency-Key"?: string;
+            };
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ReversePaymentRequestInput"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PaymentResult"];
+                };
+            };
+            /** @description `UNAUTHENTICATED`: sem sessão do app ou sessão encerrada. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description `FORBIDDEN`: é preciso ter acesso ao balcão da unidade. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description `NOT_FOUND`: não existe ou é de outra organização. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /**
+             * @description `PAYMENT_ALREADY_REVERSED`, `CASH_REGISTER_CLOSED`, `TAB_CLOSED` ou `SHIFT_CLOSED`.
+             *
+             *     `IDEMPOTENCY_KEY_REUSED` (mesma chave com outro corpo) ou `IDEMPOTENCY_REQUEST_IN_PROGRESS`.
+             */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Erro no formato `ErrorResponse` (spec 01, seção 5). */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
     MenuController_createProduct: {
         parameters: {
             query?: never;
@@ -7122,6 +7843,140 @@ export interface operations {
                 };
             };
             /** @description `IDEMPOTENCY_KEY_REUSED` (mesma chave com outro corpo) ou `IDEMPOTENCY_REQUEST_IN_PROGRESS`. */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Erro no formato `ErrorResponse` (spec 01, seção 5). */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    CashController_listRegisters: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CashRegisterList"];
+                };
+            };
+            /** @description `UNAUTHENTICATED`: sem sessão do app ou sessão encerrada. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description `FORBIDDEN`: só o balcão e quem opera o caixa na unidade. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description `NOT_FOUND`: não existe ou é de outra organização. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Erro no formato `ErrorResponse` (spec 01, seção 5). */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    CashController_openRegister: {
+        parameters: {
+            query?: never;
+            header?: {
+                /** @description UUID gerado no aparelho. Repetir a mesma chave devolve a mesma resposta por 24 h, sem repetir a ação. */
+                "Idempotency-Key"?: string;
+            };
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["OpenCashRegisterRequestInput"];
+            };
+        };
+        responses: {
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CashRegister"];
+                };
+            };
+            /** @description `UNAUTHENTICATED`: sem sessão do app ou sessão encerrada. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description `FORBIDDEN`: só o dono ou quem opera o caixa na unidade (RN-05.16). */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description `NOT_FOUND`: não existe ou é de outra organização. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /**
+             * @description `CASH_REGISTER_NAME_TAKEN` ou `SHIFT_CLOSED`.
+             *
+             *     `IDEMPOTENCY_KEY_REUSED` (mesma chave com outro corpo) ou `IDEMPOTENCY_REQUEST_IN_PROGRESS`.
+             */
             409: {
                 headers: {
                     [name: string]: unknown;
@@ -7415,6 +8270,92 @@ export interface operations {
             };
             /**
              * @description `SHIFT_CLOSED`.
+             *
+             *     `IDEMPOTENCY_KEY_REUSED` (mesma chave com outro corpo) ou `IDEMPOTENCY_REQUEST_IN_PROGRESS`.
+             */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Erro no formato `ErrorResponse` (spec 01, seção 5). */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    CashController_payFirst: {
+        parameters: {
+            query?: never;
+            header?: {
+                /** @description UUID gerado no aparelho. Repetir a mesma chave devolve a mesma resposta por 24 h, sem repetir a ação. */
+                "Idempotency-Key"?: string;
+            };
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PayFirstRequestInput"];
+            };
+        };
+        responses: {
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Tab"];
+                };
+            };
+            /** @description `INVALID_CASH_REGISTER` ou `VALIDATION_FAILED`. */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description `UNAUTHENTICATED`: sem sessão do app ou sessão encerrada. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description `FORBIDDEN`: é preciso ter acesso ao balcão da unidade. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description `NOT_FOUND`: não existe ou é de outra organização. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /**
+             * @description `PAYMENT_INSUFFICIENT` (nada é gravado, CA-05.09), `ORDER_REJECTED`, `NO_CASH_REGISTER_OPEN` (CA-05.08), `CASH_REGISTER_REQUIRED` (`details.cashRegisters`), `CASH_REGISTER_CLOSED`, `PAYMENT_EXCEEDS_BALANCE` (CA-05.03), `TAB_NOTHING_TO_PAY`, `TAB_CHANGED` ou `SHIFT_CLOSED`.
              *
              *     `IDEMPOTENCY_KEY_REUSED` (mesma chave com outro corpo) ou `IDEMPOTENCY_REQUEST_IN_PROGRESS`.
              */
@@ -8145,6 +9086,169 @@ export interface operations {
             };
         };
     };
+    CashController_setDiscount: {
+        parameters: {
+            query?: never;
+            header?: {
+                /** @description UUID gerado no aparelho. Repetir a mesma chave devolve a mesma resposta por 24 h, sem repetir a ação. */
+                "Idempotency-Key"?: string;
+            };
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PutDiscountRequestInput"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Tab"];
+                };
+            };
+            /** @description `VALIDATION_FAILED` (percentual de 1 a 100, motivo obrigatório). */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description `UNAUTHENTICATED`: sem sessão do app ou sessão encerrada. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description `FORBIDDEN`: é preciso ter acesso ao balcão da unidade. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description `NOT_FOUND`: não existe ou é de outra organização. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /**
+             * @description `TAB_PAYMENTS_EXCEED_TOTAL` (o total ficaria menor que o já pago), `TAB_PAID`, `TAB_CLOSED`, `TAB_CHANGED` ou `SHIFT_CLOSED`.
+             *
+             *     `IDEMPOTENCY_KEY_REUSED` (mesma chave com outro corpo) ou `IDEMPOTENCY_REQUEST_IN_PROGRESS`.
+             */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Erro no formato `ErrorResponse` (spec 01, seção 5). */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    CashController_removeDiscount: {
+        parameters: {
+            query?: never;
+            header?: {
+                /** @description UUID gerado no aparelho. Repetir a mesma chave devolve a mesma resposta por 24 h, sem repetir a ação. */
+                "Idempotency-Key"?: string;
+            };
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["RemoveDiscountRequestInput"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Tab"];
+                };
+            };
+            /** @description `UNAUTHENTICATED`: sem sessão do app ou sessão encerrada. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description `FORBIDDEN`: é preciso ter acesso ao balcão da unidade. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description `NOT_FOUND`: não existe ou é de outra organização. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /**
+             * @description `TAB_PAID`, `TAB_CLOSED`, `TAB_PAYMENTS_EXCEED_TOTAL`, `TAB_CHANGED` ou `SHIFT_CLOSED`.
+             *
+             *     `IDEMPOTENCY_KEY_REUSED` (mesma chave com outro corpo) ou `IDEMPOTENCY_REQUEST_IN_PROGRESS`.
+             */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Erro no formato `ErrorResponse` (spec 01, seção 5). */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
     OperationController_createOrder: {
         parameters: {
             query?: never;
@@ -8200,6 +9304,92 @@ export interface operations {
             };
             /**
              * @description `ORDER_REJECTED` com `details` no formato `OrderRejectedDetails` (CA-04.06, CA-03.06), `TAB_NOT_OPEN` (RN-04.13), `TAB_CLOSED` ou `SHIFT_CLOSED`.
+             *
+             *     `IDEMPOTENCY_KEY_REUSED` (mesma chave com outro corpo) ou `IDEMPOTENCY_REQUEST_IN_PROGRESS`.
+             */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Erro no formato `ErrorResponse` (spec 01, seção 5). */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    CashController_pay: {
+        parameters: {
+            query?: never;
+            header?: {
+                /** @description UUID gerado no aparelho. Repetir a mesma chave devolve a mesma resposta por 24 h, sem repetir a ação. */
+                "Idempotency-Key"?: string;
+            };
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreatePaymentRequestInput"];
+            };
+        };
+        responses: {
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PaymentResult"];
+                };
+            };
+            /** @description `INVALID_CASH_REGISTER` ou `VALIDATION_FAILED`. */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description `UNAUTHENTICATED`: sem sessão do app ou sessão encerrada. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description `FORBIDDEN`: é preciso ter acesso ao balcão da unidade. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description `NOT_FOUND`: não existe ou é de outra organização. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /**
+             * @description `NO_CASH_REGISTER_OPEN` (CA-05.08), `CASH_REGISTER_REQUIRED` (`details.cashRegisters`), `CASH_REGISTER_CLOSED`, `PAYMENT_EXCEEDS_BALANCE` (CA-05.03), `TAB_NOTHING_TO_PAY`, `TAB_CHANGED` ou `SHIFT_CLOSED`, `TAB_NOT_CLOSING` (RN-05.07) ou `TAB_CLOSED`.
              *
              *     `IDEMPOTENCY_KEY_REUSED` (mesma chave com outro corpo) ou `IDEMPOTENCY_REQUEST_IN_PROGRESS`.
              */
@@ -8995,7 +10185,7 @@ export interface operations {
                     "application/json": components["schemas"]["ErrorResponse"];
                 };
             };
-            /** @description `FORBIDDEN`: só o dono pode usar esta rota. */
+            /** @description `FORBIDDEN`: colaborador sem acesso à unidade. */
             403: {
                 headers: {
                     [name: string]: unknown;
