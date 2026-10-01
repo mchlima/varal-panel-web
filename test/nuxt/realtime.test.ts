@@ -30,7 +30,10 @@ function fakeSocket() {
   return socket
 }
 
-function setup(refresh: () => Promise<RefreshResult> = async () => 'renewed') {
+function setup(
+  refresh: () => Promise<RefreshResult> = async () => 'renewed',
+  onAccessChanged: () => Promise<void> = async () => {},
+) {
   const socket = fakeSocket()
   const io = vi.fn(() => socket as unknown as Socket)
   const options: RealtimeClientOptions = {
@@ -40,6 +43,7 @@ function setup(refresh: () => Promise<RefreshResult> = async () => 'renewed') {
     refresh: vi.fn(refresh),
     onSessionEnded: vi.fn(),
     onConnected: vi.fn(),
+    onAccessChanged: vi.fn(onAccessChanged),
     onStatus: vi.fn(),
     setTimer: (fn) => {
       fn()
@@ -131,5 +135,69 @@ describe('tempo real (spec 01, seção 10)', () => {
     expect(socket.disconnect).toHaveBeenCalled()
     expect(client.socket).toBeNull()
     expect(options.onStatus).toHaveBeenLastCalledWith('idle')
+  })
+
+  it('session.access_changed: recarrega o /auth/me e reconecta, sem renovar a sessão', async () => {
+    const order: string[] = []
+    const { socket, options } = setup(
+      async () => 'renewed',
+      async () => {
+        order.push('me')
+      },
+    )
+    socket.connect.mockImplementation(() => {
+      order.push('connect')
+      socket.connected = true
+      return socket
+    })
+    socket.emit('session.access_changed', {
+      type: 'session.access_changed',
+      data: { reason: 'permissions_changed' },
+    })
+    socket.emit('disconnect', 'io server disconnect')
+    await flush()
+    expect(options.onAccessChanged).toHaveBeenCalledOnce()
+    expect(options.refresh).not.toHaveBeenCalled()
+    expect(order).toEqual(['me', 'connect'])
+    expect(options.onSessionEnded).not.toHaveBeenCalled()
+
+    // A próxima desconexão do servidor volta a ser tratada como sessão vencida.
+    socket.connected = false
+    socket.emit('disconnect', 'io server disconnect')
+    await flush()
+    expect(options.refresh).toHaveBeenCalledOnce()
+  })
+
+  it('subscribe entrega eventos de unidade e para quando a tela sai', () => {
+    const { socket, client } = setup()
+    const handler = vi.fn()
+    const stop = client.subscribe('product.sold_out_changed', handler)
+    const event = {
+      type: 'product.sold_out_changed',
+      version: 2,
+      data: { productId: 'p', soldOut: true },
+    }
+    socket.emit('product.sold_out_changed', event)
+    expect(handler).toHaveBeenCalledWith(event)
+    stop()
+    socket.emit('product.sold_out_changed', event)
+    expect(handler).toHaveBeenCalledOnce()
+  })
+
+  it('subscribe feito antes de conectar vale para o socket criado depois', () => {
+    const socket = fakeSocket()
+    const client = createRealtimeClient({
+      url: 'http://api.test',
+      getDeviceId: () => DEVICE,
+      io: vi.fn(() => socket as unknown as Socket),
+      refresh: vi.fn(async () => 'renewed' as const),
+      onSessionEnded: vi.fn(),
+      onConnected: vi.fn(),
+    })
+    const handler = vi.fn()
+    client.subscribe('menu.updated', handler)
+    client.connect()
+    socket.emit('menu.updated', { type: 'menu.updated' })
+    expect(handler).toHaveBeenCalledOnce()
   })
 })

@@ -293,6 +293,57 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/categories": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Cria uma categoria (estação de preparo padrão: Cozinha) */
+        post: operations["MenuController_createCategory"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/categories/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /** Altera uma categoria */
+        patch: operations["MenuController_updateCategory"];
+        trace?: never;
+    };
+    "/api/v1/categories/{id}/products/order": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /** Reordena os produtos da categoria */
+        put: operations["MenuController_reorderProducts"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/health": {
         parameters: {
             query?: never;
@@ -309,10 +360,361 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/modifier-groups": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Cria um grupo de modificadores (com as opções, se enviadas) */
+        post: operations["MenuController_createModifierGroup"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/modifier-groups/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /** Remove um grupo de modificadores e as suas opções */
+        delete: operations["MenuController_deleteModifierGroup"];
+        options?: never;
+        head?: never;
+        /** Altera um grupo de modificadores */
+        patch: operations["MenuController_updateModifierGroup"];
+        trace?: never;
+    };
+    "/api/v1/modifiers": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Cria uma opção num grupo de modificadores */
+        post: operations["MenuController_createModifier"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/modifiers/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /** Altera ou desativa uma opção */
+        patch: operations["MenuController_updateModifier"];
+        trace?: never;
+    };
+    "/api/v1/organization/access": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Código do estabelecimento, link `/e/{code}` e QR code (SVG) */
+        get: operations["StaffController_access"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/products": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Cria um produto (preço em centavos) */
+        post: operations["MenuController_createProduct"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/products/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /** Altera um produto (vale para pedidos novos, RN-03.12) */
+        patch: operations["MenuController_updateProduct"];
+        trace?: never;
+    };
+    "/api/v1/products/{id}/sold-out": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Marca o produto como esgotado (dono e colaboradores com estação na unidade, RN-03.11) */
+        post: operations["MenuController_markSoldOut"];
+        /** Desmarca o esgotado (dono e colaboradores com estação na unidade, RN-03.11) */
+        delete: operations["MenuController_unmarkSoldOut"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/staff": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Colaboradores da organização, com as permissões por unidade */
+        get: operations["StaffController_list"];
+        put?: never;
+        /** Cadastra um colaborador com senha inicial (RN-03.15) */
+        post: operations["StaffController_create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/staff/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /** Altera nome, usuário, e-mail ou situação (desativar encerra as sessões, RN-03.17) */
+        patch: operations["StaffController_update"];
+        trace?: never;
+    };
+    "/api/v1/staff/{id}/password": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /** O dono define a senha do colaborador (RN-03.19); as sessões dele são encerradas */
+        put: operations["StaffController_setPassword"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/staff/{id}/password-reset": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Gera o link de redefinição de senha (RN-03.18): para copiar, enviar por WhatsApp e, opcionalmente, por e-mail */
+        post: operations["StaffController_passwordReset"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/staff/{id}/permissions": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /** Substitui as permissões por unidade (estações e caixa, RN-03.16); vale na hora, inclusive no tempo real */
+        put: operations["StaffController_setPermissions"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/stations/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /** Altera uma estação (nome, tipo, ordem, ativa) */
+        patch: operations["UnitsController_updateStation"];
+        trace?: never;
+    };
+    "/api/v1/units": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Unidades da organização (ativas e inativas) */
+        get: operations["UnitsController_listUnits"];
+        put?: never;
+        /** Cria uma unidade com o template padrão de estações e fluxo (RN-03.03) */
+        post: operations["UnitsController_createUnit"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/units/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /** Renomeia, ativa ou desativa a unidade e ajusta o tempo de atraso */
+        patch: operations["UnitsController_updateUnit"];
+        trace?: never;
+    };
+    "/api/v1/units/{id}/categories/order": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /** Reordena as categorias da unidade */
+        put: operations["MenuController_reorderCategories"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/units/{id}/menu": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Cardápio completo da unidade (dono e colaboradores da unidade) */
+        get: operations["MenuController_readMenu"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/units/{id}/stations": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Estações da unidade */
+        get: operations["UnitsController_listStations"];
+        put?: never;
+        /** Cria uma estação na unidade */
+        post: operations["UnitsController_createStation"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/units/{id}/workflow": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Fluxo de etapas da unidade */
+        get: operations["UnitsController_getWorkflow"];
+        /** Salva o fluxo completo de uma vez (RN-03.05 a RN-03.07) */
+        put: operations["UnitsController_saveWorkflow"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
     schemas: {
+        /**
+         * @description `permissions_changed`: o dono mudou as permissões do colaborador; `unit_changed`: unidade criada, ativada ou desativada; `stations_changed`: estação criada, ativada, desativada ou com tipo trocado.
+         * @enum {string}
+         */
+        AccessChangeReason: "permissions_changed" | "unit_changed" | "stations_changed";
         AccessCodeOrganization: {
             organizationName: string;
         };
@@ -339,11 +741,120 @@ export interface components {
          * @description Códigos de erro da autenticação (spec 01, seção 7).
          * @enum {string}
          */
-        AuthErrorCode: "INVALID_CREDENTIALS" | "INVALID_STAFF_CREDENTIALS" | "LOGIN_TEMPORARILY_LOCKED" | "INVALID_PASSWORD_TOKEN" | "WRONG_CURRENT_PASSWORD" | "PASSWORD_RESET_LIMIT_REACHED" | "DEVICE_ID_REQUIRED";
+        AuthErrorCode: "INVALID_CREDENTIALS" | "INVALID_STAFF_CREDENTIALS" | "LOGIN_TEMPORARILY_LOCKED" | "INVALID_PASSWORD_TOKEN" | "WRONG_CURRENT_PASSWORD" | "PASSWORD_RESET_LIMIT_REACHED" | "STAFF_WITHOUT_UNIT" | "DEVICE_ID_REQUIRED";
+        Category: {
+            active: boolean;
+            /**
+             * Format: uuid
+             * @description Estação de preparo padrão dos produtos.
+             */
+            defaultStationId: string;
+            /** Format: uuid */
+            id: string;
+            name: string;
+            sortOrder: number;
+            /** Format: uuid */
+            unitId: string;
+        };
+        CategoryList: {
+            data: components["schemas"]["Category"][];
+        };
+        CategoryOrderRequestInput: {
+            /** @description Todas as categorias da unidade, na nova ordem. */
+            categoryIds: string[];
+        };
         ChangePasswordRequestInput: {
             currentPassword: string;
             /** @description Nova senha: de 8 a 128 caracteres. */
             newPassword: string;
+        };
+        CreateCategoryRequestInput: {
+            active?: boolean;
+            /**
+             * Format: uuid
+             * @description Estação de fila da unidade; sem ela, a Cozinha (ou a primeira estação de fila).
+             */
+            defaultStationId?: string;
+            name: string;
+            /** @description Posição na lista (1 é o primeiro). */
+            sortOrder?: number;
+            /** Format: uuid */
+            unitId: string;
+        };
+        CreateModifierGroupRequestInput: {
+            /** @description Máximo de escolhas, pelo menos 1. */
+            maxChoices: number;
+            /** @description Mínimo de escolhas; ≥ 1 torna o grupo obrigatório (RN-03.13). */
+            minChoices: number;
+            /**
+             * @description Opções criadas junto com o grupo.
+             * @default []
+             */
+            modifiers: {
+                active?: boolean;
+                name: string;
+                /**
+                 * @description Acréscimo ao preço do produto, em centavos (pode ser zero).
+                 * @default 0
+                 */
+                priceDeltaCents: number;
+                /** @description Posição na lista (1 é o primeiro). */
+                sortOrder?: number;
+            }[];
+            name: string;
+            /** Format: uuid */
+            productId: string;
+            /** @description Posição na lista (1 é o primeiro). */
+            sortOrder?: number;
+        };
+        CreateModifierRequestInput: {
+            active?: boolean;
+            /** Format: uuid */
+            modifierGroupId: string;
+            name: string;
+            /**
+             * @description Acréscimo ao preço do produto, em centavos (pode ser zero).
+             * @default 0
+             */
+            priceDeltaCents: number;
+            /** @description Posição na lista (1 é o primeiro). */
+            sortOrder?: number;
+        };
+        CreateProductRequestInput: {
+            active?: boolean;
+            /** Format: uuid */
+            categoryId: string;
+            description?: string | null;
+            name: string;
+            /** @description Preço em centavos (inteiro, maior ou igual a zero; RN-03.09). */
+            priceCents: number;
+            /** @description Posição na lista (1 é o primeiro). */
+            sortOrder?: number;
+            stationId?: string | null;
+        };
+        CreateStaffMemberRequestInput: {
+            email?: string | null;
+            name: string;
+            /** @description Nova senha: de 8 a 128 caracteres. */
+            password: string;
+            /** @default [] */
+            permissions: components["schemas"]["StaffPermissionInputInput"][];
+            /** @description Letras, números, ponto e sublinhado (3 a 32); único na organização. */
+            username: string;
+        };
+        CreateStationRequestInput: {
+            kind: components["schemas"]["StationKind"];
+            name: string;
+            /** @description Posição na lista (1 é o primeiro). */
+            sortOrder?: number;
+        };
+        CreateUnitRequestInput: {
+            /**
+             * @description Minutos a partir dos quais um item na estação aparece como atrasado (1 a 240).
+             * @default 15
+             */
+            lateAfterMinutes: number;
+            name: string;
         };
         /**
          * @description Situação de um envio de e-mail.
@@ -396,6 +907,52 @@ export interface components {
                 message: string;
             };
         };
+        /** @description Qualquer outra alteração no cardápio da unidade. `version` é a versão do cardápio (`GET /units/{id}/menu`): o app recarrega o cardápio se a versão dele for menor. */
+        EventMenuUpdated: {
+            data: {
+                /** Format: uuid */
+                unitId: string;
+                version: number;
+            };
+            /** Format: date-time */
+            occurredAt: string;
+            /** Format: uuid */
+            organizationId: string;
+            /** @constant */
+            type: "menu.updated";
+            /** Format: uuid */
+            unitId: string;
+            /** @description Versão do recurso. O app ignora eventos com versão menor que a do estado que já tem. */
+            version: number;
+        };
+        /** @description Produto marcado ou desmarcado como esgotado (RN-03.11). `version` é a versão do produto: o balcão bloqueia ou libera o produto sem recarregar o cardápio. */
+        EventProductSoldOutChanged: {
+            data: {
+                /** Format: uuid */
+                productId: string;
+                soldOut: boolean;
+            };
+            /** Format: date-time */
+            occurredAt: string;
+            /** Format: uuid */
+            organizationId: string;
+            /** @constant */
+            type: "product.sold_out_changed";
+            /** Format: uuid */
+            unitId: string;
+            /** @description Versão do recurso. O app ignora eventos com versão menor que a do estado que já tem. */
+            version: number;
+        };
+        /** @description As unidades ou estações que o usuário acessa mudaram. A sessão continua válida: o servidor desconecta o socket logo depois, e o app busca `GET /auth/me` e reconecta (`socket.connect()`), entrando nas salas do novo acesso (spec 01, seção 10; spec 03). */
+        EventSessionAccessChanged: {
+            data: {
+                reason: components["schemas"]["AccessChangeReason"];
+            };
+            /** Format: date-time */
+            occurredAt: string;
+            /** @constant */
+            type: "session.access_changed";
+        };
         /** @description O token de acesso usado na conexão venceu. O servidor desconecta o socket logo depois; o app renova a sessão por REST (`POST /auth/refresh`) e reconecta. */
         EventSessionExpired: {
             data: {
@@ -420,6 +977,24 @@ export interface components {
             /** @constant */
             type: "session.revoked";
         };
+        /** @description Configuração da unidade alterada (nome, tempo de atraso, estações ou fluxo). `version` é a versão da unidade: o app recarrega `GET /auth/me` e, no painel do dono, a configuração. */
+        EventUnitConfigUpdated: {
+            data: {
+                /** Format: uuid */
+                unitId: string;
+                version: number;
+            };
+            /** Format: date-time */
+            occurredAt: string;
+            /** Format: uuid */
+            organizationId: string;
+            /** @constant */
+            type: "unit.config_updated";
+            /** Format: uuid */
+            unitId: string;
+            /** @description Versão do recurso. O app ignora eventos com versão menor que a do estado que já tem. */
+            version: number;
+        };
         ForgotPasswordRequestInput: {
             /** Format: email */
             email: string;
@@ -433,12 +1008,102 @@ export interface components {
             /** @enum {string} */
             status: "ok";
         };
+        /** @description Cardápio da unidade em ordem. O dono recebe tudo (com `active`); o colaborador só categorias, produtos e modificadores ativos (RN-03.10). */
+        Menu: {
+            categories: components["schemas"]["MenuCategory"][];
+            /** Format: uuid */
+            unitId: string;
+            /** @description Versão do cardápio (`menu.updated`). */
+            version: number;
+        };
+        MenuCategory: {
+            active: boolean;
+            /**
+             * Format: uuid
+             * @description Estação de preparo padrão dos produtos.
+             */
+            defaultStationId: string;
+            /** Format: uuid */
+            id: string;
+            name: string;
+            products: components["schemas"]["MenuProduct"][];
+            sortOrder: number;
+            /** Format: uuid */
+            unitId: string;
+        };
+        MenuProduct: {
+            active: boolean;
+            /** Format: uuid */
+            categoryId: string;
+            description: string | null;
+            /** Format: uuid */
+            id: string;
+            modifierGroups: components["schemas"]["ModifierGroup"][];
+            name: string;
+            /**
+             * Format: uuid
+             * @description Estação de preparo resolvida: a do produto ou, sem ela, a da categoria (RN-03.08).
+             */
+            prepStationId: string;
+            priceCents: number;
+            soldOut: boolean;
+            sortOrder: number;
+            /** @description Estação de preparo própria; `null` usa a da categoria. */
+            stationId: string | null;
+            /** Format: uuid */
+            unitId: string;
+            /** @description Versão do produto (`product.sold_out_changed`). */
+            version: number;
+        };
+        Modifier: {
+            active: boolean;
+            /** Format: uuid */
+            id: string;
+            /** Format: uuid */
+            modifierGroupId: string;
+            name: string;
+            priceDeltaCents: number;
+            sortOrder: number;
+        };
+        ModifierGroup: {
+            /** Format: uuid */
+            id: string;
+            maxChoices: number;
+            minChoices: number;
+            modifiers: components["schemas"]["Modifier"][];
+            name: string;
+            /** Format: uuid */
+            productId: string;
+            /** @description Mínimo ≥ 1: o balcão não envia o item sem escolher (RN-03.13; CA-03.06, aplicado no envio do pedido, spec 04). */
+            required: boolean;
+            sortOrder: number;
+        };
+        OrganizationAccess: {
+            /** @example ESPT26 */
+            accessCode: string;
+            /**
+             * Format: uri
+             * @description Link de acesso da equipe (`/e/{code}`).
+             */
+            link: string;
+            /** @description QR code do link em SVG (escalável; mostre grande para escanear de outro celular). */
+            qrSvg: string;
+        };
         OwnerLoginRequestInput: {
             /** Format: email */
             email: string;
             password: string;
         };
         PaginationQuery: {
+            /** @description Valor de `nextCursor` da página anterior. Opaco: não monte à mão. */
+            cursor?: string;
+            /**
+             * @description Itens por página (1 a 100, padrão 50).
+             * @default 50
+             */
+            limit: number;
+        };
+        PaginationQueryInput: {
             /** @description Valor de `nextCursor` da página anterior. Opaco: não monte à mão. */
             cursor?: string;
             /**
@@ -473,8 +1138,61 @@ export interface components {
             canOperateCash: boolean;
             /** Format: uuid */
             id: string;
+            /** @description Minutos a partir dos quais um item aparece como atrasado (spec 03, seção 3). */
+            lateAfterMinutes: number;
             name: string;
             stationIds: string[];
+            /** @description Estações que o usuário pode abrir nesta unidade, ativas e em ordem: todas para o dono, as liberadas para o colaborador. */
+            stations: components["schemas"]["StationSummary"][];
+        };
+        Product: {
+            active: boolean;
+            /** Format: uuid */
+            categoryId: string;
+            description: string | null;
+            /** Format: uuid */
+            id: string;
+            name: string;
+            /**
+             * Format: uuid
+             * @description Estação de preparo resolvida: a do produto ou, sem ela, a da categoria (RN-03.08).
+             */
+            prepStationId: string;
+            priceCents: number;
+            soldOut: boolean;
+            sortOrder: number;
+            /** @description Estação de preparo própria; `null` usa a da categoria. */
+            stationId: string | null;
+            /** Format: uuid */
+            unitId: string;
+            /** @description Versão do produto (`product.sold_out_changed`). */
+            version: number;
+        };
+        ProductList: {
+            data: components["schemas"]["Product"][];
+        };
+        ProductOrderRequestInput: {
+            /** @description Todos os produtos da categoria, na nova ordem. */
+            productIds: string[];
+        };
+        PutStaffPermissionsRequestInput: {
+            /** @description Todas as unidades liberadas (substitui as atuais). */
+            units: components["schemas"]["StaffPermissionInputInput"][];
+        };
+        PutWorkflowRequestInput: {
+            /** @description Etapas na ordem do fluxo: de 2 a 8, a última com destino `none` (RN-03.05). */
+            stages: {
+                /**
+                 * Format: uuid
+                 * @description Id de uma etapa atual, para mantê-la (itens já pedidos apontam para ela). Sem id, cria uma etapa nova; etapas atuais fora da lista são arquivadas.
+                 */
+                id?: string;
+                name: string;
+                stationId?: string | null;
+                target: components["schemas"]["WorkflowStageTarget"];
+            }[];
+            /** @description Versão que o app tem do registro. Se outro aparelho alterou antes, a API responde 409 `VERSION_CONFLICT` com `details.currentVersion`. Opcional. */
+            version?: number;
         };
         /**
          * @description Códigos de erro do tempo real (`/ws`): em `connect_error` (`err.data`, um `ErrorResponse`) e na resposta de `rooms.join`/`rooms.leave`.
@@ -529,7 +1247,16 @@ export interface components {
          * @description Por que a sessão foi encerrada.
          * @enum {string}
          */
-        SessionRevocationReason: "logout" | "password_changed" | "password_reset" | "refresh_token_reused" | "new_login_on_device" | "staff_deactivated" | "subject_deactivated";
+        SessionRevocationReason: "logout" | "password_changed" | "password_reset" | "refresh_token_reused" | "new_login_on_device" | "staff_deactivated" | "staff_access_removed" | "subject_deactivated";
+        SetStaffPasswordRequestInput: {
+            /** @description Nova senha: de 8 a 128 caracteres. */
+            password: string;
+        };
+        /**
+         * @description Códigos de erro da configuração da unidade (spec 03): unidades, estações, fluxo, cardápio e colaboradores.
+         * @enum {string}
+         */
+        SetupErrorCode: "SHIFT_OPEN" | "LAST_ACTIVE_UNIT" | "UNIT_NAME_TAKEN" | "STATION_NAME_TAKEN" | "CATEGORY_NAME_TAKEN" | "USERNAME_TAKEN" | "STATION_KIND_REQUIRED" | "STATION_IN_USE" | "INVALID_WORKFLOW" | "INVALID_PREP_STATION" | "INVALID_REFERENCE" | "INVALID_ORDER" | "INVALID_MODIFIER_LIMITS";
         StaffLoginRequestInput: {
             /**
              * @description Código do estabelecimento (6 caracteres), o mesmo do link `/e/{code}`.
@@ -539,11 +1266,173 @@ export interface components {
             password: string;
             username: string;
         };
+        StaffMember: {
+            active: boolean;
+            email: string | null;
+            hasPassword: boolean;
+            /** Format: uuid */
+            id: string;
+            name: string;
+            permissions: components["schemas"]["StaffUnitPermission"][];
+            username: string;
+        };
+        StaffMemberPage: {
+            data: components["schemas"]["StaffMember"][];
+            /** @description Cursor da próxima página; `null` na última. */
+            nextCursor: string | null;
+        };
+        StaffPasswordResetRequestInput: {
+            /**
+             * @description Também envia o link por e-mail, se o colaborador tiver e-mail.
+             * @default false
+             */
+            sendEmail: boolean;
+        };
+        StaffPasswordResetResponse: {
+            emailSent: boolean;
+            /** Format: date-time */
+            expiresAt: string;
+            /**
+             * Format: uri
+             * @description Link de uso único (1 hora) para copiar.
+             */
+            link: string;
+            /**
+             * Format: uri
+             * @description `https://wa.me/?text=` com a mensagem e o link (RN-03.18).
+             */
+            whatsappUrl: string;
+        };
+        StaffPermissionInputInput: {
+            /** @default false */
+            canOperateCash: boolean;
+            /**
+             * @description Estações ativas desta unidade que o colaborador pode abrir.
+             * @default []
+             */
+            stationIds: string[];
+            /** Format: uuid */
+            unitId: string;
+        };
+        StaffUnitPermission: {
+            canOperateCash: boolean;
+            stationIds: string[];
+            /** @description Estações liberadas, ativas, em ordem de exibição. */
+            stations: components["schemas"]["StationSummary"][];
+            /** Format: uuid */
+            unitId: string;
+            unitName: string;
+        };
+        Station: {
+            active: boolean;
+            /** Format: uuid */
+            id: string;
+            kind: components["schemas"]["StationKind"];
+            name: string;
+            sortOrder: number;
+            /** Format: uuid */
+            unitId: string;
+        };
+        /**
+         * @description `counter`: balcão de pedidos (abre comandas, lança pedidos, recebe); `queue`: fila de itens das etapas ligadas a ela (spec 03, seção 4.1).
+         * @enum {string}
+         */
+        StationKind: "counter" | "queue";
+        StationList: {
+            data: components["schemas"]["Station"][];
+        };
+        StationSummary: {
+            /** Format: uuid */
+            id: string;
+            kind: components["schemas"]["StationKind"];
+            name: string;
+        };
         /**
          * @description Situação da assinatura da organização (RN-02.11).
          * @enum {string}
          */
         SubscriptionStatus: "pilot" | "active" | "suspended" | "canceled";
+        Unit: {
+            active: boolean;
+            /** Format: date-time */
+            createdAt: string;
+            /** Format: uuid */
+            id: string;
+            lateAfterMinutes: number;
+            /** @description Versão do cardápio (`menu.updated`). */
+            menuVersion: number;
+            name: string;
+            /** @description Versão da configuração (unidade, estações e fluxo). */
+            version: number;
+        };
+        UnitPage: {
+            data: components["schemas"]["Unit"][];
+            /** @description Cursor da próxima página; `null` na última. */
+            nextCursor: string | null;
+        };
+        UpdateCategoryRequestInput: {
+            active?: boolean;
+            /** Format: uuid */
+            defaultStationId?: string;
+            name?: string;
+            /** @description Posição na lista (1 é o primeiro). */
+            sortOrder?: number;
+        };
+        UpdateModifierGroupRequestInput: {
+            maxChoices?: number;
+            minChoices?: number;
+            name?: string;
+            /** @description Posição na lista (1 é o primeiro). */
+            sortOrder?: number;
+        };
+        UpdateModifierRequestInput: {
+            active?: boolean;
+            name?: string;
+            /** @description Acréscimo ao preço do produto, em centavos (pode ser zero). */
+            priceDeltaCents?: number;
+            /** @description Posição na lista (1 é o primeiro). */
+            sortOrder?: number;
+        };
+        UpdateProductRequestInput: {
+            active?: boolean;
+            /**
+             * Format: uuid
+             * @description Outra categoria da mesma unidade.
+             */
+            categoryId?: string;
+            description?: string | null;
+            name?: string;
+            /** @description Preço em centavos (inteiro, maior ou igual a zero; RN-03.09). */
+            priceCents?: number;
+            /** @description Posição na lista (1 é o primeiro). */
+            sortOrder?: number;
+            stationId?: string | null;
+            /** @description Versão que o app tem do registro. Se outro aparelho alterou antes, a API responde 409 `VERSION_CONFLICT` com `details.currentVersion`. Opcional. */
+            version?: number;
+        };
+        UpdateStaffMemberRequestInput: {
+            /** @description Desativar encerra as sessões do colaborador na hora (RN-03.17). */
+            active?: boolean;
+            email?: string | null;
+            name?: string;
+            /** @description Letras, números, ponto e sublinhado (3 a 32); único na organização. */
+            username?: string;
+        };
+        UpdateStationRequestInput: {
+            active?: boolean;
+            kind?: components["schemas"]["StationKind"];
+            name?: string;
+            /** @description Posição na lista (1 é o primeiro). */
+            sortOrder?: number;
+        };
+        UpdateUnitRequestInput: {
+            active?: boolean;
+            /** @description Minutos a partir dos quais um item na estação aparece como atrasado (1 a 240). */
+            lateAfterMinutes?: number;
+            name?: string;
+            /** @description Versão que o app tem do registro. Se outro aparelho alterou antes, a API responde 409 `VERSION_CONFLICT` com `details.currentVersion`. Opcional. */
+            version?: number;
+        };
         ValidationErrorDetails: {
             fields: components["schemas"]["ValidationIssue"][];
         };
@@ -553,6 +1442,39 @@ export interface components {
             /** @description Caminho do campo, com pontos (ex.: `items.0.quantity`). */
             path: string;
         };
+        Workflow: {
+            stages: components["schemas"]["WorkflowStage"][];
+            /** Format: uuid */
+            unitId: string;
+            /** @description Versão da unidade (envie no `PUT` para conferência). */
+            version: number;
+        };
+        WorkflowIssue: {
+            code: components["schemas"]["WorkflowIssueCode"];
+            /** @description Posição da etapa no corpo (a partir de 0); `null` = o fluxo todo. */
+            index: number | null;
+            message: string;
+        };
+        /**
+         * @description Problema de um fluxo recusado com `INVALID_WORKFLOW` (`details.issues`, RN-03.05 e RN-03.06).
+         * @enum {string}
+         */
+        WorkflowIssueCode: "STAGE_COUNT" | "NO_FINAL_STAGE" | "MULTIPLE_FINAL_STAGES" | "FINAL_STAGE_NOT_LAST" | "STATION_REQUIRED" | "STATION_NOT_ALLOWED" | "STATION_NOT_IN_UNIT" | "STATION_NOT_QUEUE" | "DUPLICATE_NAME";
+        WorkflowStage: {
+            /** Format: uuid */
+            id: string;
+            isFinal: boolean;
+            name: string;
+            sortOrder: number;
+            /** @description Só em `fixed_station`: a estação em que o item aparece. */
+            stationId: string | null;
+            target: components["schemas"]["WorkflowStageTarget"];
+        };
+        /**
+         * @description `product_station`: a estação de preparo do produto; `fixed_station`: uma estação escolhida; `none`: etapa final, o item sai das filas (spec 03, seção 4.2).
+         * @enum {string}
+         */
+        WorkflowStageTarget: "product_station" | "fixed_station" | "none";
     };
     responses: never;
     parameters: never;
@@ -1295,8 +2217,250 @@ export interface operations {
                     "application/json": components["schemas"]["ErrorResponse"];
                 };
             };
+            /** @description `STAFF_WITHOUT_UNIT`: senha certa, mas o colaborador não tem nenhuma unidade ativa liberada (RN-03.16). */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
             /** @description `LOGIN_TEMPORARILY_LOCKED` (10 senhas erradas seguidas bloqueiam o identificador por 15 min) ou `RATE_LIMITED`. */
             429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Erro no formato `ErrorResponse` (spec 01, seção 5). */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    MenuController_createCategory: {
+        parameters: {
+            query?: never;
+            header?: {
+                /** @description UUID gerado no aparelho. Repetir a mesma chave devolve a mesma resposta por 24 h, sem repetir a ação. */
+                "Idempotency-Key"?: string;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateCategoryRequestInput"];
+            };
+        };
+        responses: {
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Category"];
+                };
+            };
+            /** @description `INVALID_REFERENCE` (item de outra unidade ou inexistente), `INVALID_PREP_STATION` (RN-03.08), `INVALID_ORDER`, `INVALID_MODIFIER_LIMITS` (RN-03.13) ou `VALIDATION_FAILED`. */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description `UNAUTHENTICATED`: sem sessão do app ou sessão encerrada. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description `FORBIDDEN`: só o dono pode usar esta rota. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description `NOT_FOUND`: não existe ou é de outra organização. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /**
+             * @description `CATEGORY_NAME_TAKEN`.
+             *
+             *     `IDEMPOTENCY_KEY_REUSED` (mesma chave com outro corpo) ou `IDEMPOTENCY_REQUEST_IN_PROGRESS`.
+             */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Erro no formato `ErrorResponse` (spec 01, seção 5). */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    MenuController_updateCategory: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UpdateCategoryRequestInput"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Category"];
+                };
+            };
+            /** @description `INVALID_REFERENCE` (item de outra unidade ou inexistente), `INVALID_PREP_STATION` (RN-03.08), `INVALID_ORDER`, `INVALID_MODIFIER_LIMITS` (RN-03.13) ou `VALIDATION_FAILED`. */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description `UNAUTHENTICATED`: sem sessão do app ou sessão encerrada. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description `FORBIDDEN`: só o dono pode usar esta rota. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description `NOT_FOUND`: não existe ou é de outra organização. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description `CATEGORY_NAME_TAKEN`. */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Erro no formato `ErrorResponse` (spec 01, seção 5). */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    MenuController_reorderProducts: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ProductOrderRequestInput"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProductList"];
+                };
+            };
+            /** @description `INVALID_REFERENCE` (item de outra unidade ou inexistente), `INVALID_PREP_STATION` (RN-03.08), `INVALID_ORDER`, `INVALID_MODIFIER_LIMITS` (RN-03.13) ou `VALIDATION_FAILED`. */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description `UNAUTHENTICATED`: sem sessão do app ou sessão encerrada. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description `FORBIDDEN`: só o dono pode usar esta rota. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description `NOT_FOUND`: não existe ou é de outra organização. */
+            404: {
                 headers: {
                     [name: string]: unknown;
                 };
@@ -1331,6 +2495,1709 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["HealthResponse"];
+                };
+            };
+            /** @description Erro no formato `ErrorResponse` (spec 01, seção 5). */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    MenuController_createModifierGroup: {
+        parameters: {
+            query?: never;
+            header?: {
+                /** @description UUID gerado no aparelho. Repetir a mesma chave devolve a mesma resposta por 24 h, sem repetir a ação. */
+                "Idempotency-Key"?: string;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateModifierGroupRequestInput"];
+            };
+        };
+        responses: {
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ModifierGroup"];
+                };
+            };
+            /** @description `INVALID_REFERENCE` (item de outra unidade ou inexistente), `INVALID_PREP_STATION` (RN-03.08), `INVALID_ORDER`, `INVALID_MODIFIER_LIMITS` (RN-03.13) ou `VALIDATION_FAILED`. */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description `UNAUTHENTICATED`: sem sessão do app ou sessão encerrada. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description `FORBIDDEN`: só o dono pode usar esta rota. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description `IDEMPOTENCY_KEY_REUSED` (mesma chave com outro corpo) ou `IDEMPOTENCY_REQUEST_IN_PROGRESS`. */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Erro no formato `ErrorResponse` (spec 01, seção 5). */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    MenuController_deleteModifierGroup: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Grupo removido. */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description `UNAUTHENTICATED`: sem sessão do app ou sessão encerrada. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description `FORBIDDEN`: só o dono pode usar esta rota. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description `NOT_FOUND`: não existe ou é de outra organização. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Erro no formato `ErrorResponse` (spec 01, seção 5). */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    MenuController_updateModifierGroup: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UpdateModifierGroupRequestInput"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ModifierGroup"];
+                };
+            };
+            /** @description `INVALID_REFERENCE` (item de outra unidade ou inexistente), `INVALID_PREP_STATION` (RN-03.08), `INVALID_ORDER`, `INVALID_MODIFIER_LIMITS` (RN-03.13) ou `VALIDATION_FAILED`. */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description `UNAUTHENTICATED`: sem sessão do app ou sessão encerrada. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description `FORBIDDEN`: só o dono pode usar esta rota. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description `NOT_FOUND`: não existe ou é de outra organização. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Erro no formato `ErrorResponse` (spec 01, seção 5). */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    MenuController_createModifier: {
+        parameters: {
+            query?: never;
+            header?: {
+                /** @description UUID gerado no aparelho. Repetir a mesma chave devolve a mesma resposta por 24 h, sem repetir a ação. */
+                "Idempotency-Key"?: string;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateModifierRequestInput"];
+            };
+        };
+        responses: {
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Modifier"];
+                };
+            };
+            /** @description `INVALID_REFERENCE` (item de outra unidade ou inexistente), `INVALID_PREP_STATION` (RN-03.08), `INVALID_ORDER`, `INVALID_MODIFIER_LIMITS` (RN-03.13) ou `VALIDATION_FAILED`. */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description `UNAUTHENTICATED`: sem sessão do app ou sessão encerrada. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description `FORBIDDEN`: só o dono pode usar esta rota. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description `IDEMPOTENCY_KEY_REUSED` (mesma chave com outro corpo) ou `IDEMPOTENCY_REQUEST_IN_PROGRESS`. */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Erro no formato `ErrorResponse` (spec 01, seção 5). */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    MenuController_updateModifier: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UpdateModifierRequestInput"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Modifier"];
+                };
+            };
+            /** @description `UNAUTHENTICATED`: sem sessão do app ou sessão encerrada. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description `FORBIDDEN`: só o dono pode usar esta rota. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description `NOT_FOUND`: não existe ou é de outra organização. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Erro no formato `ErrorResponse` (spec 01, seção 5). */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    StaffController_access: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["OrganizationAccess"];
+                };
+            };
+            /** @description `UNAUTHENTICATED`: sem sessão do app ou sessão encerrada. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description `FORBIDDEN`: só o dono pode usar esta rota. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Erro no formato `ErrorResponse` (spec 01, seção 5). */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    MenuController_createProduct: {
+        parameters: {
+            query?: never;
+            header?: {
+                /** @description UUID gerado no aparelho. Repetir a mesma chave devolve a mesma resposta por 24 h, sem repetir a ação. */
+                "Idempotency-Key"?: string;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateProductRequestInput"];
+            };
+        };
+        responses: {
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Product"];
+                };
+            };
+            /** @description `INVALID_REFERENCE` (item de outra unidade ou inexistente), `INVALID_PREP_STATION` (RN-03.08), `INVALID_ORDER`, `INVALID_MODIFIER_LIMITS` (RN-03.13) ou `VALIDATION_FAILED`. */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description `UNAUTHENTICATED`: sem sessão do app ou sessão encerrada. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description `FORBIDDEN`: só o dono pode usar esta rota. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description `IDEMPOTENCY_KEY_REUSED` (mesma chave com outro corpo) ou `IDEMPOTENCY_REQUEST_IN_PROGRESS`. */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Erro no formato `ErrorResponse` (spec 01, seção 5). */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    MenuController_updateProduct: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UpdateProductRequestInput"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Product"];
+                };
+            };
+            /** @description `INVALID_REFERENCE` (item de outra unidade ou inexistente), `INVALID_PREP_STATION` (RN-03.08), `INVALID_ORDER`, `INVALID_MODIFIER_LIMITS` (RN-03.13) ou `VALIDATION_FAILED`. */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description `UNAUTHENTICATED`: sem sessão do app ou sessão encerrada. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description `FORBIDDEN`: só o dono pode usar esta rota. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description `NOT_FOUND`: não existe ou é de outra organização. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description `VERSION_CONFLICT`. */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Erro no formato `ErrorResponse` (spec 01, seção 5). */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    MenuController_markSoldOut: {
+        parameters: {
+            query?: never;
+            header?: {
+                /** @description UUID gerado no aparelho. Repetir a mesma chave devolve a mesma resposta por 24 h, sem repetir a ação. */
+                "Idempotency-Key"?: string;
+            };
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Product"];
+                };
+            };
+            /** @description `UNAUTHENTICATED`: sem sessão do app ou sessão encerrada. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description `FORBIDDEN`: colaborador sem estação na unidade. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description `NOT_FOUND`: não existe ou é de outra organização. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description `IDEMPOTENCY_KEY_REUSED` (mesma chave com outro corpo) ou `IDEMPOTENCY_REQUEST_IN_PROGRESS`. */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Erro no formato `ErrorResponse` (spec 01, seção 5). */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    MenuController_unmarkSoldOut: {
+        parameters: {
+            query?: never;
+            header?: {
+                /** @description UUID gerado no aparelho. Repetir a mesma chave devolve a mesma resposta por 24 h, sem repetir a ação. */
+                "Idempotency-Key"?: string;
+            };
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Product"];
+                };
+            };
+            /** @description `UNAUTHENTICATED`: sem sessão do app ou sessão encerrada. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description `FORBIDDEN`: colaborador sem estação na unidade. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description `NOT_FOUND`: não existe ou é de outra organização. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description `IDEMPOTENCY_KEY_REUSED` (mesma chave com outro corpo) ou `IDEMPOTENCY_REQUEST_IN_PROGRESS`. */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Erro no formato `ErrorResponse` (spec 01, seção 5). */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    StaffController_list: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["StaffMemberPage"];
+                };
+            };
+            /** @description `UNAUTHENTICATED`: sem sessão do app ou sessão encerrada. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description `FORBIDDEN`: só o dono pode usar esta rota. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Erro no formato `ErrorResponse` (spec 01, seção 5). */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    StaffController_create: {
+        parameters: {
+            query?: never;
+            header?: {
+                /** @description UUID gerado no aparelho. Repetir a mesma chave devolve a mesma resposta por 24 h, sem repetir a ação. */
+                "Idempotency-Key"?: string;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateStaffMemberRequestInput"];
+            };
+        };
+        responses: {
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["StaffMember"];
+                };
+            };
+            /** @description `VALIDATION_FAILED` ou `INVALID_REFERENCE` (unidade ou estação inválida). */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description `UNAUTHENTICATED`: sem sessão do app ou sessão encerrada. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description `FORBIDDEN`: só o dono pode usar esta rota. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /**
+             * @description `USERNAME_TAKEN` (CA-03.07).
+             *
+             *     `IDEMPOTENCY_KEY_REUSED` (mesma chave com outro corpo) ou `IDEMPOTENCY_REQUEST_IN_PROGRESS`.
+             */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Erro no formato `ErrorResponse` (spec 01, seção 5). */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    StaffController_update: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UpdateStaffMemberRequestInput"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["StaffMember"];
+                };
+            };
+            /** @description `UNAUTHENTICATED`: sem sessão do app ou sessão encerrada. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description `FORBIDDEN`: só o dono pode usar esta rota. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description `NOT_FOUND`: não existe ou é de outra organização. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description `USERNAME_TAKEN` (CA-03.07). */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Erro no formato `ErrorResponse` (spec 01, seção 5). */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    StaffController_setPassword: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SetStaffPasswordRequestInput"];
+            };
+        };
+        responses: {
+            /** @description Senha definida. */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description `UNAUTHENTICATED`: sem sessão do app ou sessão encerrada. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description `FORBIDDEN`: só o dono pode usar esta rota. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description `NOT_FOUND`: não existe ou é de outra organização. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Erro no formato `ErrorResponse` (spec 01, seção 5). */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    StaffController_passwordReset: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["StaffPasswordResetRequestInput"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["StaffPasswordResetResponse"];
+                };
+            };
+            /** @description `UNAUTHENTICATED`: sem sessão do app ou sessão encerrada. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description `FORBIDDEN`: só o dono pode usar esta rota. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description `NOT_FOUND`: não existe ou é de outra organização. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description `PASSWORD_RESET_LIMIT_REACHED`: 3 links na última hora (RN-01.02). */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Erro no formato `ErrorResponse` (spec 01, seção 5). */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    StaffController_setPermissions: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PutStaffPermissionsRequestInput"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["StaffMember"];
+                };
+            };
+            /** @description `INVALID_REFERENCE`: unidade repetida, de fora da organização, ou estação que não é ativa daquela unidade. */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description `UNAUTHENTICATED`: sem sessão do app ou sessão encerrada. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description `FORBIDDEN`: só o dono pode usar esta rota. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description `NOT_FOUND`: não existe ou é de outra organização. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Erro no formato `ErrorResponse` (spec 01, seção 5). */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    UnitsController_updateStation: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UpdateStationRequestInput"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Station"];
+                };
+            };
+            /** @description `UNAUTHENTICATED`: sem sessão do app ou sessão encerrada. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description `FORBIDDEN`: só o dono pode usar esta rota. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description `NOT_FOUND`: não existe ou é de outra organização. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description `SHIFT_OPEN`: a unidade está com turno aberto (CA-03.03); `VERSION_CONFLICT`; nomes repetidos (`*_NAME_TAKEN`); `STATION_KIND_REQUIRED` ou `STATION_IN_USE`. */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Erro no formato `ErrorResponse` (spec 01, seção 5). */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    UnitsController_listUnits: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["UnitPage"];
+                };
+            };
+            /** @description `UNAUTHENTICATED`: sem sessão do app ou sessão encerrada. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description `FORBIDDEN`: só o dono pode usar esta rota. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Erro no formato `ErrorResponse` (spec 01, seção 5). */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    UnitsController_createUnit: {
+        parameters: {
+            query?: never;
+            header?: {
+                /** @description UUID gerado no aparelho. Repetir a mesma chave devolve a mesma resposta por 24 h, sem repetir a ação. */
+                "Idempotency-Key"?: string;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateUnitRequestInput"];
+            };
+        };
+        responses: {
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Unit"];
+                };
+            };
+            /** @description `UNAUTHENTICATED`: sem sessão do app ou sessão encerrada. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description `FORBIDDEN`: só o dono pode usar esta rota. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /**
+             * @description `UNIT_NAME_TAKEN`.
+             *
+             *     `IDEMPOTENCY_KEY_REUSED` (mesma chave com outro corpo) ou `IDEMPOTENCY_REQUEST_IN_PROGRESS`.
+             */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Erro no formato `ErrorResponse` (spec 01, seção 5). */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    UnitsController_updateUnit: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UpdateUnitRequestInput"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Unit"];
+                };
+            };
+            /** @description `UNAUTHENTICATED`: sem sessão do app ou sessão encerrada. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description `FORBIDDEN`: só o dono pode usar esta rota. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description `NOT_FOUND`: não existe ou é de outra organização. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description `SHIFT_OPEN` (RN-03.02), `LAST_ACTIVE_UNIT` (RN-03.01), `UNIT_NAME_TAKEN` ou `VERSION_CONFLICT`. */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Erro no formato `ErrorResponse` (spec 01, seção 5). */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    MenuController_reorderCategories: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CategoryOrderRequestInput"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CategoryList"];
+                };
+            };
+            /** @description `INVALID_REFERENCE` (item de outra unidade ou inexistente), `INVALID_PREP_STATION` (RN-03.08), `INVALID_ORDER`, `INVALID_MODIFIER_LIMITS` (RN-03.13) ou `VALIDATION_FAILED`. */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description `UNAUTHENTICATED`: sem sessão do app ou sessão encerrada. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description `FORBIDDEN`: só o dono pode usar esta rota. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description `NOT_FOUND`: não existe ou é de outra organização. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Erro no formato `ErrorResponse` (spec 01, seção 5). */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    MenuController_readMenu: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Menu"];
+                };
+            };
+            /** @description `UNAUTHENTICATED`: sem sessão do app ou sessão encerrada. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description `FORBIDDEN`: colaborador sem acesso à unidade. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description `NOT_FOUND`: não existe ou é de outra organização. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Erro no formato `ErrorResponse` (spec 01, seção 5). */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    UnitsController_listStations: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["StationList"];
+                };
+            };
+            /** @description `UNAUTHENTICATED`: sem sessão do app ou sessão encerrada. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description `FORBIDDEN`: só o dono pode usar esta rota. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description `NOT_FOUND`: não existe ou é de outra organização. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Erro no formato `ErrorResponse` (spec 01, seção 5). */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    UnitsController_createStation: {
+        parameters: {
+            query?: never;
+            header?: {
+                /** @description UUID gerado no aparelho. Repetir a mesma chave devolve a mesma resposta por 24 h, sem repetir a ação. */
+                "Idempotency-Key"?: string;
+            };
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateStationRequestInput"];
+            };
+        };
+        responses: {
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Station"];
+                };
+            };
+            /** @description `UNAUTHENTICATED`: sem sessão do app ou sessão encerrada. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description `FORBIDDEN`: só o dono pode usar esta rota. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description `NOT_FOUND`: não existe ou é de outra organização. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /**
+             * @description `SHIFT_OPEN`: a unidade está com turno aberto (CA-03.03); `VERSION_CONFLICT`; nomes repetidos (`*_NAME_TAKEN`); `STATION_KIND_REQUIRED` ou `STATION_IN_USE`.
+             *
+             *     `IDEMPOTENCY_KEY_REUSED` (mesma chave com outro corpo) ou `IDEMPOTENCY_REQUEST_IN_PROGRESS`.
+             */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Erro no formato `ErrorResponse` (spec 01, seção 5). */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    UnitsController_getWorkflow: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Workflow"];
+                };
+            };
+            /** @description `UNAUTHENTICATED`: sem sessão do app ou sessão encerrada. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description `FORBIDDEN`: só o dono pode usar esta rota. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description `NOT_FOUND`: não existe ou é de outra organização. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Erro no formato `ErrorResponse` (spec 01, seção 5). */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    UnitsController_saveWorkflow: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PutWorkflowRequestInput"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Workflow"];
+                };
+            };
+            /** @description `INVALID_WORKFLOW` com `details.issues: WorkflowIssue[]` (CA-03.02), `INVALID_REFERENCE` ou `VALIDATION_FAILED`. */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description `UNAUTHENTICATED`: sem sessão do app ou sessão encerrada. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description `FORBIDDEN`: só o dono pode usar esta rota. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description `NOT_FOUND`: não existe ou é de outra organização. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description `SHIFT_OPEN` (CA-03.03) ou `VERSION_CONFLICT`. */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
                 };
             };
             /** @description Erro no formato `ErrorResponse` (spec 01, seção 5). */

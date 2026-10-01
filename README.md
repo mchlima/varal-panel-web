@@ -62,18 +62,33 @@ const { data, error } = await $api.GET('/api/v1/...')
 
 ## Telas (spec 01, seções 14 e 14.1)
 
-| Rota               | Tela                                                                                                                                                                                                                                      |
-| ------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `/entrar`          | Login com abas "Sou dono" (e-mail e senha) e "Sou colaborador" (código, usuário e senha). `?aba=colaborador` abre na segunda aba                                                                                                          |
-| `/e/{codigo}`      | Login do colaborador com o código preenchido e o nome da barraca no topo (`GET /auth/access-code/{code}`); código inválido mostra aviso (CA-01.03)                                                                                        |
-| `/esqueci-a-senha` | Pedido de redefinição do dono; mensagem sempre igual (RN-01.03)                                                                                                                                                                           |
-| `/definir-senha`   | Convite e redefinição: lê `token` e `tipo` do fragmento (`#token=...&tipo=convite\|redefinicao`), apaga o fragmento da barra de endereço, exige 8+ caracteres e confirmação                                                               |
-| `/estacoes`        | Escolha de unidade (se houver mais de uma) e de estação entre as liberadas no `/auth/me`. A tabela de estações chega com a spec 03: até lá, as estações aparecem numeradas e, sem nenhuma, a tela diz "Nenhuma estação configurada ainda" |
-| `/painel`          | Início mínimo do painel do dono (cabeçalho com organização, pessoa, conexão e "Sair")                                                                                                                                                     |
+| Rota                          | Tela                                                                                                                                                                                                                                                                         |
+| ----------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `/entrar`                     | Login com abas "Sou dono" (e-mail e senha) e "Sou colaborador" (código, usuário e senha). `?aba=colaborador` abre na segunda aba                                                                                                                                             |
+| `/e/{codigo}`                 | Login do colaborador com o código preenchido e o nome da barraca no topo (`GET /auth/access-code/{code}`); código inválido mostra aviso (CA-01.03)                                                                                                                           |
+| `/esqueci-a-senha`            | Pedido de redefinição do dono; mensagem sempre igual (RN-01.03)                                                                                                                                                                                                              |
+| `/definir-senha`              | Convite e redefinição: lê `token` e `tipo` do fragmento (`#token=...&tipo=convite\|redefinicao`), apaga o fragmento da barra de endereço, exige 8+ caracteres e confirmação                                                                                                  |
+| `/estacoes`                   | Escolha de unidade (se houver mais de uma) e de estação entre as do `/auth/me`, com nome e tipo reais (todas para o dono, as liberadas para o colaborador). Balcão de pedidos leva ao `/balcao`; fila, ao `/estacao/{id}`. Sem estações, "Nenhuma estação configurada ainda" |
+| `/painel`                     | Início do painel do dono, com atalhos para as seções                                                                                                                                                                                                                         |
+| `/painel/unidades`            | Unidades: lista, criar (com o template padrão), renomear, tempo de atraso (1 a 240 min), ativar e desativar (`LAST_ACTIVE_UNIT` e `SHIFT_OPEN` explicados)                                                                                                                   |
+| `/painel/unidades/{id}/fluxo` | Estações (criar, renomear, tipo, ordem, ativar/desativar com `STATION_IN_USE` explicado) e editor do fluxo de etapas (ordem, destino, etapa final), com validação local das RN-03.05/06, problemas de `INVALID_WORKFLOW` por etapa e conflito de `version` com "Recarregar"  |
+| `/painel/cardapio`            | Categorias em abas, produtos com preço, estação e esgotado; ordenação por arrasto (com ↑/↓); editor de produto com grupos de modificadores. Com mais de uma unidade, escolhe a unidade no topo                                                                               |
+| `/painel/colaboradores`       | Lista com situação; cadastro; permissões por unidade (estações e caixa); redefinir senha (e-mail se houver, copiar link, WhatsApp); definir senha direto; desativar e reativar                                                                                               |
+| `/painel/acesso-da-equipe`    | Código, link `/e/{codigo}` com "Copiar link" e QR grande (SVG da API, mostrado como imagem)                                                                                                                                                                                  |
+| `/balcao`, `/estacao/{id}`    | Provisórias até a spec 04: nome da estação, aviso honesto do que falta e o atalho de esgotado do cardápio                                                                                                                                                                    |
 
 O middleware `app/middleware/auth.global.ts` leva páginas protegidas sem sessão para `/entrar`, quem já está logado do login para o início (`/painel` do dono, `/estacoes` do colaborador) e o colaborador para fora de `/painel`.
 
-Componentes próprios em `app/components` (`AppButton`, `AppTextField`, `AppAlert`, `AppIcon`…), com Reka UI só nas abas. Uma única ação principal (botão preenchido) por tela, alvos de 48 px ou mais, foco visível e cores só dos tokens (spec 08).
+Componentes próprios em `app/components` (`AppButton`, `AppTextField`, `AppSelect`, `AppCheckbox`, `AppAlert`, `AppIcon`, `StatusChip`, `ConfirmAction`, `SortableList`…), com Reka UI nas abas e nos painéis de edição (`AppDialog`: tela cheia no celular, janela a partir de 1024 px). O painel usa `PanelShell`: navegação lateral a partir de 1024 px e menu inferior abaixo disso (spec 08, seção 7). Uma única ação principal (botão preenchido) por tela, alvos de 48 px ou mais, foco visível e cores só dos tokens (spec 08).
+
+## Configuração da unidade (spec 03)
+
+- **Dinheiro:** `app/lib/money.ts` lê reais digitados ("12,50", "1.234,56", "12.5") e devolve centavos inteiros (`parseReais`), sem ponto flutuante; `formatCents` mostra "R$ 12,50". A API recebe sempre `priceCents`/`priceDeltaCents`.
+- **Fluxo:** `app/lib/workflow.ts` repete a validação da API (`validateWorkflow`: 2 a 8 etapas, só a última final, estação fixa de fila ativa, nomes sem repetir), com os mesmos códigos e mensagens de `INVALID_WORKFLOW`. O editor mostra os problemas por etapa e não envia um fluxo inválido; os problemas da API aparecem do mesmo jeito. O `PUT` leva a `version` da unidade; `VERSION_CONFLICT` oferece "Recarregar". Se a versão sobe sem mudar as etapas (estação renomeada), o rascunho só atualiza a versão; se outro aparelho mudou o fluxo, a tela avisa.
+- **Turno aberto (RN-03.07):** a tela de fluxo sempre explica que estações e fluxo travam com turno aberto; ainda não há turnos (spec 04), então o aviso não sabe se há um aberto. O `SHIFT_OPEN` da API aparece com a dica de fechar o turno.
+- **Escrita online x fila offline (decisão):** só o **esgotado** é operacional (RN-03.11, feito do balcão e das estações a qualquer hora) e vai pela fila offline (`useSoldOut` → `POST/DELETE /products/{id}/sold-out` com `Idempotency-Key`), com "Enviando…" até o evento confirmar. Os **cadastros** (unidades, estações, fluxo, cardápio, colaboradores) são online: sem conexão, a tela diz "Alterações de cadastro precisam de internet" e não envia (`useApiAction`). As criações (`POST`) mandam `Idempotency-Key`, reaproveitada enquanto o formulário enviar o mesmo conteúdo, para um reenvio não duplicar.
+- **Cardápio compartilhado:** a store `useMenuStore` guarda o cardápio da unidade (e as estações, para o dono). O atalho de esgotado (`SoldOutToggle`, `MenuSoldOutList`) serve o cardápio do painel e as telas provisórias do balcão e das estações.
+- **Listas:** `GET /units` e `GET /staff` são paginados, mas o `openapi.json` ainda não publica `limit`/`cursor`; as telas mostram a primeira página (50) e avisam se houver mais.
 
 ## Sessão
 
@@ -89,11 +104,13 @@ Componentes próprios em `app/components` (`AppButton`, `AppTextField`, `AppAler
 - `session.revoked` → volta ao login (CA-01.05).
 - `session.expired` ou `disconnect` com `io server disconnect` → `POST /auth/refresh` e `socket.connect()`; renovação recusada → login. `connect_error` com `UNAUTHENTICATED` faz o mesmo (até 3 vezes seguidas).
 - A cada conexão e reconexão: reinicia a espera da fila, dispara o envio e chama os ganchos de "recarregar estado" (RN-01.05). As telas que aplicam eventos registram o seu com `useRealtimeResync(() => recarregarPorRest())`.
+- `session.access_changed` (permissões, unidade ou estação mudaram) → no `io server disconnect` seguinte, recarrega o `/auth/me` e reconecta, sem renovar a sessão (as salas novas valem na hora).
+- Eventos de unidade: `realtime.subscribe(evento, handler)` vale também para sockets criados depois; nas telas, `useRealtimeEvent(...)`. `unit.config_updated` recarrega o `/auth/me` em qualquer tela e a lista de unidades, a tela de fluxo, o cardápio (nomes de estação) e a lista de colaboradores; `menu.updated` recarrega o cardápio; `product.sold_out_changed` bloqueia ou libera o produto sem recarregar (CA-03.05). Eventos com `version` menor ou igual à conhecida são ignorados.
 - O cabeçalho mostra "Conectado", "Conectando…" ou "Sem conexão", sempre com ícone e texto.
 
 ## Fila offline (spec 01, seção 11)
 
-`app/lib/offline-queue.ts` (Dexie, banco `varal`, tabela `queue`). Ainda não há ações operacionais; a infraestrutura está pronta para as specs 04 e 05:
+`app/lib/offline-queue.ts` (Dexie, banco `varal`, tabela `queue`). A primeira ação operacional é o esgotado (spec 03); as das specs 04 e 05 usam o mesmo caminho:
 
 ```ts
 const queue = useOfflineQueue()
@@ -123,7 +140,7 @@ await queue.enqueue({
 
 ## Testes
 
-- `pnpm test` (Vitest, entra na CI): sessão e renovação única, fila com `fake-indexeddb` (CA-01.07: ação feita sem conexão é enviada uma única vez quando a conexão volta), `deviceId`, cliente de tempo real com socket falso, telas de acesso, indicador de conexão e aviso de versão nova.
+- `pnpm test` (Vitest, entra na CI): sessão e renovação única, fila com `fake-indexeddb` (CA-01.07: ação feita sem conexão é enviada uma única vez quando a conexão volta), `deviceId`, cliente de tempo real com socket falso, telas de acesso, indicador de conexão e aviso de versão nova. Da spec 03: reais ↔ centavos, validação do fluxo (RN-03.05/06, CA-03.02), limites de modificadores (RN-03.13), erros explicados, `session.access_changed` e eventos de unidade no cliente de tempo real, `/estacoes` com estações reais, editor do fluxo (problemas locais e da API, conflito de versão), lista ordenável por botões, esgotado pela fila e eventos fora de ordem, editor de produto (preço em centavos) e redefinição de senha com as três opções.
 - `pnpm test:e2e` (Playwright, **fora da CI** porque precisa da API rodando): projetos `android` (Pixel 7, Chromium) e `iphone` (iPhone 15, WebKit).
 
 ### Testes de ponta a ponta
@@ -132,7 +149,7 @@ await queue.enqueue({
 2. Aqui, `NUXT_PUBLIC_API_BASE_URL=http://localhost:<porta da API>` no `.env.local`.
 3. `pnpm exec playwright install chromium webkit` (uma vez) e `pnpm test:e2e`. O Playwright sobe o `pnpm dev` se o painel não estiver rodando. Para o teste do service worker, rode `pnpm generate` antes (sem build ele é pulado).
 
-Cobertura: login do dono, login do colaborador por `/e/{codigo}` (CA-01.03), código inválido, renovação ao perder o token de acesso, `session.revoked` levando ao login, indicador "Sem conexão" (`context.setOffline`), "esqueci a senha" lendo o e-mail no Mailpit (`MAILPIT_URL`, padrão `http://localhost:8025`) e definindo a senha pelo link, validações de `/definir-senha`, instrução de instalação no iPhone e app abrindo do cache sem rede.
+Cobertura: login do dono, login do colaborador por `/e/{codigo}` (CA-01.03), código inválido, renovação ao perder o token de acesso, `session.revoked` levando ao login, indicador "Sem conexão" (`context.setOffline`), "esqueci a senha" lendo o e-mail no Mailpit (`MAILPIT_URL`, padrão `http://localhost:8025`) e definindo a senha pelo link, validações de `/definir-senha`, instrução de instalação no iPhone e app abrindo do cache sem rede. Da spec 03 (`setup.spec.ts`): dono cria estação e edita o fluxo (validação local, salvar, tirar etapa), cria produto com grupo de modificadores e marca esgotado, que chega ao celular da cozinha em até 2 s (CA-03.05) e é liberado de volta por lá; colaborador vê só as estações liberadas, com nome e tipo (RN-03.16); acesso da equipe com código, link e QR. Os nomes criados levam um sufixo, para a suíte rodar de novo no mesmo banco.
 
 **Limitação do WebKit:** os cookies da sessão são `Secure` (`__Host-`/`__Secure-`). O Chromium aceita esses cookies em `http://localhost`; o WebKit do Playwright no Linux não os guarda em http. Por isso os testes que dependem da sessão rodam só no projeto `android`; no `iphone` rodam as telas abertas. Em produção (https) o Safari funciona normalmente. A API limita "esqueci a senha" a 5 pedidos por IP a cada 15 minutos e 3 links por usuário por hora (RN-01.02): rodar a suíte muitas vezes seguidas pode pular o teste do Mailpit.
 

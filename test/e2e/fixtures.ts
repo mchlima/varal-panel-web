@@ -60,9 +60,9 @@ export async function loginOwner(page: Page): Promise<void> {
   await expect(page).toHaveURL(/\/painel$/)
 }
 
-export async function loginStaffByLink(page: Page): Promise<void> {
+export async function loginStaffByLink(page: Page, username = seed.staffUsername): Promise<void> {
   await page.goto(`/e/${seed.accessCode}`)
-  await page.getByLabel('Usuário').fill(seed.staffUsername)
+  await page.getByLabel('Usuário').fill(username)
   await page.getByLabel('Senha', { exact: true }).fill(seed.password)
   await page.getByRole('button', { name: 'Entrar' }).click()
   await expect(page).toHaveURL(/\/estacoes$/)
