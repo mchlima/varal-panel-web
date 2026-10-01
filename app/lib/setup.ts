@@ -59,6 +59,14 @@ const HINTS: Partial<Record<string, string>> = {
     'Cada unidade precisa de um balcão de pedidos e de uma fila ativos. Crie ou ative outra antes.',
   VERSION_CONFLICT:
     'Outro aparelho alterou estes dados enquanto você editava. Recarregue para ver a versão atual.',
+  // Fiado (spec 06)
+  CUSTOMER_HAS_RECEIVABLE:
+    'Cliente com fiado a receber não pode ser removido (RN-06.03): quite as comandas dele antes. Os dados ficam guardados até lá.',
+  CUSTOMER_PHONE_TAKEN: 'Já existe um cliente com este telefone nesta unidade: busque por ele.',
+  CUSTOMER_CPF_TAKEN: 'Já existe um cliente com este CPF nesta unidade: busque por ele.',
+  CUSTOMER_CHANGED:
+    'Outro aparelho alterou este cliente enquanto você editava. Feche e abra de novo para ver a versão atual.',
+  CUSTOMER_REMOVED: 'Cliente removido não pode ser editado nem receber comandas.',
 }
 
 export interface ExplainedError {

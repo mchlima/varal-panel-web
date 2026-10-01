@@ -1,5 +1,7 @@
 <script setup lang="ts">
-import { formatTime } from '~/lib/datetime'
+import { CONTRACTOR_REFERENCE, customerErrorMessage, customerLabel } from '~/lib/customer'
+import type { Customer } from '~/lib/customer'
+import { formatDate, formatTime } from '~/lib/datetime'
 import { formatCents } from '~/lib/money'
 import { TAB_STATUS_LABELS, type Tab } from '~/lib/operation'
 import { pendingLabel, pendingOperations } from '~/lib/operation-actions'
@@ -30,11 +32,20 @@ import {
  * Pagamento, estorno e desconto vão pela fila local (spec 01, seção 11) com a
  * `Idempotency-Key` gerada na hora. Um pagamento na fila aparece como "não confirmado" e não
  * mexe no saldo nem na situação da comanda: só a resposta, o evento ou o REST mudam isso.
+ *
+ * Fiado (spec 06): "Pendurar" na comanda em `closing` escolhe ou cadastra o cliente e confirma
+ * o valor pendurado, o saldo (RN-06.04 a RN-06.06); no turno contratado `consumption_billed`,
+ * pendura no contratante sem escolher cliente (RN-06.08). Pendurar vai pela fila. Numa comanda
+ * `on_credit` esta tela quita (parcial ou total, RN-06.09 a RN-06.11) no caixa do turno aberto,
+ * mesmo que a comanda seja de outro turno: nesse caso ela chega por `?comanda={id}`.
  */
 const route = useRoute()
 const number = computed(() => Number(route.params.numero))
+const tabIdParam = computed(() =>
+  typeof route.query.comanda === 'string' && route.query.comanda ? route.query.comanda : null,
+)
 const { place, counter } = useCounterLive()
-const { tab, notFound, error, reloadSoon } = useTabDetail(number)
+const { tab, notFound, error, reloadSoon } = useTabDetail(number, tabIdParam)
 const connection = useConnectionStore()
 const operations = useOperations()
 const session = useSessionStore()
@@ -125,10 +136,12 @@ const padBalance = computed(() => {
 })
 const pendingSum = computed(() => (tab.value?.balanceCents ?? 0) - padBalance.value)
 
+/** Quitação de fiado: comanda pendurada, com turno aberto na unidade (RN-06.09). */
+const settling = computed(() => tab.value?.status === 'on_credit' && !!counter.shift)
 const canReceive = computed(
   () =>
-    tab.value?.status === 'closing' &&
-    tab.value.totalCents > 0 &&
+    (tab.value?.status === 'closing' || settling.value) &&
+    (tab.value?.totalCents ?? 0) > 0 &&
     !(cash.loaded.value && cash.openRegisters.value.length === 0),
 )
 const issue = computed(() =>
@@ -196,13 +209,19 @@ function paymentFailureText(code: string, message: string): string {
     return 'Abra um caixa para receber.'
   }
   if (code === 'PAYMENT_EXCEEDS_BALANCE' || code === 'TAB_NOTHING_TO_PAY') reloadSoon()
+  if (code === 'NO_SHIFT_OPEN') {
+    void counter.load()
+    return customerErrorMessage(code, message)
+  }
   return message
 }
 
 // Resposta da API às ações deste aparelho nesta comanda.
 operations.onSettled((meta, outcome) => {
   if (!('tabId' in meta) || meta.tabId !== tabId.value) return
-  if (outcome.ok && (meta.kind === 'tab.payment' || meta.kind === 'payment.reverse')) {
+  if (outcome.ok && meta.kind === 'tab.put_on_credit') {
+    applyTab(outcome.body as Tab | undefined)
+  } else if (outcome.ok && (meta.kind === 'tab.payment' || meta.kind === 'payment.reverse')) {
     const result = outcome.body as PaymentResult | undefined
     applyTab(result?.tab)
     if (meta.kind === 'tab.payment' && result?.payment.method === 'cash') {
@@ -226,6 +245,11 @@ useOperationFailures((meta, failure, action) => {
   }
   if (meta.kind === 'payment.reverse') {
     notice.value = `Estorno não registrado: ${failure.message}`
+    reloadSoon()
+    return true
+  }
+  if (meta.kind === 'tab.put_on_credit') {
+    notice.value = `Comanda não foi pendurada em ${meta.customerName}: ${customerErrorMessage(failure.code, failure.message)}`
     reloadSoon()
     return true
   }
@@ -337,12 +361,94 @@ async function submitDiscount(
 }
 
 const paid = computed(() => tab.value?.status === 'paid')
+
+// Pendurar (spec 06, seção 4)
+const creditOpen = ref(false)
+const creditBusy = ref(false)
+const creditError = ref('')
+/** Cliente escolhido; `id` nulo é o contratante do turno (RN-06.08). */
+const creditTarget = ref<{ id: string | null; name: string; detail: string } | null>(null)
+/** Turno contratado em que o contratante paga o consumo no final (RN-06.08). */
+const contractorName = computed(() => {
+  const shift = counter.shift
+  if (!shift || shift.id !== tab.value?.shiftId) return null
+  return shift.type === 'contracted' && shift.agreement?.modality === 'consumption_billed'
+    ? shift.agreement.contractorName
+    : null
+})
+const pendingCredit = computed(() => {
+  const op = pendingOperations(
+    connection.pending,
+    (meta) => meta.kind === 'tab.put_on_credit' && meta.tabId === tabId.value,
+  )[0]
+  if (!op || op.meta.kind !== 'tab.put_on_credit') return null
+  return { name: op.meta.customerName, label: pendingLabel(op.action, connection.online) }
+})
+
+function openCredit() {
+  creditTarget.value = null
+  creditError.value = ''
+  creditOpen.value = true
+}
+
+function chooseCustomer(customer: Customer) {
+  creditError.value = ''
+  creditTarget.value = { id: customer.id, name: customer.name, detail: customerLabel(customer) }
+}
+
+function chooseContractor(name: string) {
+  creditError.value = ''
+  creditTarget.value = { id: null, name, detail: `${name} (${CONTRACTOR_REFERENCE})` }
+}
+
+async function confirmCredit() {
+  const current = tab.value
+  const target = creditTarget.value
+  if (!current || !target || creditBusy.value) return
+  creditBusy.value = true
+  creditError.value = ''
+  try {
+    const { idempotencyKey, settled } = await operations.submit({
+      path: `/api/v1/tabs/${current.id}/put-on-credit`,
+      body: target.id ? { customerId: target.id } : {},
+      label: `Pendurar ${formatCents(current.balanceCents)} da comanda ${current.number} em ${target.name}`,
+      meta: {
+        kind: 'tab.put_on_credit',
+        tabId: current.id,
+        tabNumber: current.number,
+        customerId: target.id,
+        customerName: target.name,
+        balanceCents: current.balanceCents,
+      },
+    })
+    const outcome = await waitOutcome(idempotencyKey, settled)
+    if (outcome && !outcome.ok) {
+      creditError.value = customerErrorMessage(outcome.error.code, outcome.error.message)
+      reloadSoon()
+      return
+    }
+    creditOpen.value = false
+  } finally {
+    creditBusy.value = false
+  }
+}
+
+/** Em comanda pendurada ou quitada, só as quitações são estornadas (pagamentos de antes ficam). */
+function canReverse(payment: Payment): boolean {
+  const status = tab.value?.status
+  if (status === 'on_credit' || status === 'settled') return payment.isCreditSettlement
+  return true
+}
 </script>
 
 <template>
   <div>
     <OperationShell
-      :title="tab ? `Receber · ${tab.number} · ${tab.customerName}` : `Receber · comanda ${number}`"
+      :title="
+        tab
+          ? `${tab.status === 'on_credit' ? 'Quitar' : 'Receber'} · ${tab.number} · ${tab.customer ? customerLabel(tab.customer) : tab.customerName}`
+          : `Receber · comanda ${number}`
+      "
       :unit-name="place?.unit.name"
       :back="`/balcao/comandas/${number}`"
       back-label="Voltar à comanda"
@@ -351,13 +457,13 @@ const paid = computed(() => tab.value?.status === 'paid')
       <AppAlert v-if="!place">
         Escolha uma estação de balcão liberada para você em "Trocar de estação".
       </AppAlert>
-      <template v-else-if="counter.shiftLoaded && !counter.shift">
+      <template v-else-if="counter.shiftLoaded && !counter.shift && !tabIdParam">
         <NoShiftNotice :unit-id="place.unit.id" />
       </template>
       <template v-else>
         <AppAlert v-if="error && !(tab && !connection.online)" tone="error">{{ error }}</AppAlert>
         <AppAlert v-if="notFound" tone="error">
-          A comanda {{ number }} não existe neste turno.
+          A comanda {{ number }} não existe {{ tabIdParam ? 'nesta unidade' : 'neste turno' }}.
           <NuxtLink to="/balcao" class="font-bold underline">Voltar ao varal</NuxtLink>
         </AppAlert>
         <p v-else-if="!tab" class="text-text-muted">Carregando comanda…</p>
@@ -376,6 +482,13 @@ const paid = computed(() => tab.value?.status === 'paid')
                   :label="TAB_STATUS_LABELS[tab.status]"
                 />
               </div>
+              <p v-if="tab.customer" class="font-bold" data-testid="receive-customer">
+                <AppIcon name="users" class="mr-1 inline align-[-3px]" />
+                Fiado de {{ customerLabel(tab.customer) }}
+                <span v-if="tab.creditAt" class="font-normal text-text-muted"
+                  >· pendurada em {{ formatDate(tab.creditAt) }}</span
+                >
+              </p>
               <dl class="grid grid-cols-2 gap-1">
                 <dt class="text-text-muted">Subtotal</dt>
                 <dd class="text-right tabular-nums">{{ formatCents(tab.subtotalCents) }}</dd>
@@ -439,6 +552,22 @@ const paid = computed(() => tab.value?.status === 'paid')
               <p class="font-bold" data-testid="tab-paid">Comanda paga.</p>
               <p>Ela saiu do varal.</p>
             </AppAlert>
+            <AppAlert v-if="tab.status === 'settled'" tone="success">
+              <p class="font-bold" data-testid="tab-settled">Fiado quitado.</p>
+              <p>A comanda não deve mais nada.</p>
+            </AppAlert>
+            <AppAlert v-if="tab.status === 'on_credit'">
+              <p class="font-bold" data-testid="tab-on-credit">
+                No fiado: falta receber {{ formatCents(tab.balanceCents) }}.
+              </p>
+              <p>A quitação pode ser em partes e entra no caixa do turno aberto.</p>
+            </AppAlert>
+            <StageChip
+              v-if="pendingCredit"
+              status="pending"
+              :label="`Pendurar em ${pendingCredit.name}: ${pendingCredit.label}`"
+              data-testid="pending-credit"
+            />
 
             <div
               v-if="lastChange && lastChange.cents > 0"
@@ -471,7 +600,10 @@ const paid = computed(() => tab.value?.status === 'paid')
                       :class="isActivePayment(payment) ? '' : 'text-text-muted line-through'"
                       >{{ PAYMENT_METHOD_LABELS[payment.method] }}
                       <span class="font-normal text-text-muted"
-                        >· {{ formatTime(payment.createdAt) }}</span
+                        >· {{ formatDate(payment.createdAt) }} {{ formatTime(payment.createdAt) }}
+                        <template v-if="payment.isCreditSettlement"
+                          >· quitação de fiado</template
+                        ></span
                       ></span
                     >
                     <span
@@ -497,7 +629,7 @@ const paid = computed(() => tab.value?.status === 'paid')
                     :label="`Estorno: ${pendingReversals[payment.id]}`"
                   />
                   <button
-                    v-else
+                    v-else-if="canReverse(payment)"
                     type="button"
                     class="min-h-12 self-start rounded-button font-bold text-status-late-text underline-offset-4 hover:underline"
                     data-testid="reverse-payment"
@@ -575,12 +707,43 @@ const paid = computed(() => tab.value?.status === 'paid')
               </AppAlert>
               <AppButton
                 variant="secondary"
-                disabled
-                title="O fiado chega com o módulo de fiado."
+                :disabled="!!pendingCredit || pendingSum > 0 || tab.balanceCents <= 0"
                 data-testid="hang-on-credit"
+                @click="openCredit"
               >
-                Pendurar · disponível em breve
+                <AppIcon name="users" />
+                Pendurar {{ formatCents(tab.balanceCents) }}
               </AppButton>
+              <p v-if="pendingSum > 0" class="text-sm text-text-muted">
+                Espere os pagamentos na fila serem confirmados para pendurar o saldo.
+              </p>
+            </template>
+            <template v-else-if="tab.status === 'on_credit'">
+              <template v-if="!counter.shift">
+                <AppAlert tone="error" data-testid="settle-no-shift">
+                  {{ customerErrorMessage('NO_SHIFT_OPEN', '') }}
+                </AppAlert>
+                <NoShiftNotice v-if="counter.shiftLoaded" :unit-id="place.unit.id" />
+              </template>
+              <template v-else>
+                <RegisterPicker
+                  :registers="cash.openRegisters.value"
+                  :selected-id="cash.selectedId.value"
+                  :loaded="cash.loaded.value"
+                  :can-open="canOpenRegister"
+                  :unit-id="unitId"
+                  @choose="cash.choose"
+                />
+                <PaymentPad
+                  v-model:method="method"
+                  v-model:cents="cents"
+                  :balance-cents="padBalance"
+                  :disabled="!canReceive"
+                />
+                <AppAlert v-if="payError" tone="error">
+                  <p data-testid="pay-error">{{ payError }}</p>
+                </AppAlert>
+              </template>
             </template>
           </section>
         </div>
@@ -592,7 +755,7 @@ const paid = computed(() => tab.value?.status === 'paid')
           Voltar ao varal
         </AppButton>
         <AppButton
-          v-else-if="tab.status === 'closing'"
+          v-else-if="tab.status === 'closing' || settling"
           :disabled="blocked"
           :loading="sending"
           data-testid="confirm-payment"
@@ -628,6 +791,57 @@ const paid = computed(() => tab.value?.status === 'paid')
         />
         <AppButton type="submit" data-testid="confirm-reverse">Estornar pagamento</AppButton>
       </form>
+    </AppDialog>
+
+    <AppDialog v-model:open="creditOpen" title="Pendurar no fiado">
+      <div v-if="tab && place" class="flex flex-col gap-4" data-testid="credit-dialog">
+        <template v-if="!creditTarget">
+          <p>
+            Pendurar <strong class="tabular-nums">{{ formatCents(tab.balanceCents) }}</strong> da
+            comanda {{ tab.number }} ({{ tab.customerName }}). Escolha o cliente.
+          </p>
+          <AppButton
+            v-if="contractorName"
+            variant="secondary"
+            data-testid="credit-contractor"
+            @click="chooseContractor(contractorName)"
+          >
+            Pendurar no contratante: {{ contractorName }}
+          </AppButton>
+          <CustomerPicker :unit-id="place.unit.id" @choose="chooseCustomer" />
+        </template>
+        <template v-else>
+          <div
+            class="flex flex-col gap-1 rounded-card border-2 border-primary bg-surface p-4"
+            data-testid="credit-confirm"
+          >
+            <span class="text-text-muted">Valor pendurado</span>
+            <span
+              class="font-display text-[2.5rem] leading-none font-extrabold text-primary-deep tabular-nums"
+              data-testid="credit-amount"
+              >{{ formatCents(tab.balanceCents) }}</span
+            >
+            <span class="text-lg">
+              na conta de <strong>{{ creditTarget.detail }}</strong>
+            </span>
+            <span v-if="tab.paidCents > 0" class="text-sm text-text-muted">
+              Total {{ formatCents(tab.totalCents) }} − já pago {{ formatCents(tab.paidCents) }}
+              (os pagamentos feitos continuam valendo).
+            </span>
+          </div>
+          <p class="text-sm text-text-muted">
+            Depois de pendurada, a comanda não aceita pedidos, descontos nem cancelamentos e sai do
+            varal. Ela aparece na aba Fiado até ser quitada.
+          </p>
+          <AppAlert v-if="creditError" tone="error">
+            <p data-testid="credit-error">{{ creditError }}</p>
+          </AppAlert>
+          <AppButton :loading="creditBusy" data-testid="credit-submit" @click="confirmCredit">
+            Pendurar {{ formatCents(tab.balanceCents) }}
+          </AppButton>
+          <AppButton variant="ghost" @click="creditTarget = null">Trocar cliente</AppButton>
+        </template>
+      </div>
     </AppDialog>
 
     <AppDialog v-model:open="discountOpen" title="Desconto">
