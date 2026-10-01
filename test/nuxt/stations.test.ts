@@ -18,9 +18,11 @@ function me(type: 'owner' | 'staff', units: PanelMe['units']): PanelMe {
       name: 'Espetinho do Piloto',
       accessCode: 'ESPT26',
       subscriptionStatus: 'pilot',
+      suspendedReason: null,
     },
     units,
     session: { id: ID, deviceId: ID, accessTokenExpiresAt: '', expiresAt: '' },
+    impersonation: null,
   }
 }
 

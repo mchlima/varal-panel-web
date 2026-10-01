@@ -11,6 +11,8 @@ const NO_REFRESH_PATHS = [
   '/api/v1/auth/logout',
   '/api/v1/auth/owner/login',
   '/api/v1/auth/staff/login',
+  // 401 aqui é "sem a sessão do admin neste navegador" (RN-02.21), não sessão do app vencida.
+  '/api/v1/auth/impersonation',
   '/api/v1/auth/password/forgot',
   '/api/v1/auth/password/reset',
   '/api/v1/auth/access-code/',

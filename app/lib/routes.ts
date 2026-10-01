@@ -1,7 +1,11 @@
-/** Rotas abertas, sem sessão (spec 01, seção 14.1). */
+/**
+ * Rotas abertas, sem sessão (spec 01, seção 14.1). `/entrar-como` troca o link do
+ * "entrar como" por uma sessão (spec 02, RN-02.21) e abre com ou sem sessão do painel.
+ */
 export function isPublicRoute(path: string): boolean {
   return (
     path === '/entrar' ||
+    path === '/entrar-como' ||
     path === '/esqueci-a-senha' ||
     path === '/definir-senha' ||
     path.startsWith('/e/')

@@ -51,6 +51,8 @@ const pairs: [text: string, background: string][] = [
   ['color-status-ready-text', 'color-status-ready-bg'],
   ['color-status-late-text', 'color-status-late-bg'],
   ['color-status-canceled-text', 'color-status-canceled-bg'],
+  // Faixa do "entrar como" (spec 02, RN-02.19): fundo escuro, texto claro.
+  ['color-surface', 'color-text'],
 ]
 
 describe('tokens de cor (spec 08)', () => {
