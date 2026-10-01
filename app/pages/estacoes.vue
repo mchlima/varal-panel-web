@@ -1,8 +1,14 @@
 <script setup lang="ts">
+import type { components } from '~/api/schema'
+import { STATION_KIND_LABELS } from '~/lib/setup'
+
+type StationSummary = components['schemas']['StationSummary']
+
 /**
  * Escolha de unidade e estação (spec 01, seção 14). Se houver mais de uma unidade,
- * escolhe a unidade antes. As estações vêm do `/auth/me`; a tabela de estações (com nome)
- * chega com a spec 03, então por enquanto elas aparecem numeradas.
+ * escolhe a unidade antes. As estações vêm do `/auth/me` (ativas, em ordem, com nome e tipo):
+ * todas para o dono, as liberadas para o colaborador (RN-03.16). Balcão de pedidos leva ao
+ * `/balcao`; fila, ao `/estacao/{id}` (spec 01, seção 14.1).
  */
 useHead({ title: 'Estações · Varal' })
 
@@ -14,10 +20,13 @@ const unit = computed(() => {
   if (units.value.length === 1) return units.value[0]
   return units.value.find((u) => u.id === workplace.unitId) ?? null
 })
-const stations = computed(() =>
-  (unit.value?.stationIds ?? []).map((id, index) => ({ id, label: `Estação ${index + 1}` })),
-)
-const chosen = computed(() => stations.value.find((s) => s.id === workplace.stationId) ?? null)
+const stations = computed(() => unit.value?.stations ?? [])
+
+async function open(station: StationSummary) {
+  if (unit.value) workplace.selectUnit(unit.value.id)
+  workplace.selectStation(station.id)
+  await navigateTo(station.kind === 'counter' ? '/balcao' : `/estacao/${station.id}`)
+}
 </script>
 
 <template>
@@ -62,7 +71,8 @@ const chosen = computed(() => stations.value.find((s) => s.id === workplace.stat
           <AppAlert>
             <p class="font-bold">Nenhuma estação configurada ainda.</p>
             <p v-if="session.isOwner">
-              As estações (cozinha, balcão de entrega…) são criadas no painel, no fluxo da unidade.
+              As estações (cozinha, balcão de entrega…) são criadas no painel, em Unidades →
+              Estações e fluxo.
             </p>
             <p v-else>Fale com o responsável pela barraca para liberar uma estação para você.</p>
           </AppAlert>
@@ -80,18 +90,18 @@ const chosen = computed(() => stations.value.find((s) => s.id === workplace.stat
                   ? 'border-primary bg-primary-soft text-primary-deep'
                   : 'border-border-strong text-text hover:border-primary'
               "
-              @click="workplace.selectStation(station.id)"
+              @click="open(station)"
             >
-              <span class="font-display text-xl font-semibold">{{ station.label }}</span>
-              <span class="text-sm text-text-muted">{{ station.id.slice(-6) }}</span>
+              <span class="font-display text-xl font-semibold">{{ station.name }}</span>
+              <span
+                class="text-sm"
+                :class="workplace.stationId === station.id ? '' : 'text-text-muted'"
+              >
+                {{ STATION_KIND_LABELS[station.kind] }}
+              </span>
             </button>
           </li>
         </ul>
-
-        <AppAlert v-if="chosen" tone="success">
-          {{ chosen.label }} escolhida neste aparelho. A fila da estação chega na próxima versão do
-          Varal.
-        </AppAlert>
 
         <AppButton
           v-if="units.length > 1"

@@ -1,9 +1,14 @@
-import { mountSuspended } from '@nuxt/test-utils/runtime'
-import { describe, expect, it } from 'vitest'
+import { mountSuspended, mockNuxtImport } from '@nuxt/test-utils/runtime'
+import { describe, expect, it, vi } from 'vitest'
 import Estacoes from '~/pages/estacoes.vue'
-import type { PanelMe } from '~/stores/session'
+import type { PanelMe, PanelUnit } from '~/stores/session'
+
+const { navigateToMock } = vi.hoisted(() => ({ navigateToMock: vi.fn() }))
+mockNuxtImport('navigateTo', () => navigateToMock)
 
 const ID = '01a0f6f8-4a82-77c9-b59d-f7b27d590e8e'
+const COUNTER = '01a0f6f8-0000-7000-8000-0000000000e1'
+const KITCHEN = '01a0f6f8-0000-7000-8000-0000000000e2'
 
 function me(type: 'owner' | 'staff', units: PanelMe['units']): PanelMe {
   return {
@@ -19,13 +24,15 @@ function me(type: 'owner' | 'staff', units: PanelMe['units']): PanelMe {
   }
 }
 
-function unit(name: string, stationIds: string[] = []) {
+function unit(name: string, stations: PanelUnit['stations'] = []): PanelUnit {
   return {
     id: `${ID.slice(0, -4)}${name.length}000`.slice(0, 36),
     name,
     allStations: false,
-    stationIds,
+    stationIds: stations.map((station) => station.id),
+    stations,
     canOperateCash: false,
+    lateAfterMinutes: 15,
   }
 }
 
@@ -51,25 +58,48 @@ describe('/estacoes (spec 01, seção 14)', () => {
     expect(wrapper.find('a[href="/painel"]').text()).toBe('Ir para o painel')
   })
 
-  it('lista as estações liberadas do colaborador como botões grandes', async () => {
+  it('RN-03.16: mostra as estações liberadas com o nome e o tipo reais, sem numerar', async () => {
     const session = useSessionStore()
     useWorkplaceStore().clear()
     session.me = me('staff', [
       unit('Barraca da Praça', [
-        '01a0f6f8-0000-7000-8000-0000000000e1',
-        '01a0f6f8-0000-7000-8000-0000000000e2',
+        { id: COUNTER, name: 'Balcão', kind: 'counter' },
+        { id: KITCHEN, name: 'Cozinha', kind: 'queue' },
       ]),
     ])
     session.status = 'authenticated'
     const wrapper = await mountSuspended(Estacoes)
     const buttons = wrapper.findAll('button[aria-pressed]')
     expect(buttons.map((b) => b.text())).toEqual([
-      expect.stringContaining('Estação 1'),
-      expect.stringContaining('Estação 2'),
+      expect.stringContaining('Balcão'),
+      expect.stringContaining('Cozinha'),
     ])
+    expect(buttons[0]!.text()).toContain('Balcão de pedidos')
+    expect(buttons[1]!.text()).toContain('Fila')
+    expect(wrapper.text()).not.toContain('Estação 1')
     expect(buttons[0]!.classes()).toContain('min-h-20')
+  })
+
+  it('balcão leva ao /balcao e fila ao /estacao/{id}, guardando a escolha', async () => {
+    const session = useSessionStore()
+    useWorkplaceStore().clear()
+    session.me = me('staff', [
+      unit('Barraca da Praça', [
+        { id: COUNTER, name: 'Balcão', kind: 'counter' },
+        { id: KITCHEN, name: 'Cozinha', kind: 'queue' },
+      ]),
+    ])
+    session.status = 'authenticated'
+    const wrapper = await mountSuspended(Estacoes)
+    const buttons = wrapper.findAll('button[aria-pressed]')
+
+    navigateToMock.mockClear()
     await buttons[1]!.trigger('click')
-    expect(buttons[1]!.attributes('aria-pressed')).toBe('true')
-    expect(useWorkplaceStore().stationId).toBe('01a0f6f8-0000-7000-8000-0000000000e2')
+    expect(navigateToMock).toHaveBeenCalledWith(`/estacao/${KITCHEN}`)
+    expect(useWorkplaceStore().stationId).toBe(KITCHEN)
+
+    await buttons[0]!.trigger('click')
+    expect(navigateToMock).toHaveBeenLastCalledWith('/balcao')
+    expect(useWorkplaceStore().stationId).toBe(COUNTER)
   })
 })
