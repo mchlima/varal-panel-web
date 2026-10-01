@@ -1,5 +1,18 @@
 # Changelog
 
+## [0.3.0](https://github.com/mchlima/varal-panel-web/compare/v0.2.0...v0.3.0) (2026-10-01)
+
+
+### Features
+
+* **orders:** telas de turno, balcão e estações (fase 5) ([#18](https://github.com/mchlima/varal-panel-web/issues/18)) ([a216e83](https://github.com/mchlima/varal-panel-web/commit/a216e83c4ccc97b706d856de0fe2c595ad0fa644))
+* **ui:** carrega mais itens nas listas de unidades, equipe e acessos ([#17](https://github.com/mchlima/varal-panel-web/issues/17)) ([e0370db](https://github.com/mchlima/varal-panel-web/commit/e0370db2094ec6f939442b12ad5ae69323dbae3e))
+
+
+### Bug Fixes
+
+* **ui:** reserva a linha do erro nos campos validados ([#15](https://github.com/mchlima/varal-panel-web/issues/15)) ([743d2db](https://github.com/mchlima/varal-panel-web/commit/743d2dbcd3e11ac0a4e4cc867a2a594df1680431))
+
 ## [0.2.0](https://github.com/mchlima/varal-panel-web/compare/v0.1.0...v0.2.0) (2026-10-01)
 
 
