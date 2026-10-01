@@ -24,3 +24,14 @@ export function formatDateTime(iso: string): string {
 export function formatDate(iso: string): string {
   return date.format(new Date(iso))
 }
+
+const time = new Intl.DateTimeFormat('pt-BR', {
+  timeZone: 'America/Sao_Paulo',
+  hour: '2-digit',
+  minute: '2-digit',
+})
+
+/** "13:47" */
+export function formatTime(iso: string): string {
+  return time.format(new Date(iso))
+}

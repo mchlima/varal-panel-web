@@ -10,6 +10,8 @@ export interface QueuedActionError {
   status: number
   code: string
   message: string
+  /** `details` do erro da API (ex.: `ITEM_CHANGED` traz o estado atual em `details.item`). */
+  details?: Record<string, unknown>
 }
 
 /**
@@ -27,6 +29,11 @@ export interface QueuedAction {
   body?: unknown
   /** Descrição curta em pt-BR para a interface (ex.: "Avançar 2 Espeto de carne"). */
   label: string
+  /**
+   * Dados da tela sobre a ação (o que ela muda, para mostrar "Enviando…"/"Na fila" no lugar
+   * certo e sobreviver a um recarregamento). Não vai para a API.
+   */
+  meta?: unknown
   createdAt: number
   attempts: number
   nextAttemptAt: number

@@ -903,6 +903,57 @@ export interface paths {
         patch: operations["MenuController_updateModifier"];
         trace?: never;
     };
+    "/api/v1/order-items/{id}/advance": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Avança o item para a próxima etapa; `quantity` avança só parte, dividindo a linha (RN-04.20, RN-04.21, RN-04.24) */
+        post: operations["OperationController_advance"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/order-items/{id}/back": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Volta o item para a etapa anterior, com auditoria (RN-04.22) */
+        post: operations["OperationController_back"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/order-items/{id}/cancel": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Cancela o item ou parte dele, com motivo; perda depois da primeira etapa (RN-04.25 a RN-04.28) */
+        post: operations["OperationController_cancelItem"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/organization/access": {
         parameters: {
             query?: never;
@@ -967,6 +1018,58 @@ export interface paths {
         post: operations["MenuController_markSoldOut"];
         /** Desmarca o esgotado (dono e colaboradores com estação na unidade, RN-03.11) */
         delete: operations["MenuController_unmarkSoldOut"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/shifts/{id}/close": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Fecha o turno (RN-04.07): recusa com a lista de pendências; itens ainda em preparo vão à etapa final (RN-04.08) */
+        post: operations["OperationController_closeShift"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/shifts/{id}/prices": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /** Substitui a tabela de preços do turno aberto (RN-04.06) */
+        put: operations["OperationController_updatePrices"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/shifts/{id}/tabs": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Varal: comandas do turno com totais e resumo dos itens, por número */
+        get: operations["OperationController_listTabs"];
+        put?: never;
+        /** Abre uma comanda aberta com o próximo número do turno (RN-04.09) */
+        post: operations["OperationController_createTab"];
+        delete?: never;
         options?: never;
         head?: never;
         patch?: never;
@@ -1075,6 +1178,23 @@ export interface paths {
         patch: operations["UnitsController_updateStation"];
         trace?: never;
     };
+    "/api/v1/stations/{id}/queue": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Fila da estação: itens nela, do pedido mais antigo para o mais novo */
+        get: operations["OperationController_queue"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/support-access": {
         parameters: {
             query?: never;
@@ -1086,6 +1206,91 @@ export interface paths {
         get: operations["SupportAccessController_list"];
         put?: never;
         post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/tabs/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Comanda com pedidos, itens e totais */
+        get: operations["OperationController_getTab"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/tabs/{id}/cancel": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Cancela a comanda quando todos os itens já foram cancelados (RN-04.12) */
+        post: operations["OperationController_cancelTab"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/tabs/{id}/orders": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Envia um pedido à comanda aberta: 1 a 50 itens, cada item vai à estação de preparo (RN-04.16 a RN-04.19) */
+        post: operations["OperationController_createOrder"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/tabs/{id}/reopen": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Reabre a comanda: `closing` → `open` (RN-04.12) */
+        post: operations["OperationController_reopen"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/tabs/{id}/request-bill": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Pede a conta: `open` → `closing` (RN-04.12) */
+        post: operations["OperationController_requestBill"];
         delete?: never;
         options?: never;
         head?: never;
@@ -1161,6 +1366,40 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/units/{id}/shifts": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Abre o turno da unidade, com tipo, acordo e preços (dono ou quem opera caixa, RN-04.02) */
+        post: operations["OperationController_openShift"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/units/{id}/shifts/current": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Turno aberto da unidade, com acordo e preços */
+        get: operations["OperationController_currentShift"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/units/{id}/stations": {
         parameters: {
             query?: never;
@@ -1208,6 +1447,11 @@ export interface components {
         AccessChangeReason: "permissions_changed" | "unit_changed" | "stations_changed";
         AccessCodeOrganization: {
             organizationName: string;
+        };
+        /** @description Quem fez a ação (dono ou colaborador). */
+        ActorRef: {
+            id: string | null;
+            type: components["schemas"]["ActorType"];
         };
         /**
          * @description Quem fez a ação registrada na auditoria.
@@ -1293,6 +1537,17 @@ export interface components {
             /** @description Cursor da próxima página; `null` na última. */
             nextCursor: string | null;
         };
+        AdvanceItemRequestInput: {
+            /** @description Quantas unidades seguem (RN-04.24); padrão: todas. Menos que a quantidade divide o item em duas linhas. */
+            quantity?: number;
+            /** @description Versão do item que o aparelho tem. Se outro aparelho mudou o item antes, a API responde 409 `ITEM_CHANGED` com o estado atual em `details.item` (CA-04.05). */
+            version: number;
+        };
+        /**
+         * @description `fixed_fee`: valor fixo; `per_quantity`: por quantidade; `consumption_billed`: o contratante paga o consumo no final; `other` (RN-04.05).
+         * @enum {string}
+         */
+        AgreementModality: "fixed_fee" | "per_quantity" | "consumption_billed" | "other";
         Announcement: {
             archivedAt: string | null;
             /** @description Donos ativos no público hoje (para "X de Y leram"). */
@@ -1411,6 +1666,24 @@ export interface components {
          * @enum {string}
          */
         AuthErrorCode: "INVALID_CREDENTIALS" | "INVALID_STAFF_CREDENTIALS" | "LOGIN_TEMPORARILY_LOCKED" | "INVALID_PASSWORD_TOKEN" | "WRONG_CURRENT_PASSWORD" | "PASSWORD_RESET_LIMIT_REACHED" | "STAFF_WITHOUT_UNIT" | "INVALID_IMPERSONATION_TOKEN" | "NOT_ALLOWED_DURING_IMPERSONATION" | "DEVICE_ID_REQUIRED";
+        BackItemRequestInput: {
+            /** @description Versão do item que o aparelho tem. Se outro aparelho mudou o item antes, a API responde 409 `ITEM_CHANGED` com o estado atual em `details.item` (CA-04.05). */
+            version: number;
+        };
+        CancelItemRequestInput: {
+            /** @description Quantas unidades cancelar (RN-04.26); padrão: todas. */
+            quantity?: number;
+            /** @description Motivo, até 140 caracteres (RN-04.25). */
+            reason: string;
+            /** @description Versão do item que o aparelho tem. Se outro aparelho mudou o item antes, a API responde 409 `ITEM_CHANGED` com o estado atual em `details.item` (CA-04.05). */
+            version: number;
+        };
+        CancelTabRequestInput: {
+            /** @description Motivo, até 140 caracteres. */
+            reason?: string;
+            /** @description Versão da comanda que o aparelho tem (opcional). Diferente da atual: 409 `TAB_CHANGED` com `details.currentVersion`. */
+            version?: number;
+        };
         Category: {
             active: boolean;
             /**
@@ -1508,6 +1781,18 @@ export interface components {
             /** @description Posição na lista (1 é o primeiro). */
             sortOrder?: number;
         };
+        /** @description Pedido com 1 a 50 itens (RN-04.16). */
+        CreateOrderRequestInput: {
+            items: {
+                /** @default [] */
+                modifierIds: string[];
+                /** @description Observação livre, até 140 caracteres. */
+                note?: string | null;
+                /** Format: uuid */
+                productId: string;
+                quantity: number;
+            }[];
+        };
         CreateOrganizationRequestInput: {
             name: string;
             owner: {
@@ -1557,6 +1842,10 @@ export interface components {
             /** @description Posição na lista (1 é o primeiro). */
             sortOrder?: number;
         };
+        CreateTabRequestInput: {
+            /** @description Nome do cliente, de 1 a 40 caracteres (RN-04.10). */
+            customerName: string;
+        };
         CreateUnitRequestInput: {
             /**
              * @description Minutos a partir dos quais um item na estação aparece como atrasado (1 a 240).
@@ -1565,6 +1854,15 @@ export interface components {
             lateAfterMinutes: number;
             name: string;
         };
+        CurrentShift: {
+            /** @description `null` sem turno aberto. */
+            shift: components["schemas"]["Shift"] | null;
+        };
+        /**
+         * @description Desconto da comanda (spec 05): `amount` em centavos ou `percent` de 1 a 100.
+         * @enum {string}
+         */
+        DiscountType: "amount" | "percent";
         EmailLog: {
             /** Format: date-time */
             createdAt: string;
@@ -1675,6 +1973,83 @@ export interface components {
             /** @description Versão do recurso. O app ignora eventos com versão menor que a do estado que já tem. */
             version: number;
         };
+        /** @description Todos os itens do pedido estão na etapa final ou cancelados (sala `unit`). `version` é a do pedido. */
+        EventOrderCompleted: {
+            data: {
+                /** Format: uuid */
+                orderId: string;
+                /** Format: uuid */
+                tabId: string;
+            };
+            /** Format: date-time */
+            occurredAt: string;
+            /** Format: uuid */
+            organizationId: string;
+            /** @constant */
+            type: "order.completed";
+            /** Format: uuid */
+            unitId: string;
+            /** @description Versão do recurso. O app ignora eventos com versão menor que a do estado que já tem. */
+            version: number;
+        };
+        /** @description Pedido enviado. Na sala `unit` vai completo; na sala de cada `station`, só com os itens daquela estação (CA-04.03). */
+        EventOrderCreated: {
+            data: components["schemas"]["Order"];
+            /** Format: date-time */
+            occurredAt: string;
+            /** Format: uuid */
+            organizationId: string;
+            /** @constant */
+            type: "order.created";
+            /** Format: uuid */
+            unitId: string;
+            /** @description Versão do recurso. O app ignora eventos com versão menor que a do estado que já tem. */
+            version: number;
+        };
+        /** @description Item cancelado (sala `unit` e sala `station` em que estava). `version` é a do item. */
+        EventOrderItemCanceled: {
+            data: {
+                /** @description A linha cancelada. */
+                item: components["schemas"]["OrderItem"];
+                /** @description Estação em que a linha estava antes do cancelamento. */
+                previousStationId: string | null;
+                /** @description Cancelamento parcial (RN-04.26): a linha original, com o restante, ativa. */
+                remaining: components["schemas"]["OrderItem"] | null;
+            };
+            /** Format: date-time */
+            occurredAt: string;
+            /** Format: uuid */
+            organizationId: string;
+            /** @constant */
+            type: "order_item.canceled";
+            /** Format: uuid */
+            unitId: string;
+            /** @description Versão do recurso. O app ignora eventos com versão menor que a do estado que já tem. */
+            version: number;
+        };
+        /** @description Item mudou de etapa (avançar ou voltar). Vai à sala `unit` e às salas `station` de origem e de destino (CA-04.04). `version` é a do item. */
+        EventOrderItemStageChanged: {
+            data: {
+                /** @description A linha que mudou de etapa (a linha nova, quando avançou só parte da quantidade). */
+                item: components["schemas"]["OrderItem"];
+                /** Format: uuid */
+                previousStageId: string;
+                /** @description Estação em que a linha estava: sai da fila dela se for diferente de `item.stationId`. */
+                previousStationId: string | null;
+                /** @description Avanço de parte da quantidade (RN-04.24): a linha original, com o restante, na etapa em que estava. */
+                remaining: components["schemas"]["OrderItem"] | null;
+            };
+            /** Format: date-time */
+            occurredAt: string;
+            /** Format: uuid */
+            organizationId: string;
+            /** @constant */
+            type: "order_item.stage_changed";
+            /** Format: uuid */
+            unitId: string;
+            /** @description Versão do recurso. O app ignora eventos com versão menor que a do estado que já tem. */
+            version: number;
+        };
         /** @description Produto marcado ou desmarcado como esgotado (RN-03.11). `version` é a versão do produto: o balcão bloqueia ou libera o produto sem recarregar o cardápio. */
         EventProductSoldOutChanged: {
             data: {
@@ -1726,6 +2101,76 @@ export interface components {
             occurredAt: string;
             /** @constant */
             type: "session.revoked";
+        };
+        /** @description Turno fechado (sala `unit`). Itens que ainda não estavam na etapa final foram levados a ela (RN-04.08): as filas das estações ficam vazias. */
+        EventShiftClosed: {
+            data: components["schemas"]["Shift"];
+            /** Format: date-time */
+            occurredAt: string;
+            /** Format: uuid */
+            organizationId: string;
+            /** @constant */
+            type: "shift.closed";
+            /** Format: uuid */
+            unitId: string;
+            /** @description Versão do recurso. O app ignora eventos com versão menor que a do estado que já tem. */
+            version: number;
+        };
+        /** @description Turno aberto na unidade (sala `unit`). `version` é a versão do turno. */
+        EventShiftOpened: {
+            data: components["schemas"]["Shift"];
+            /** Format: date-time */
+            occurredAt: string;
+            /** Format: uuid */
+            organizationId: string;
+            /** @constant */
+            type: "shift.opened";
+            /** Format: uuid */
+            unitId: string;
+            /** @description Versão do recurso. O app ignora eventos com versão menor que a do estado que já tem. */
+            version: number;
+        };
+        /** @description Proposta (não listado na spec 04): tabela de preços do turno alterada (RN-04.06). O balcão passa a mostrar os preços novos. */
+        EventShiftUpdated: {
+            data: components["schemas"]["Shift"];
+            /** Format: date-time */
+            occurredAt: string;
+            /** Format: uuid */
+            organizationId: string;
+            /** @constant */
+            type: "shift.updated";
+            /** Format: uuid */
+            unitId: string;
+            /** @description Versão do recurso. O app ignora eventos com versão menor que a do estado que já tem. */
+            version: number;
+        };
+        /** @description Comanda criada, com totais (sala `unit`). */
+        EventTabCreated: {
+            data: components["schemas"]["TabSummary"];
+            /** Format: date-time */
+            occurredAt: string;
+            /** Format: uuid */
+            organizationId: string;
+            /** @constant */
+            type: "tab.created";
+            /** Format: uuid */
+            unitId: string;
+            /** @description Versão do recurso. O app ignora eventos com versão menor que a do estado que já tem. */
+            version: number;
+        };
+        /** @description Comanda com situação, totais e `version` novos (sala `unit`): pedido novo, item cancelado, pedir a conta, reabrir, cancelar. */
+        EventTabUpdated: {
+            data: components["schemas"]["TabSummary"];
+            /** Format: date-time */
+            occurredAt: string;
+            /** Format: uuid */
+            organizationId: string;
+            /** @constant */
+            type: "tab.updated";
+            /** Format: uuid */
+            unitId: string;
+            /** @description Versão do recurso. O app ignora eventos com versão menor que a do estado que já tem. */
+            version: number;
         };
         /** @description Configuração da unidade alterada (nome, tempo de atraso, estações ou fluxo). `version` é a versão da unidade: o app recarrega `GET /auth/me` e, no painel do dono, a configuração. */
         EventUnitConfigUpdated: {
@@ -1810,6 +2255,12 @@ export interface components {
             data: components["schemas"]["Impersonation"][];
             /** @description Cursor da próxima página; `null` na última. */
             nextCursor: string | null;
+        };
+        ItemChange: {
+            /** @description A linha que mudou de etapa ou foi cancelada (a linha nova, quando houve divisão). */
+            changed: components["schemas"]["OrderItem"];
+            /** @description Numa divisão (parte da quantidade), a linha original com o restante, na etapa em que estava; senão `null`. */
+            remaining: components["schemas"]["OrderItem"] | null;
         };
         /** @description Cardápio da unidade em ordem. O dono recebe tudo (com `active`); o colaborador só categorias, produtos e modificadores ativos (RN-03.10). */
         Menu: {
@@ -1932,6 +2383,128 @@ export interface components {
             required: boolean;
             sortOrder: number;
         };
+        OpenShiftRequestInput: {
+            /** @description Obrigatório no turno contratado; não vale na venda direta (RN-04.05). */
+            agreement?: {
+                agreedAmountCents?: number | null;
+                agreedQuantity?: number | null;
+                contractorName: string;
+                limits?: string | null;
+                modality: components["schemas"]["AgreementModality"];
+                notes?: string | null;
+            } | null;
+            /** @default [] */
+            prices: components["schemas"]["ShiftPriceInput"][];
+            type: components["schemas"]["ShiftType"];
+        };
+        /**
+         * @description Códigos de erro da operação (spec 04): turno, comandas, pedidos e itens. `SHIFT_OPEN` (spec 03) e `ORGANIZATION_SUSPENDED`/`ORGANIZATION_CANCELED` (spec 02) também aparecem nestas rotas.
+         * @enum {string}
+         */
+        OperationErrorCode: "SHIFT_ALREADY_OPEN" | "UNIT_INACTIVE" | "SHIFT_CLOSED" | "SHIFT_HAS_PENDING_ITEMS" | "INVALID_SHIFT_PRICE" | "TAB_NOT_OPEN" | "TAB_NOT_CLOSING" | "TAB_CLOSED" | "TAB_HAS_ACTIVE_ITEMS" | "TAB_CHANGED" | "ORDER_REJECTED" | "ITEM_CHANGED" | "ITEM_CANCELED" | "ITEM_IN_FINAL_STAGE" | "NO_PREVIOUS_STAGE" | "INVALID_QUANTITY";
+        Order: {
+            completedAt: string | null;
+            createdBy: components["schemas"]["ActorRef"];
+            customerName: string;
+            /** Format: uuid */
+            id: string;
+            items: components["schemas"]["OrderItem"][];
+            numberInTab: number;
+            /** Format: date-time */
+            sentAt: string;
+            /** Format: uuid */
+            shiftId: string;
+            status: components["schemas"]["OrderStatus"];
+            /** Format: uuid */
+            tabId: string;
+            tabNumber: number;
+            /** Format: uuid */
+            unitId: string;
+            version: number;
+        };
+        OrderItem: {
+            cancelReason: string | null;
+            canceledAt: string | null;
+            canceledBy: components["schemas"]["ActorRef"] | null;
+            customerName: string;
+            /** Format: uuid */
+            id: string;
+            /** @description Atrasado no momento da resposta (CA-04.11). */
+            isLate: boolean;
+            /** @description Quando o item passa a estar atrasado: envio + `lateAfterMinutes` da unidade (RN-04.23). `null` na etapa final ou cancelado. */
+            lateAt: string | null;
+            modifiers: components["schemas"]["OrderItemModifier"][];
+            note: string | null;
+            /** Format: uuid */
+            orderId: string;
+            orderNumberInTab: number;
+            /**
+             * Format: uuid
+             * @description Estação de preparo resolvida no envio.
+             */
+            prepStationId: string;
+            /** Format: uuid */
+            productId: string;
+            /** @description Cópia do nome no momento da venda (RN-04.18). */
+            productName: string;
+            quantity: number;
+            /**
+             * Format: date-time
+             * @description Envio do pedido.
+             */
+            sentAt: string;
+            /** @description Linha original de uma divisão (avançar ou cancelar parte, RN-04.24/RN-04.26). */
+            splitFromId: string | null;
+            /** Format: date-time */
+            stageEnteredAt: string;
+            /** Format: uuid */
+            stageId: string;
+            stageIsFinal: boolean;
+            stageName: string;
+            /** @description Estação em que o item aparece agora; `null` na etapa final ou cancelado. */
+            stationId: string | null;
+            /** Format: uuid */
+            tabId: string;
+            tabNumber: number;
+            /** @description `(unitPriceCents + Σ priceDeltaCents) × quantity` (spec 04, seção 6). */
+            totalCents: number;
+            /** Format: uuid */
+            unitId: string;
+            /** @description Preço unitário vigente no envio: do turno ou do cardápio (RN-04.18). */
+            unitPriceCents: number;
+            version: number;
+            /** @description Cancelado depois de sair da primeira etapa: perda (RN-04.27). */
+            wasted: boolean;
+        };
+        /** @description Cópia do modificador escolhido (RN-04.18). */
+        OrderItemModifier: {
+            groupName: string;
+            /** Format: uuid */
+            modifierId: string;
+            modifierName: string;
+            priceDeltaCents: number;
+        };
+        OrderItemRejection: {
+            /** @description Posição do item no corpo do pedido (a partir de 0). */
+            index: number;
+            modifierGroupId: string | null;
+            productId: string;
+            reason: components["schemas"]["OrderItemRejectionReason"];
+        };
+        /**
+         * @description Motivo de um item recusado em `ORDER_REJECTED` (RN-04.17): `product_unavailable` (não existe ou é de outra unidade), `product_inactive`, `sold_out`, `modifier_required` (grupo obrigatório sem escolha, CA-03.06), `too_many_modifiers`, `invalid_modifier`.
+         * @enum {string}
+         */
+        OrderItemRejectionReason: "product_unavailable" | "product_inactive" | "sold_out" | "modifier_required" | "too_many_modifiers" | "invalid_modifier";
+        /** @description `details` do 409 `ORDER_REJECTED` (RN-04.17, CA-04.06). */
+        OrderRejectedDetails: {
+            items: components["schemas"]["OrderItemRejection"][];
+        };
+        /**
+         * @description `sent` enquanto houver item em etapa não final; `completed` quando todos estão na etapa final ou cancelados.
+         * @enum {string}
+         */
+        OrderStatus: "sent" | "completed";
         OrganizationAccess: {
             /** @example ESPT26 */
             accessCode: string;
@@ -1954,7 +2527,7 @@ export interface components {
             lastAccessAt: string | null;
             name: string;
             owner: components["schemas"]["OrganizationOwner"] | null;
-            /** @description Últimos 10 turnos. Vazio até a spec 04 criar os turnos. */
+            /** @description Últimos 10 turnos, do mais novo para o mais antigo. */
             recentShifts: components["schemas"]["OrganizationShiftSummary"][];
             subscriptionStatus: components["schemas"]["SubscriptionStatus"];
             /** @description Motivo da suspensão ou do cancelamento. */
@@ -1989,7 +2562,7 @@ export interface components {
             /** @description Cursor da próxima página; `null` na última. */
             nextCursor: string | null;
         };
-        /** @description Turno no detalhe da organização (os turnos chegam com a spec 04). */
+        /** @description Turno no detalhe da organização (spec 04). */
         OrganizationShiftSummary: {
             closedAt: string | null;
             /** Format: uuid */
@@ -2193,6 +2766,12 @@ export interface components {
              */
             publishAt?: string;
         };
+        PutShiftPricesRequestInput: {
+            /** @description A tabela inteira; substitui a anterior. */
+            prices: components["schemas"]["ShiftPriceInput"][];
+            /** @description Versão que o app tem do registro. Se outro aparelho alterou antes, a API responde 409 `VERSION_CONFLICT` com `details.currentVersion`. Opcional. */
+            version?: number;
+        };
         PutStaffPermissionsRequestInput: {
             /** @description Todas as unidades liberadas (substitui as atuais). */
             units: components["schemas"]["StaffPermissionInputInput"][];
@@ -2308,6 +2887,70 @@ export interface components {
          * @enum {string}
          */
         SetupErrorCode: "SHIFT_OPEN" | "LAST_ACTIVE_UNIT" | "UNIT_NAME_TAKEN" | "STATION_NAME_TAKEN" | "CATEGORY_NAME_TAKEN" | "USERNAME_TAKEN" | "STATION_KIND_REQUIRED" | "STATION_IN_USE" | "INVALID_WORKFLOW" | "INVALID_PREP_STATION" | "INVALID_REFERENCE" | "INVALID_ORDER" | "INVALID_MODIFIER_LIMITS";
+        Shift: {
+            /** @description Só no turno contratado. */
+            agreement: components["schemas"]["ShiftAgreement"] | null;
+            closedAt: string | null;
+            closedBy: components["schemas"]["ActorRef"] | null;
+            /** Format: uuid */
+            id: string;
+            /** Format: date-time */
+            openedAt: string;
+            openedBy: components["schemas"]["ActorRef"];
+            /** @description Tabela de preços do turno; produtos fora dela usam o preço do cardápio (RN-04.06). */
+            prices: components["schemas"]["ShiftPrice"][];
+            status: components["schemas"]["ShiftStatus"];
+            type: components["schemas"]["ShiftType"];
+            /** Format: uuid */
+            unitId: string;
+            version: number;
+        };
+        /** @description Acordo do turno contratado (RN-04.05). */
+        ShiftAgreement: {
+            agreedAmountCents: number | null;
+            agreedQuantity: number | null;
+            contractorName: string;
+            limits: string | null;
+            modality: components["schemas"]["AgreementModality"];
+            notes: string | null;
+        };
+        /** @description `details` do 409 `SHIFT_HAS_PENDING_ITEMS` ao fechar o turno (RN-04.07, CA-04.09). */
+        ShiftPendingItems: {
+            /** @description Caixas ainda abertos (spec 05; vazio até os caixas existirem). */
+            cashRegisters: {
+                /** Format: uuid */
+                id: string;
+                name: string;
+            }[];
+            /** @description Comandas em `open` ou `closing`. */
+            tabs: components["schemas"]["ShiftPendingTab"][];
+        };
+        ShiftPendingTab: {
+            customerName: string;
+            /** Format: uuid */
+            id: string;
+            number: number;
+            status: components["schemas"]["TabStatus"];
+        };
+        /** @description Preço de um produto só neste turno (RN-04.06). */
+        ShiftPrice: {
+            priceCents: number;
+            /** Format: uuid */
+            productId: string;
+        };
+        /** @description Preço de um produto só neste turno (RN-04.06). */
+        ShiftPriceInput: {
+            priceCents: number;
+            /** Format: uuid */
+            productId: string;
+        };
+        /** @enum {string} */
+        ShiftStatus: "open" | "closed";
+        /**
+         * @description `direct_sale`: venda direta; `contracted`: turno contratado, com acordo (RN-04.04). Não muda depois da abertura.
+         * @enum {string}
+         */
+        ShiftType: "direct_sale" | "contracted";
         StaffLoginRequestInput: {
             /**
              * @description Código do estabelecimento (6 caracteres), o mesmo do link `/e/{code}`.
@@ -2408,6 +3051,17 @@ export interface components {
         StationList: {
             data: components["schemas"]["Station"][];
         };
+        StationQueue: {
+            /** @description Itens nesta estação, do pedido mais antigo para o mais novo; itens do mesmo pedido juntos. */
+            items: components["schemas"]["OrderItem"][];
+            lateAfterMinutes: number;
+            /** @description Fluxo da unidade em ordem, para o nome do botão de avançar ("Começar", "Pronto") e o filtro por etapa. */
+            stages: components["schemas"]["WorkflowStage"][];
+            /** Format: uuid */
+            stationId: string;
+            /** Format: uuid */
+            unitId: string;
+        };
         StationSummary: {
             /** Format: uuid */
             id: string;
@@ -2448,6 +3102,87 @@ export interface components {
         };
         SuspendOrganizationRequestInput: {
             reason: string;
+        };
+        /** @description Comanda com pedidos, itens e totais. */
+        Tab: {
+            closedAt: string | null;
+            customerName: string;
+            discountCents: number;
+            discountType: components["schemas"]["DiscountType"] | null;
+            discountValue: number | null;
+            /** Format: uuid */
+            id: string;
+            /** @description Unidades em itens não cancelados. */
+            itemCount: number;
+            /** @description Unidades atrasadas (RN-04.23). */
+            lateItemCount: number;
+            mode: components["schemas"]["TabMode"];
+            number: number;
+            /** Format: date-time */
+            openedAt: string;
+            openedBy: components["schemas"]["ActorRef"];
+            /** @description Pedidos, do primeiro ao último. */
+            orders: components["schemas"]["Order"][];
+            /** @description Unidades na etapa anterior à final (prontas para entregar): o sinal do cartão no varal. */
+            readyItemCount: number;
+            /** Format: uuid */
+            shiftId: string;
+            status: components["schemas"]["TabStatus"];
+            /** @description Soma dos itens não cancelados (RN-04.14). */
+            subtotalCents: number;
+            /** @description Subtotal − desconto (RN-04.14). */
+            totalCents: number;
+            /** Format: uuid */
+            unitId: string;
+            version: number;
+        };
+        TabActionRequestInput: {
+            /** @description Versão da comanda que o aparelho tem (opcional). Diferente da atual: 409 `TAB_CHANGED` com `details.currentVersion`. */
+            version?: number;
+        };
+        TabList: {
+            data: components["schemas"]["TabSummary"][];
+        };
+        /**
+         * @description `pay_first`: paga antes, o pedido só vai às estações depois do pagamento (spec 05); `open_tab`: comanda aberta, paga no fechamento (RN-04.11).
+         * @enum {string}
+         */
+        TabMode: "pay_first" | "open_tab";
+        /**
+         * @description Situação da comanda (RN-04.12): `open`, `closing` (pediu a conta), `paid` (spec 05), `on_credit` e `settled` (spec 06), `canceled`.
+         * @enum {string}
+         */
+        TabStatus: "open" | "closing" | "paid" | "on_credit" | "settled" | "canceled";
+        /** @description Cartão da comanda no varal do balcão. */
+        TabSummary: {
+            closedAt: string | null;
+            customerName: string;
+            discountCents: number;
+            discountType: components["schemas"]["DiscountType"] | null;
+            discountValue: number | null;
+            /** Format: uuid */
+            id: string;
+            /** @description Unidades em itens não cancelados. */
+            itemCount: number;
+            /** @description Unidades atrasadas (RN-04.23). */
+            lateItemCount: number;
+            mode: components["schemas"]["TabMode"];
+            number: number;
+            /** Format: date-time */
+            openedAt: string;
+            openedBy: components["schemas"]["ActorRef"];
+            /** @description Unidades na etapa anterior à final (prontas para entregar): o sinal do cartão no varal. */
+            readyItemCount: number;
+            /** Format: uuid */
+            shiftId: string;
+            status: components["schemas"]["TabStatus"];
+            /** @description Soma dos itens não cancelados (RN-04.14). */
+            subtotalCents: number;
+            /** @description Subtotal − desconto (RN-04.14). */
+            totalCents: number;
+            /** Format: uuid */
+            unitId: string;
+            version: number;
         };
         Unit: {
             active: boolean;
@@ -5814,6 +6549,255 @@ export interface operations {
             };
         };
     };
+    OperationController_advance: {
+        parameters: {
+            query?: never;
+            header?: {
+                /** @description UUID gerado no aparelho. Repetir a mesma chave devolve a mesma resposta por 24 h, sem repetir a ação. */
+                "Idempotency-Key"?: string;
+            };
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AdvanceItemRequestInput"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ItemChange"];
+                };
+            };
+            /** @description `INVALID_QUANTITY`. */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description `UNAUTHENTICATED`: sem sessão do app ou sessão encerrada. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description `FORBIDDEN`: sem acesso à estação do item (o balcão só registra a entrega, RN-04.21). */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description `NOT_FOUND`: não existe ou é de outra organização. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /**
+             * @description `ITEM_CHANGED` (outro aparelho mudou o item antes: `details.item` traz o estado atual, CA-04.05), `ITEM_CANCELED`, `SHIFT_CLOSED` ou `ITEM_IN_FINAL_STAGE`.
+             *
+             *     `IDEMPOTENCY_KEY_REUSED` (mesma chave com outro corpo) ou `IDEMPOTENCY_REQUEST_IN_PROGRESS`.
+             */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Erro no formato `ErrorResponse` (spec 01, seção 5). */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    OperationController_back: {
+        parameters: {
+            query?: never;
+            header?: {
+                /** @description UUID gerado no aparelho. Repetir a mesma chave devolve a mesma resposta por 24 h, sem repetir a ação. */
+                "Idempotency-Key"?: string;
+            };
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["BackItemRequestInput"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ItemChange"];
+                };
+            };
+            /** @description `UNAUTHENTICATED`: sem sessão do app ou sessão encerrada. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description `FORBIDDEN`: sem acesso à estação do item. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description `NOT_FOUND`: não existe ou é de outra organização. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /**
+             * @description `ITEM_CHANGED` (outro aparelho mudou o item antes: `details.item` traz o estado atual, CA-04.05), `ITEM_CANCELED`, `SHIFT_CLOSED`, `ITEM_IN_FINAL_STAGE` ou `NO_PREVIOUS_STAGE`.
+             *
+             *     `IDEMPOTENCY_KEY_REUSED` (mesma chave com outro corpo) ou `IDEMPOTENCY_REQUEST_IN_PROGRESS`.
+             */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Erro no formato `ErrorResponse` (spec 01, seção 5). */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    OperationController_cancelItem: {
+        parameters: {
+            query?: never;
+            header?: {
+                /** @description UUID gerado no aparelho. Repetir a mesma chave devolve a mesma resposta por 24 h, sem repetir a ação. */
+                "Idempotency-Key"?: string;
+            };
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CancelItemRequestInput"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ItemChange"];
+                };
+            };
+            /** @description `INVALID_QUANTITY` ou `VALIDATION_FAILED` (motivo obrigatório). */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description `UNAUTHENTICATED`: sem sessão do app ou sessão encerrada. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description `FORBIDDEN`: sem acesso ao balcão nem à estação do item. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description `NOT_FOUND`: não existe ou é de outra organização. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /**
+             * @description `ITEM_CHANGED` (outro aparelho mudou o item antes: `details.item` traz o estado atual, CA-04.05), `ITEM_CANCELED`, `SHIFT_CLOSED` ou `TAB_CLOSED` (RN-04.28).
+             *
+             *     `IDEMPOTENCY_KEY_REUSED` (mesma chave com outro corpo) ou `IDEMPOTENCY_REQUEST_IN_PROGRESS`.
+             */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Erro no formato `ErrorResponse` (spec 01, seção 5). */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
     StaffController_access: {
         parameters: {
             query?: never;
@@ -6129,6 +7113,302 @@ export interface operations {
                 };
             };
             /** @description `IDEMPOTENCY_KEY_REUSED` (mesma chave com outro corpo) ou `IDEMPOTENCY_REQUEST_IN_PROGRESS`. */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Erro no formato `ErrorResponse` (spec 01, seção 5). */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    OperationController_closeShift: {
+        parameters: {
+            query?: never;
+            header?: {
+                /** @description UUID gerado no aparelho. Repetir a mesma chave devolve a mesma resposta por 24 h, sem repetir a ação. */
+                "Idempotency-Key"?: string;
+            };
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Shift"];
+                };
+            };
+            /** @description `UNAUTHENTICATED`: sem sessão do app ou sessão encerrada. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description `FORBIDDEN`: só o dono ou quem opera o caixa na unidade. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description `NOT_FOUND`: não existe ou é de outra organização. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /**
+             * @description `SHIFT_HAS_PENDING_ITEMS` com `details` no formato `ShiftPendingItems` (CA-04.09) ou `SHIFT_CLOSED`.
+             *
+             *     `IDEMPOTENCY_KEY_REUSED` (mesma chave com outro corpo) ou `IDEMPOTENCY_REQUEST_IN_PROGRESS`.
+             */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Erro no formato `ErrorResponse` (spec 01, seção 5). */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    OperationController_updatePrices: {
+        parameters: {
+            query?: never;
+            header?: {
+                /** @description UUID gerado no aparelho. Repetir a mesma chave devolve a mesma resposta por 24 h, sem repetir a ação. */
+                "Idempotency-Key"?: string;
+            };
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PutShiftPricesRequestInput"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Shift"];
+                };
+            };
+            /** @description `INVALID_SHIFT_PRICE` ou `VALIDATION_FAILED`. */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description `UNAUTHENTICATED`: sem sessão do app ou sessão encerrada. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description `FORBIDDEN`: só o dono ou quem opera o caixa na unidade. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description `NOT_FOUND`: não existe ou é de outra organização. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /**
+             * @description `SHIFT_CLOSED` ou `VERSION_CONFLICT`.
+             *
+             *     `IDEMPOTENCY_KEY_REUSED` (mesma chave com outro corpo) ou `IDEMPOTENCY_REQUEST_IN_PROGRESS`.
+             */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Erro no formato `ErrorResponse` (spec 01, seção 5). */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    OperationController_listTabs: {
+        parameters: {
+            query?: {
+                /** @description Situações (`TabStatus`) separadas por vírgula; padrão `open,closing`. Ex.: `open,closing,paid`. */
+                status?: string;
+            };
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TabList"];
+                };
+            };
+            /** @description `UNAUTHENTICATED`: sem sessão do app ou sessão encerrada. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description `FORBIDDEN`: colaborador sem acesso à unidade. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description `NOT_FOUND`: não existe ou é de outra organização. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Erro no formato `ErrorResponse` (spec 01, seção 5). */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    OperationController_createTab: {
+        parameters: {
+            query?: never;
+            header?: {
+                /** @description UUID gerado no aparelho. Repetir a mesma chave devolve a mesma resposta por 24 h, sem repetir a ação. */
+                "Idempotency-Key"?: string;
+            };
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateTabRequestInput"];
+            };
+        };
+        responses: {
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Tab"];
+                };
+            };
+            /** @description `UNAUTHENTICATED`: sem sessão do app ou sessão encerrada. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description `FORBIDDEN`: é preciso ter acesso ao balcão da unidade. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description `NOT_FOUND`: não existe ou é de outra organização. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /**
+             * @description `SHIFT_CLOSED`.
+             *
+             *     `IDEMPOTENCY_KEY_REUSED` (mesma chave com outro corpo) ou `IDEMPOTENCY_REQUEST_IN_PROGRESS`.
+             */
             409: {
                 headers: {
                     [name: string]: unknown;
@@ -6614,6 +7894,63 @@ export interface operations {
             };
         };
     };
+    OperationController_queue: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["StationQueue"];
+                };
+            };
+            /** @description `UNAUTHENTICATED`: sem sessão do app ou sessão encerrada. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description `FORBIDDEN`: colaborador sem acesso à estação. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description `NOT_FOUND`: não existe ou é de outra organização. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Erro no formato `ErrorResponse` (spec 01, seção 5). */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
     SupportAccessController_list: {
         parameters: {
             query?: {
@@ -6647,6 +7984,371 @@ export interface operations {
             };
             /** @description `FORBIDDEN`: só o dono pode usar esta rota. */
             403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Erro no formato `ErrorResponse` (spec 01, seção 5). */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    OperationController_getTab: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Tab"];
+                };
+            };
+            /** @description `UNAUTHENTICATED`: sem sessão do app ou sessão encerrada. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description `FORBIDDEN`: colaborador sem acesso à unidade. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description `NOT_FOUND`: não existe ou é de outra organização. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Erro no formato `ErrorResponse` (spec 01, seção 5). */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    OperationController_cancelTab: {
+        parameters: {
+            query?: never;
+            header?: {
+                /** @description UUID gerado no aparelho. Repetir a mesma chave devolve a mesma resposta por 24 h, sem repetir a ação. */
+                "Idempotency-Key"?: string;
+            };
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CancelTabRequestInput"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Tab"];
+                };
+            };
+            /** @description `UNAUTHENTICATED`: sem sessão do app ou sessão encerrada. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description `FORBIDDEN`: é preciso ter acesso ao balcão da unidade. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description `NOT_FOUND`: não existe ou é de outra organização. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /**
+             * @description `TAB_HAS_ACTIVE_ITEMS` (`details.itemIds`), `TAB_CLOSED`, `TAB_CHANGED` ou `SHIFT_CLOSED`.
+             *
+             *     `IDEMPOTENCY_KEY_REUSED` (mesma chave com outro corpo) ou `IDEMPOTENCY_REQUEST_IN_PROGRESS`.
+             */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Erro no formato `ErrorResponse` (spec 01, seção 5). */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    OperationController_createOrder: {
+        parameters: {
+            query?: never;
+            header?: {
+                /** @description UUID gerado no aparelho. Repetir a mesma chave devolve a mesma resposta por 24 h, sem repetir a ação. */
+                "Idempotency-Key"?: string;
+            };
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateOrderRequestInput"];
+            };
+        };
+        responses: {
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Order"];
+                };
+            };
+            /** @description `UNAUTHENTICATED`: sem sessão do app ou sessão encerrada. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description `FORBIDDEN`: é preciso ter acesso ao balcão da unidade. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description `NOT_FOUND`: não existe ou é de outra organização. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /**
+             * @description `ORDER_REJECTED` com `details` no formato `OrderRejectedDetails` (CA-04.06, CA-03.06), `TAB_NOT_OPEN` (RN-04.13), `TAB_CLOSED` ou `SHIFT_CLOSED`.
+             *
+             *     `IDEMPOTENCY_KEY_REUSED` (mesma chave com outro corpo) ou `IDEMPOTENCY_REQUEST_IN_PROGRESS`.
+             */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Erro no formato `ErrorResponse` (spec 01, seção 5). */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    OperationController_reopen: {
+        parameters: {
+            query?: never;
+            header?: {
+                /** @description UUID gerado no aparelho. Repetir a mesma chave devolve a mesma resposta por 24 h, sem repetir a ação. */
+                "Idempotency-Key"?: string;
+            };
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["TabActionRequestInput"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Tab"];
+                };
+            };
+            /** @description `UNAUTHENTICATED`: sem sessão do app ou sessão encerrada. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description `FORBIDDEN`: é preciso ter acesso ao balcão da unidade. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description `NOT_FOUND`: não existe ou é de outra organização. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /**
+             * @description `TAB_NOT_CLOSING`, `TAB_CLOSED`, `TAB_CHANGED` ou `SHIFT_CLOSED`.
+             *
+             *     `IDEMPOTENCY_KEY_REUSED` (mesma chave com outro corpo) ou `IDEMPOTENCY_REQUEST_IN_PROGRESS`.
+             */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Erro no formato `ErrorResponse` (spec 01, seção 5). */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    OperationController_requestBill: {
+        parameters: {
+            query?: never;
+            header?: {
+                /** @description UUID gerado no aparelho. Repetir a mesma chave devolve a mesma resposta por 24 h, sem repetir a ação. */
+                "Idempotency-Key"?: string;
+            };
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["TabActionRequestInput"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Tab"];
+                };
+            };
+            /** @description `UNAUTHENTICATED`: sem sessão do app ou sessão encerrada. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description `FORBIDDEN`: é preciso ter acesso ao balcão da unidade. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description `NOT_FOUND`: não existe ou é de outra organização. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /**
+             * @description `TAB_NOT_OPEN`, `TAB_CLOSED`, `TAB_CHANGED` ou `SHIFT_CLOSED`.
+             *
+             *     `IDEMPOTENCY_KEY_REUSED` (mesma chave com outro corpo) ou `IDEMPOTENCY_REQUEST_IN_PROGRESS`.
+             */
+            409: {
                 headers: {
                     [name: string]: unknown;
                 };
@@ -6939,6 +8641,149 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["Menu"];
+                };
+            };
+            /** @description `UNAUTHENTICATED`: sem sessão do app ou sessão encerrada. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description `FORBIDDEN`: colaborador sem acesso à unidade. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description `NOT_FOUND`: não existe ou é de outra organização. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Erro no formato `ErrorResponse` (spec 01, seção 5). */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    OperationController_openShift: {
+        parameters: {
+            query?: never;
+            header?: {
+                /** @description UUID gerado no aparelho. Repetir a mesma chave devolve a mesma resposta por 24 h, sem repetir a ação. */
+                "Idempotency-Key"?: string;
+            };
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["OpenShiftRequestInput"];
+            };
+        };
+        responses: {
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Shift"];
+                };
+            };
+            /** @description `INVALID_SHIFT_PRICE` ou `VALIDATION_FAILED` (acordo obrigatório no turno contratado). */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description `UNAUTHENTICATED`: sem sessão do app ou sessão encerrada. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description `FORBIDDEN`: só o dono ou quem opera o caixa na unidade. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description `NOT_FOUND`: não existe ou é de outra organização. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /**
+             * @description `SHIFT_ALREADY_OPEN` (CA-04.01), `UNIT_INACTIVE`, `ORGANIZATION_SUSPENDED` ou `ORGANIZATION_CANCELED` (CA-02.05).
+             *
+             *     `IDEMPOTENCY_KEY_REUSED` (mesma chave com outro corpo) ou `IDEMPOTENCY_REQUEST_IN_PROGRESS`.
+             */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Erro no formato `ErrorResponse` (spec 01, seção 5). */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    OperationController_currentShift: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CurrentShift"];
                 };
             };
             /** @description `UNAUTHENTICATED`: sem sessão do app ou sessão encerrada. */

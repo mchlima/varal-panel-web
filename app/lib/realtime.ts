@@ -10,12 +10,33 @@ export type EventSessionAccessChanged = Schemas['EventSessionAccessChanged']
 export type EventProductSoldOutChanged = Schemas['EventProductSoldOutChanged']
 export type EventMenuUpdated = Schemas['EventMenuUpdated']
 export type EventUnitConfigUpdated = Schemas['EventUnitConfigUpdated']
+export type EventShiftOpened = Schemas['EventShiftOpened']
+export type EventShiftUpdated = Schemas['EventShiftUpdated']
+export type EventShiftClosed = Schemas['EventShiftClosed']
+export type EventTabCreated = Schemas['EventTabCreated']
+export type EventTabUpdated = Schemas['EventTabUpdated']
+export type EventOrderCreated = Schemas['EventOrderCreated']
+export type EventOrderItemStageChanged = Schemas['EventOrderItemStageChanged']
+export type EventOrderItemCanceled = Schemas['EventOrderItemCanceled']
+export type EventOrderCompleted = Schemas['EventOrderCompleted']
 
-/** Eventos de unidade que as telas ouvem (spec 03, seção 8; README da API). */
+/**
+ * Eventos de unidade e de estação que as telas ouvem (spec 03, seção 8; spec 04, seção 7.1;
+ * README da API).
+ */
 export interface UnitEvents {
   'product.sold_out_changed': EventProductSoldOutChanged
   'menu.updated': EventMenuUpdated
   'unit.config_updated': EventUnitConfigUpdated
+  'shift.opened': EventShiftOpened
+  'shift.updated': EventShiftUpdated
+  'shift.closed': EventShiftClosed
+  'tab.created': EventTabCreated
+  'tab.updated': EventTabUpdated
+  'order.created': EventOrderCreated
+  'order_item.stage_changed': EventOrderItemStageChanged
+  'order_item.canceled': EventOrderItemCanceled
+  'order.completed': EventOrderCompleted
 }
 export type UnitEventName = keyof UnitEvents
 export type EventHandler<T = unknown> = (payload: T) => void

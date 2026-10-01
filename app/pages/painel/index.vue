@@ -9,6 +9,12 @@ const firstName = computed(() => session.me?.subject.name.split(' ')[0] ?? '')
 
 const sections: { to: string; title: string; text: string; icon: IconName }[] = [
   {
+    to: '/painel/turnos',
+    title: 'Turno',
+    text: 'Abrir e fechar o turno, preços do turno e resumo das comandas.',
+    icon: 'calendar',
+  },
+  {
     to: '/painel/unidades',
     title: 'Unidades',
     text: 'Barracas, tempo de atraso, estações e fluxo de etapas.',
@@ -65,7 +71,7 @@ const sections: { to: string; title: string; text: string; icon: IconName }[] = 
         </NuxtLink>
       </li>
     </ul>
-    <AppAlert>Turnos, caixa e relatórios chegam nas próximas versões.</AppAlert>
+    <AppAlert>Caixa, fiado e relatórios chegam nas próximas versões.</AppAlert>
     <AppButton to="/estacoes">Abrir estações</AppButton>
     <InstallHint />
   </PanelShell>

@@ -18,7 +18,9 @@ export default defineNuxtRouteMiddleware(async (to) => {
 
   if (isLoginRoute(to.path)) return navigateTo(session.homePath, { replace: true })
 
-  // O painel é só do dono.
+  // O painel é só do dono; o turno também é de quem opera caixa (RN-04.02).
+  const canOperateCash = session.me?.units.some((unit) => unit.canOperateCash) === true
+  if (to.path === '/painel/turnos' && canOperateCash) return
   if (to.path.startsWith('/painel') && !session.isOwner) {
     return navigateTo('/estacoes', { replace: true })
   }

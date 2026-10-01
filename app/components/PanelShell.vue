@@ -14,14 +14,15 @@ interface NavItem {
 
 const items: NavItem[] = [
   { to: '/painel', label: 'Início', short: 'Início', icon: 'home' },
+  { to: '/painel/turnos', label: 'Turno', short: 'Turno', icon: 'calendar' },
   { to: '/painel/unidades', label: 'Unidades', short: 'Unidades', icon: 'store' },
   { to: '/painel/cardapio', label: 'Cardápio', short: 'Cardápio', icon: 'menu' },
   { to: '/painel/colaboradores', label: 'Colaboradores', short: 'Equipe', icon: 'users' },
-  { to: '/painel/acesso-da-equipe', label: 'Acesso da equipe', short: 'Acesso', icon: 'qr' },
 ]
 
 /** Só na navegação lateral; no celular, o atalho fica no início do painel. */
 const sideOnly: NavItem[] = [
+  { to: '/painel/acesso-da-equipe', label: 'Acesso da equipe', short: 'Acesso', icon: 'qr' },
   {
     to: '/painel/acessos-de-suporte',
     label: 'Acessos de suporte',

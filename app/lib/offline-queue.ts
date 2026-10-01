@@ -1,4 +1,4 @@
-import { apiErrorCode, apiErrorMessage } from './api-error'
+import { apiErrorCode, apiErrorMessage, isApiErrorBody } from './api-error'
 import type { QueuedAction, QueuedActionError, QueuedMethod, VaralDatabase } from './db'
 import { uuidv7 } from './uuid'
 
@@ -18,6 +18,8 @@ export interface EnqueueInput {
   path: string
   body?: unknown
   label: string
+  /** Dados da tela (ver `QueuedAction.meta`); não vão para a API. */
+  meta?: unknown
   /** Normalmente omitida: gerada aqui, no momento da ação. */
   idempotencyKey?: string
 }
@@ -28,6 +30,12 @@ export interface BackoffOptions {
 }
 
 export const DEFAULT_BACKOFF: BackoffOptions = { baseMs: 1_000, maxMs: 60_000 }
+
+/** Resultado de uma ação processada por este aparelho (nesta aba). */
+export type QueueOutcome =
+  { ok: true; status: number; body: unknown } | { ok: false; error: QueuedActionError }
+
+export type SettledListener = (action: QueuedAction, outcome: QueueOutcome) => void
 
 type LockRunner = (task: () => Promise<void>) => Promise<void>
 
@@ -78,10 +86,24 @@ async function readError(response: Response): Promise<QueuedActionError> {
   } catch {
     body = undefined
   }
+  const details =
+    isApiErrorBody(body) && typeof body.error.details === 'object' && body.error.details !== null
+      ? (body.error.details as Record<string, unknown>)
+      : undefined
   return {
     status: response.status,
     code: apiErrorCode(body) ?? `HTTP_${response.status}`,
     message: apiErrorMessage(body, 'A ação foi recusada pelo servidor.'),
+    ...(details ? { details } : {}),
+  }
+}
+
+async function readBody(response: Response): Promise<unknown> {
+  if (response.status === 204) return undefined
+  try {
+    return await response.json()
+  } catch {
+    return undefined
   }
 }
 
@@ -94,6 +116,7 @@ export class OfflineQueue {
   private running: Promise<void> | null = null
   private rerun = false
   private timer: unknown = null
+  private readonly listeners = new Set<SettledListener>()
 
   constructor(options: OfflineQueueOptions) {
     this.options = options
@@ -113,6 +136,7 @@ export class OfflineQueue {
       path: input.path,
       body: input.body,
       label: input.label,
+      ...(input.meta === undefined ? {} : { meta: input.meta }),
       createdAt: now,
       attempts: 0,
       nextAttemptAt: now,
@@ -142,6 +166,25 @@ export class OfflineQueue {
       }
     })()
     return this.running
+  }
+
+  /**
+   * Avisa quando uma ação é aceita ou recusada de vez por este processador (as telas
+   * recarregam o estado ou mostram o motivo). Ações enviadas por outra aba não passam aqui.
+   */
+  onSettled(listener: SettledListener): () => void {
+    this.listeners.add(listener)
+    return () => this.listeners.delete(listener)
+  }
+
+  private notify(action: QueuedAction, outcome: QueueOutcome): void {
+    for (const listener of this.listeners) {
+      try {
+        listener(action, outcome)
+      } catch {
+        // Um ouvinte com erro não pode travar a fila.
+      }
+    }
   }
 
   /** Para o temporizador de nova tentativa (ao sair da sessão ou nos testes). */
@@ -205,7 +248,9 @@ export class OfflineQueue {
       }
 
       if (response.ok) {
+        const body = await readBody(response)
         await this.db.queue.delete(next.seq)
+        this.notify(next, { ok: true, status: response.status, body })
         continue
       }
 
@@ -222,6 +267,7 @@ export class OfflineQueue {
       }
 
       await this.db.queue.update(next.seq, { status: 'failed', lastError: error })
+      this.notify({ ...next, status: 'failed', lastError: error }, { ok: false, error })
     }
   }
 

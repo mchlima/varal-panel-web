@@ -48,7 +48,8 @@ test.beforeAll(async () => {
 })
 
 test.afterAll(async () => {
-  await new Promise((done) => server?.close(done))
+  // Sem build o servidor nem sobe: não há o que fechar.
+  if (server) await new Promise((done) => server.close(done))
 })
 
 async function waitForServiceWorker(page: Page) {
