@@ -1,8 +1,8 @@
 /**
  * Balcão aberto neste aparelho (spec 04, seção 8.1): a estação de balcão escolhida em
  * `/estacoes`, se ainda liberada no `/auth/me` (RN-03.16), e o tempo real do varal: `tab.*` e
- * `shift.*` por `version`, recarga por REST a cada reconexão (RN-01.05) e recarga curta depois
- * de mudanças de item (prontos e atrasados).
+ * `shift.*` por `version` (os contadores de prontos e atrasados chegam no `tab.updated`) e
+ * recarga por REST a cada reconexão (RN-01.05).
  */
 export function useCounterPlace() {
   const session = useSessionStore()
@@ -36,12 +36,6 @@ export function useCounterLive() {
   useRealtimeEvent('shift.opened', counter.applyShift)
   useRealtimeEvent('shift.updated', counter.applyShift)
   useRealtimeEvent('shift.closed', counter.applyShift)
-  useRealtimeEvent('order_item.stage_changed', (event) => {
-    if (event.unitId === counter.unitId) counter.reloadSoon()
-  })
-  useRealtimeEvent('order.completed', (event) => {
-    if (event.unitId === counter.unitId) counter.reloadSoon()
-  })
 
   return { place, counter }
 }
