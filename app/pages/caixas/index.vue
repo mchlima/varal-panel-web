@@ -15,6 +15,8 @@ import {
   actorLabel,
   differenceLabel,
   expectedOf,
+  expectedSplit,
+  splitLabel,
   type CashMovementType,
   type CashRegister,
   type CashRegisterDetail,
@@ -403,8 +405,17 @@ const isOwner = computed(() => session.isOwner)
                   <dd class="text-right font-bold tabular-nums" :data-testid="`expected-${method}`">
                     {{ formatCents(expectedOf(register, method)) }}
                   </dd>
+                  <dd
+                    class="col-span-2 -mt-1 text-right text-sm text-text-muted tabular-nums"
+                    :data-testid="`split-${method}`"
+                  >
+                    {{ splitLabel(expectedSplit(register, method)) }}
+                  </dd>
                 </template>
               </dl>
+              <p class="text-sm font-bold tabular-nums" data-testid="register-credit-settlements">
+                Quitações de fiado neste caixa: {{ formatCents(register.creditSettlementsCents) }}
+              </p>
               <p v-if="register.status === 'open'" class="text-sm text-text-muted tabular-nums">
                 Dinheiro = troco inicial {{ formatCents(register.cash.openingFloatCents) }} +
                 recebido {{ formatCents(register.cash.paymentsCents) }} + suprimentos
@@ -428,6 +439,11 @@ const isOwner = computed(() => session.isOwner)
                   >
                     <td class="py-1">
                       {{ PAYMENT_METHOD_LABELS[count.method] }}
+                      <span
+                        v-if="count.creditSettlementsCents > 0"
+                        class="block text-sm text-text-muted"
+                        >fiado {{ formatCents(count.creditSettlementsCents) }}</span
+                      >
                       <span
                         class="block text-sm"
                         :class="
