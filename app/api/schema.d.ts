@@ -4,6 +4,295 @@
  */
 
 export interface paths {
+    "/api/v1/admin/auth/login": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Login do admin da plataforma */
+        post: operations["AdminAuthController_login"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/auth/logout": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Encerra a sessão do admin neste aparelho */
+        post: operations["AdminAuthController_logout"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/auth/me": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Admin logado */
+        get: operations["AdminAuthController_me"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/auth/password/change": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Troca a senha do admin (logado) */
+        post: operations["AdminAuthController_change"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/auth/password/forgot": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Admin pede o link de redefinição de senha */
+        post: operations["AdminAuthController_forgot"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/auth/password/reset": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Define a senha do admin com o token de um convite ou de uma redefinição */
+        post: operations["AdminAuthController_reset"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/auth/refresh": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Renova a sessão do admin */
+        post: operations["AdminAuthController_refresh"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/emails/usage": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Consumo de e-mails do mês e nível do alerta (RN-01.04) */
+        get: operations["AdminEmailsController_usage"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/auth/access-code/{code}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Nome da organização de um código de estabelecimento */
+        get: operations["AuthController_accessCode"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/auth/logout": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Encerra a sessão deste aparelho */
+        post: operations["AuthController_logout"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/auth/me": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Perfil, organização, unidades e estações permitidas */
+        get: operations["AuthController_me"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/auth/owner/login": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Login do dono (e-mail e senha) */
+        post: operations["AuthController_ownerLogin"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/auth/password/change": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Troca a senha (logado) */
+        post: operations["AuthController_change"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/auth/password/forgot": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Dono pede o link de redefinição de senha */
+        post: operations["AuthController_forgot"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/auth/password/reset": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Define a senha com o token de um convite ou de uma redefinição */
+        post: operations["AuthController_reset"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/auth/refresh": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Renova a sessão (gira o token de renovação) */
+        post: operations["AuthController_refresh"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/auth/staff/login": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Login do colaborador (código do estabelecimento, usuário e senha) */
+        post: operations["AuthController_staffLogin"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/health": {
         parameters: {
             query?: never;
@@ -24,11 +313,245 @@ export interface paths {
 export type webhooks = Record<string, never>;
 export interface components {
     schemas: {
+        AccessCodeOrganization: {
+            organizationName: string;
+        };
+        /**
+         * @description Quem fez a ação registrada na auditoria.
+         * @enum {string}
+         */
+        ActorType: "owner" | "staff" | "platform_admin" | "system";
+        AdminLoginRequestInput: {
+            /** Format: email */
+            email: string;
+            password: string;
+        };
+        AdminMe: {
+            admin: {
+                email: string;
+                /** Format: uuid */
+                id: string;
+                name: string;
+            };
+            session: components["schemas"]["SessionInfo"];
+        };
+        /**
+         * @description Códigos de erro da autenticação (spec 01, seção 7).
+         * @enum {string}
+         */
+        AuthErrorCode: "INVALID_CREDENTIALS" | "INVALID_STAFF_CREDENTIALS" | "LOGIN_TEMPORARILY_LOCKED" | "INVALID_PASSWORD_TOKEN" | "WRONG_CURRENT_PASSWORD" | "PASSWORD_RESET_LIMIT_REACHED" | "DEVICE_ID_REQUIRED";
+        ChangePasswordRequestInput: {
+            currentPassword: string;
+            /** @description Nova senha: de 8 a 128 caracteres. */
+            newPassword: string;
+        };
+        /**
+         * @description Situação de um envio de e-mail.
+         * @enum {string}
+         */
+        EmailStatus: "queued" | "sent" | "failed";
+        /**
+         * @description Tipos de e-mail do MVP (spec 01, seção 9).
+         * @enum {string}
+         */
+        EmailType: "owner_invite" | "owner_password_reset" | "staff_password_reset" | "admin_invite" | "admin_password_reset";
+        EmailUsage: {
+            /** @description E-mails enfileirados ou enviados no mês (falhas não contam). */
+            count: number;
+            level: components["schemas"]["EmailUsageLevel"];
+            limit: number;
+            /**
+             * @description Mês em `America/Sao_Paulo` (AAAA-MM).
+             * @example 2026-10
+             */
+            month: string;
+            warningThreshold: number;
+        };
+        /**
+         * @description RN-01.04: `warning` a partir de 8.000 envios no mês (alerta no admin); `critical` a partir de 10.000 (só convites e redefinições continuam).
+         * @enum {string}
+         */
+        EmailUsageLevel: "ok" | "warning" | "critical";
+        EmailUsageQueryInput: {
+            /** @description Mês em `America/Sao_Paulo` (AAAA-MM). Padrão: o mês atual. */
+            month?: string;
+        };
+        /**
+         * @description Códigos genéricos de erro; cada módulo pode ter os seus.
+         * @enum {string}
+         */
+        ErrorCode: "VALIDATION_FAILED" | "BAD_REQUEST" | "UNAUTHENTICATED" | "FORBIDDEN" | "NOT_FOUND" | "METHOD_NOT_ALLOWED" | "CONFLICT" | "ALREADY_EXISTS" | "VERSION_CONFLICT" | "IDEMPOTENCY_KEY_REUSED" | "IDEMPOTENCY_REQUEST_IN_PROGRESS" | "PAYLOAD_TOO_LARGE" | "RATE_LIMITED" | "INTERNAL_ERROR" | "SERVICE_UNAVAILABLE";
+        ErrorResponse: {
+            error: {
+                /**
+                 * @description Código estável, em inglês (ex.: `NOT_FOUND`, `TAB_ALREADY_CLOSED`).
+                 * @example VALIDATION_FAILED
+                 */
+                code: string;
+                /** @description Dados extras do erro; em `VALIDATION_FAILED`, `{ fields: ValidationIssue[] }`. */
+                details: {
+                    [key: string]: unknown;
+                };
+                /** @description Mensagem em português, pode ser mostrada ao usuário. */
+                message: string;
+            };
+        };
+        /** @description O token de acesso usado na conexão venceu. O servidor desconecta o socket logo depois; o app renova a sessão por REST (`POST /auth/refresh`) e reconecta. */
+        EventSessionExpired: {
+            data: {
+                /**
+                 * Format: date-time
+                 * @description Fim do token de acesso do socket.
+                 */
+                expiredAt: string;
+            };
+            /** Format: date-time */
+            occurredAt: string;
+            /** @constant */
+            type: "session.expired";
+        };
+        /** @description A sessão foi encerrada (logout, troca ou redefinição de senha, desativação, novo login no aparelho). O servidor desconecta o socket logo depois; o app volta para o login (CA-01.05). */
+        EventSessionRevoked: {
+            data: {
+                reason: components["schemas"]["SessionRevocationReason"];
+            };
+            /** Format: date-time */
+            occurredAt: string;
+            /** @constant */
+            type: "session.revoked";
+        };
+        ForgotPasswordRequestInput: {
+            /** Format: email */
+            email: string;
+        };
+        ForgotPasswordResponse: {
+            message: string;
+        };
         HealthResponse: {
             /** @enum {string} */
             db: "ok" | "unavailable";
             /** @enum {string} */
             status: "ok";
+        };
+        OwnerLoginRequestInput: {
+            /** Format: email */
+            email: string;
+            password: string;
+        };
+        PaginationQuery: {
+            /** @description Valor de `nextCursor` da página anterior. Opaco: não monte à mão. */
+            cursor?: string;
+            /**
+             * @description Itens por página (1 a 100, padrão 50).
+             * @default 50
+             */
+            limit: number;
+        };
+        /** @description Perfil, organização, unidades e estações permitidas. */
+        PanelMe: {
+            organization: {
+                accessCode: string;
+                /** Format: uuid */
+                id: string;
+                name: string;
+                subscriptionStatus: components["schemas"]["SubscriptionStatus"];
+            };
+            session: components["schemas"]["SessionInfo"];
+            subject: {
+                email: string | null;
+                /** Format: uuid */
+                id: string;
+                name: string;
+                /** @enum {string} */
+                type: "owner" | "staff";
+                username: string | null;
+            };
+            units: components["schemas"]["PanelUnit"][];
+        };
+        PanelUnit: {
+            allStations: boolean;
+            canOperateCash: boolean;
+            /** Format: uuid */
+            id: string;
+            name: string;
+            stationIds: string[];
+        };
+        /**
+         * @description Códigos de erro do tempo real (`/ws`): em `connect_error` (`err.data`, um `ErrorResponse`) e na resposta de `rooms.join`/`rooms.leave`.
+         * @enum {string}
+         */
+        RealtimeErrorCode: "UNAUTHENTICATED" | "DEVICE_ID_REQUIRED" | "ROOM_FORBIDDEN" | "VALIDATION_FAILED" | "INTERNAL_ERROR";
+        /** @description Resposta (callback) de `rooms.join` e `rooms.leave`. */
+        RealtimeRoomAck: {
+            /** @constant */
+            ok: true;
+            /** @description Salas `unit:` e `station:` em que o aparelho está agora. */
+            rooms: string[];
+        } | {
+            error: {
+                code: components["schemas"]["RealtimeErrorCode"];
+                details: {
+                    [key: string]: unknown;
+                };
+                message: string;
+            };
+            /** @constant */
+            ok: false;
+        };
+        /** @description Corpo de `rooms.join` e `rooms.leave` (cliente → servidor, com callback de confirmação). */
+        RealtimeRoomRequest: {
+            /**
+             * @description Sala `unit:{unitId}` ou `station:{stationId}`.
+             * @example station:01922f2c-7a3b-7c00-8000-0000000000e1
+             */
+            room: string;
+        };
+        ResetPasswordRequestInput: {
+            /** @description Nova senha: de 8 a 128 caracteres. */
+            password: string;
+            /** @description Token do link (fragmento `#token=`). */
+            token: string;
+        };
+        SessionInfo: {
+            /** Format: date-time */
+            accessTokenExpiresAt: string;
+            /** Format: uuid */
+            deviceId: string;
+            /**
+             * Format: date-time
+             * @description Fim da sessão se não for renovada.
+             */
+            expiresAt: string;
+            /** Format: uuid */
+            id: string;
+        };
+        /**
+         * @description Por que a sessão foi encerrada.
+         * @enum {string}
+         */
+        SessionRevocationReason: "logout" | "password_changed" | "password_reset" | "refresh_token_reused" | "new_login_on_device" | "staff_deactivated" | "subject_deactivated";
+        StaffLoginRequestInput: {
+            /**
+             * @description Código do estabelecimento (6 caracteres), o mesmo do link `/e/{code}`.
+             * @example ESPT26
+             */
+            accessCode: string;
+            password: string;
+            username: string;
+        };
+        /**
+         * @description Situação da assinatura da organização (RN-02.11).
+         * @enum {string}
+         */
+        SubscriptionStatus: "pilot" | "active" | "suspended" | "canceled";
+        ValidationErrorDetails: {
+            fields: components["schemas"]["ValidationIssue"][];
+        };
+        ValidationIssue: {
+            /** @description Mensagem em português. */
+            message: string;
+            /** @description Caminho do campo, com pontos (ex.: `items.0.quantity`). */
+            path: string;
         };
     };
     responses: never;
@@ -39,6 +562,759 @@ export interface components {
 }
 export type $defs = Record<string, never>;
 export interface operations {
+    AdminAuthController_login: {
+        parameters: {
+            query?: never;
+            header: {
+                /** @description UUID guardado no aparelho; obrigatório no login e gravado na sessão (spec 01, seção 7.2). */
+                "X-Device-Id": string;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AdminLoginRequestInput"];
+            };
+        };
+        responses: {
+            /** @description Sessão do admin aberta; cookies definidos. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AdminMe"];
+                };
+            };
+            /** @description Credenciais inválidas: sempre a mesma resposta, exista ou não o usuário. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description `LOGIN_TEMPORARILY_LOCKED` (10 senhas erradas seguidas bloqueiam o identificador por 15 min) ou `RATE_LIMITED`. */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Erro no formato `ErrorResponse` (spec 01, seção 5). */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    AdminAuthController_logout: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Sessão encerrada (ou já não havia sessão); cookies apagados. */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Erro no formato `ErrorResponse` (spec 01, seção 5). */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    AdminAuthController_me: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AdminMe"];
+                };
+            };
+            /** @description `UNAUTHENTICATED`: sem sessão do admin ou sessão encerrada. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Erro no formato `ErrorResponse` (spec 01, seção 5). */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    AdminAuthController_change: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ChangePasswordRequestInput"];
+            };
+        };
+        responses: {
+            /** @description Senha trocada; as outras sessões foram encerradas e este aparelho recebeu uma sessão nova. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SessionInfo"];
+                };
+            };
+            /** @description `WRONG_CURRENT_PASSWORD` ou `VALIDATION_FAILED`. */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description `UNAUTHENTICATED`: sem sessão do admin ou sessão encerrada. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description `RATE_LIMITED`: mais de 10 requisições em 900 s deste IP. */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Erro no formato `ErrorResponse` (spec 01, seção 5). */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    AdminAuthController_forgot: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ForgotPasswordRequestInput"];
+            };
+        };
+        responses: {
+            /** @description Sempre a mesma resposta, exista ou não o e-mail (RN-01.03). */
+            202: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ForgotPasswordResponse"];
+                };
+            };
+            /** @description `RATE_LIMITED`: mais de 5 requisições em 900 s deste IP. */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Erro no formato `ErrorResponse` (spec 01, seção 5). */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    AdminAuthController_reset: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ResetPasswordRequestInput"];
+            };
+        };
+        responses: {
+            /** @description Senha definida; todas as sessões do admin foram encerradas. */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description `INVALID_PASSWORD_TOKEN` ou `VALIDATION_FAILED`. */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description `RATE_LIMITED`: mais de 10 requisições em 900 s deste IP. */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Erro no formato `ErrorResponse` (spec 01, seção 5). */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    AdminAuthController_refresh: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Novos cookies definidos. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SessionInfo"];
+                };
+            };
+            /** @description `UNAUTHENTICATED`: sem token de renovação válido; cookies apagados. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Erro no formato `ErrorResponse` (spec 01, seção 5). */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    AdminEmailsController_usage: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["EmailUsage"];
+                };
+            };
+            /** @description `UNAUTHENTICATED`: sem sessão do admin ou sessão encerrada. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Erro no formato `ErrorResponse` (spec 01, seção 5). */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    AuthController_accessCode: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                code: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AccessCodeOrganization"];
+                };
+            };
+            /** @description Código inexistente. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description `RATE_LIMITED`: mais de 30 requisições em 60 s deste IP. */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Erro no formato `ErrorResponse` (spec 01, seção 5). */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    AuthController_logout: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Sessão encerrada (ou já não havia sessão); cookies apagados. */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Erro no formato `ErrorResponse` (spec 01, seção 5). */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    AuthController_me: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PanelMe"];
+                };
+            };
+            /** @description `UNAUTHENTICATED`: sem sessão do app ou sessão encerrada. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Erro no formato `ErrorResponse` (spec 01, seção 5). */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    AuthController_ownerLogin: {
+        parameters: {
+            query?: never;
+            header: {
+                /** @description UUID guardado no aparelho; obrigatório no login e gravado na sessão (spec 01, seção 7.2). */
+                "X-Device-Id": string;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["OwnerLoginRequestInput"];
+            };
+        };
+        responses: {
+            /** @description Sessão aberta; cookies definidos. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PanelMe"];
+                };
+            };
+            /** @description Credenciais inválidas: sempre a mesma resposta, exista ou não o usuário. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description `LOGIN_TEMPORARILY_LOCKED` (10 senhas erradas seguidas bloqueiam o identificador por 15 min) ou `RATE_LIMITED`. */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Erro no formato `ErrorResponse` (spec 01, seção 5). */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    AuthController_change: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ChangePasswordRequestInput"];
+            };
+        };
+        responses: {
+            /** @description Senha trocada; as outras sessões foram encerradas e este aparelho recebeu uma sessão nova. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SessionInfo"];
+                };
+            };
+            /** @description `WRONG_CURRENT_PASSWORD` ou `VALIDATION_FAILED`. */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description `UNAUTHENTICATED`: sem sessão do app ou sessão encerrada. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description `RATE_LIMITED`: mais de 10 requisições em 900 s deste IP. */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Erro no formato `ErrorResponse` (spec 01, seção 5). */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    AuthController_forgot: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ForgotPasswordRequestInput"];
+            };
+        };
+        responses: {
+            /** @description Sempre a mesma resposta, exista ou não o e-mail (RN-01.03). */
+            202: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ForgotPasswordResponse"];
+                };
+            };
+            /** @description `RATE_LIMITED`: mais de 5 requisições em 900 s deste IP. */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Erro no formato `ErrorResponse` (spec 01, seção 5). */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    AuthController_reset: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ResetPasswordRequestInput"];
+            };
+        };
+        responses: {
+            /** @description Senha definida; todas as sessões do usuário foram encerradas. */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description `INVALID_PASSWORD_TOKEN` ou `VALIDATION_FAILED` (senha com menos de 8 caracteres). */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description `RATE_LIMITED`: mais de 10 requisições em 900 s deste IP. */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Erro no formato `ErrorResponse` (spec 01, seção 5). */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    AuthController_refresh: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Novos cookies definidos. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SessionInfo"];
+                };
+            };
+            /** @description `UNAUTHENTICATED`: sem token de renovação válido; cookies apagados. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Erro no formato `ErrorResponse` (spec 01, seção 5). */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    AuthController_staffLogin: {
+        parameters: {
+            query?: never;
+            header: {
+                /** @description UUID guardado no aparelho; obrigatório no login e gravado na sessão (spec 01, seção 7.2). */
+                "X-Device-Id": string;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["StaffLoginRequestInput"];
+            };
+        };
+        responses: {
+            /** @description Sessão aberta; cookies definidos. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PanelMe"];
+                };
+            };
+            /** @description Credenciais inválidas: sempre a mesma resposta, exista ou não o usuário. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description `LOGIN_TEMPORARILY_LOCKED` (10 senhas erradas seguidas bloqueiam o identificador por 15 min) ou `RATE_LIMITED`. */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Erro no formato `ErrorResponse` (spec 01, seção 5). */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
     HealthController_check: {
         parameters: {
             query?: never;
@@ -55,6 +1331,15 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["HealthResponse"];
+                };
+            };
+            /** @description Erro no formato `ErrorResponse` (spec 01, seção 5). */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
                 };
             };
         };
