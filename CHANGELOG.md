@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.2.0](https://github.com/mchlima/varal-panel-web/compare/v0.1.0...v0.2.0) (2026-10-01)
+
+
+### Features
+
+* **impersonation:** adiciona o lado do dono do admin no painel ([#14](https://github.com/mchlima/varal-panel-web/issues/14)) ([00e2e58](https://github.com/mchlima/varal-panel-web/commit/00e2e580ef897976463a4fbdd303b7b08823d2ad))
+* **units:** telas de configuração da unidade no painel do dono (fase 4) ([#12](https://github.com/mchlima/varal-panel-web/issues/12)) ([0a59055](https://github.com/mchlima/varal-panel-web/commit/0a590557951db1e4ded32f95cbf04f9d752494df))
+
 ## 0.1.0 (2026-10-01)
 
 
