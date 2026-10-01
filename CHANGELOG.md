@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.4.0](https://github.com/mchlima/varal-panel-web/compare/v0.3.0...v0.4.0) (2026-10-01)
+
+
+### Features
+
+* **impersonation:** tira o tempo restante da faixa do entrar como ([#19](https://github.com/mchlima/varal-panel-web/issues/19)) ([2bee987](https://github.com/mchlima/varal-panel-web/commit/2bee987ad2b4311292e1f763724403e398b5bf18))
+
 ## [0.3.0](https://github.com/mchlima/varal-panel-web/compare/v0.2.0...v0.3.0) (2026-10-01)
 
 
