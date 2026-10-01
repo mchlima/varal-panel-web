@@ -21,6 +21,12 @@ export default defineNuxtRouteMiddleware(async (to) => {
   // O painel é só do dono; o turno também é de quem opera caixa (RN-04.02).
   const canOperateCash = session.me?.units.some((unit) => unit.canOperateCash) === true
   if (to.path === '/painel/turnos' && canOperateCash) return
+  // Fiado: o dono e quem tem balcão veem (spec 06); editar e remover cliente é só do dono.
+  const hasCounter =
+    session.me?.units.some((unit) =>
+      unit.stations.some((station) => station.kind === 'counter'),
+    ) === true
+  if (to.path.startsWith('/painel/fiado') && hasCounter) return
   // Caixas: dono e quem opera caixa (RN-05.16).
   if (to.path.startsWith('/caixas') && !session.isOwner && !canOperateCash) {
     return navigateTo('/estacoes', { replace: true })

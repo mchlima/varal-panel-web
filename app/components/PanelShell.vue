@@ -23,6 +23,7 @@ const items: NavItem[] = [
 /** Só na navegação lateral; no celular, o atalho fica no início do painel. */
 const sideOnly: NavItem[] = [
   { to: '/caixas', label: 'Caixas', short: 'Caixas', icon: 'wallet' },
+  { to: '/painel/fiado', label: 'Fiado', short: 'Fiado', icon: 'users' },
   { to: '/painel/acesso-da-equipe', label: 'Acesso da equipe', short: 'Acesso', icon: 'qr' },
   {
     to: '/painel/acessos-de-suporte',

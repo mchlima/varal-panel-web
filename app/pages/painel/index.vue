@@ -21,6 +21,12 @@ const sections: { to: string; title: string; text: string; icon: IconName }[] = 
     icon: 'wallet',
   },
   {
+    to: '/painel/fiado',
+    title: 'Fiado',
+    text: 'Quanto há a receber, clientes, comandas penduradas e quitações.',
+    icon: 'users',
+  },
+  {
     to: '/painel/unidades',
     title: 'Unidades',
     text: 'Barracas, tempo de atraso, estações e fluxo de etapas.',
