@@ -85,6 +85,26 @@ test.describe('com sessão', () => {
     await expect(page).toHaveURL(/\/entrar$/)
   })
 
+  test('toque no Entrar logo depois de corrigir os campos não se perde', async ({ page }) => {
+    await page.goto('/entrar')
+    const submit = page.getByRole('button', { name: 'Entrar' })
+    await submit.click()
+    await expect(page.getByText('Informe a senha.')).toBeVisible()
+
+    await page.getByLabel('E-mail').fill(seed.ownerEmail)
+    await page.getByLabel('Senha', { exact: true }).fill(seed.password)
+    // Com o foco ainda na senha, aperta e solta como uma pessoa, um instante depois e no
+    // mesmo ponto da tela (sem Enter).
+    const box = await submit.boundingBox()
+    expect(box).not.toBeNull()
+    await page.mouse.move(box!.x + box!.width / 2, box!.y + box!.height - 8)
+    await page.mouse.down()
+    await page.waitForTimeout(150)
+    await page.mouse.up()
+
+    await expect(page).toHaveURL(/\/painel$/)
+  })
+
   test('sem conexão depois do login, o indicador fixo aparece no topo', async ({
     page,
     context,
@@ -164,4 +184,19 @@ test('iPhone mostra como instalar pelo Compartilhar', async ({ page, browserName
   await expect(hint).toContainText('Adicionar à Tela de Início')
   await hint.getByRole('button', { name: 'Agora não' }).click()
   await expect(hint).toBeHidden()
+})
+
+test('a mensagem de erro aparecer e o campo ser corrigido não movem o botão Entrar', async ({
+  page,
+}) => {
+  await page.goto('/entrar')
+  const submit = page.getByRole('button', { name: 'Entrar' })
+  const initial = await submit.boundingBox()
+  await submit.click()
+  await expect(page.getByText('Informe o e-mail.')).toBeVisible()
+  expect(await submit.boundingBox()).toEqual(initial)
+
+  await page.getByLabel('E-mail').fill(seed.ownerEmail)
+  await page.getByLabel('E-mail').blur()
+  expect(await submit.boundingBox()).toEqual(initial)
 })
