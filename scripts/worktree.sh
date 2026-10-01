@@ -32,6 +32,14 @@ main_root() {
   dirname "$common_dir"
 }
 
+# Os worktrees ficam fora do repositório, em <pasta comum>/.worktrees/<repositório>/<nome>
+# (ex.: varal/.worktrees/varal-panel-web/feat-x). Dentro do repositório, ferramentas que
+# sobem pelas pastas (Nuxt, Vite, TypeScript) encontrariam a configuração do checkout principal.
+worktrees_dir() {
+  local root="$1"
+  printf '%s/.worktrees/%s' "$(dirname "$root")" "$(basename "$root")"
+}
+
 # Lê uma variável de um arquivo .env sem executá-lo.
 env_value() {
   local file="$1" key="$2"
@@ -82,7 +90,7 @@ cmd_new() {
   fi
 
   local slug="${type}-${description}"
-  local path="$root/.worktrees/$slug"
+  local path="$(worktrees_dir "$root")/$slug"
   [[ ! -e "$path" ]] || die "o worktree '$slug' já existe em $path"
   if git show-ref --verify --quiet "refs/heads/$branch"; then
     die "a branch '$branch' já existe; escolha outro nome ou remova a branch antiga"
@@ -128,7 +136,7 @@ cmd_list() {
       offset="$(env_value "$path/.env.local" PORT_OFFSET)"
       offset="${offset:-0}"
     else
-      name="${path#"$root"/.worktrees/}"
+      name="${path#"$(worktrees_dir "$root")"/}"
       offset="$(env_value "$path/.env.local" PORT_OFFSET)"
     fi
     if [[ -n "$offset" ]]; then
@@ -144,12 +152,12 @@ cmd_list() {
 cmd_remove() {
   local name="${1:-}"
   [[ -n "$name" ]] || usage 1
-  name="${name#.worktrees/}"
+  name="${name##*/}"
   [[ "$name" != */* && "$name" != "." && "$name" != ".." ]] || die "nome inválido: '$name'"
 
   local root path
   root="$(main_root)"
-  path="$root/.worktrees/$name"
+  path="$(worktrees_dir "$root")/$name"
   [[ -d "$path" ]] || die "worktree não encontrado: $path"
 
   if [[ -n "$(git -C "$path" status --porcelain)" ]]; then

@@ -35,7 +35,7 @@ Variáveis documentadas em [`.env.example`](.env.example). A URL da API (`NUXT_P
 
 ## Worktrees
 
-Cada tarefa roda num worktree próprio em `.worktrees/` (spec 01, seção 4.1):
+Cada tarefa roda num worktree próprio fora do repositório, em `../.worktrees/varal-panel-web/<nome>` (spec 01, seção 4.1):
 
 ```bash
 scripts/worktree.sh new feat/minha-tarefa   # cria o worktree, o .env.local (PORT_OFFSET livre) e instala
