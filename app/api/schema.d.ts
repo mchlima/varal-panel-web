@@ -2610,7 +2610,13 @@ export type $defs = Record<string, never>;
 export interface operations {
     AnnouncementsController_list: {
         parameters: {
-            query?: never;
+            query?: {
+                /** @description Itens por página (1 a 100, padrão 50). */
+                limit?: number;
+                /** @description Valor de `nextCursor` da página anterior. Opaco: não monte à mão. */
+                cursor?: string;
+                status?: components["schemas"]["AnnouncementStatus"];
+            };
             header?: never;
             path?: never;
             cookie?: never;
@@ -2906,7 +2912,24 @@ export interface operations {
     };
     AuditLogsController_list: {
         parameters: {
-            query?: never;
+            query?: {
+                /** @description Itens por página (1 a 100, padrão 50). */
+                limit?: number;
+                /** @description Valor de `nextCursor` da página anterior. Opaco: não monte à mão. */
+                cursor?: string;
+                organizationId?: string;
+                actorType?: components["schemas"]["ActorType"];
+                actorId?: string;
+                impersonatorId?: string;
+                /** @description Ação exata (`organization.suspended`) ou prefixo terminado em ponto (`organization.`). */
+                action?: string;
+                entityType?: string;
+                entityId?: string;
+                /** @description A partir deste instante (inclusive). */
+                from?: string;
+                /** @description Antes deste instante. */
+                to?: string;
+            };
             header?: never;
             path?: never;
             cookie?: never;
@@ -3259,7 +3282,19 @@ export interface operations {
     };
     AdminEmailsController_list: {
         parameters: {
-            query?: never;
+            query?: {
+                /** @description Itens por página (1 a 100, padrão 50). */
+                limit?: number;
+                /** @description Valor de `nextCursor` da página anterior. Opaco: não monte à mão. */
+                cursor?: string;
+                type?: components["schemas"]["EmailType"];
+                status?: components["schemas"]["EmailStatus"];
+                organizationId?: string;
+                /** @description Criados a partir deste instante (inclusive). */
+                from?: string;
+                /** @description Criados antes deste instante. */
+                to?: string;
+            };
             header?: never;
             path?: never;
             cookie?: never;
@@ -3305,7 +3340,10 @@ export interface operations {
     };
     AdminEmailsController_usage: {
         parameters: {
-            query?: never;
+            query?: {
+                /** @description Mês em `America/Sao_Paulo` (AAAA-MM). Padrão: o mês atual. */
+                month?: string;
+            };
             header?: never;
             path?: never;
             cookie?: never;
@@ -3351,7 +3389,16 @@ export interface operations {
     };
     ImpersonationsController_list: {
         parameters: {
-            query?: never;
+            query?: {
+                /** @description Itens por página (1 a 100, padrão 50). */
+                limit?: number;
+                /** @description Valor de `nextCursor` da página anterior. Opaco: não monte à mão. */
+                cursor?: string;
+                organizationId?: string;
+                active?: "true" | "false";
+                /** @description Só os acessos do admin logado. */
+                mine?: "true" | "false";
+            };
             header?: never;
             path?: never;
             cookie?: never;
@@ -3495,7 +3542,14 @@ export interface operations {
     };
     MetricsController_organizations: {
         parameters: {
-            query?: never;
+            query?: {
+                /** @description Primeiro dia (AAAA-MM-DD, horário de Brasília). Padrão: 29 dias antes de `to`. */
+                from?: string;
+                /** @description Último dia, inclusive (AAAA-MM-DD, horário de Brasília). Padrão: hoje. */
+                to?: string;
+                sort?: "name" | "shifts" | "tabs" | "soldCents" | "lastAccessAt";
+                order?: "asc" | "desc";
+            };
             header?: never;
             path?: never;
             cookie?: never;
@@ -3541,7 +3595,12 @@ export interface operations {
     };
     MetricsController_overview: {
         parameters: {
-            query?: never;
+            query?: {
+                /** @description Primeiro dia (AAAA-MM-DD, horário de Brasília). Padrão: 29 dias antes de `to`. */
+                from?: string;
+                /** @description Último dia, inclusive (AAAA-MM-DD, horário de Brasília). Padrão: hoje. */
+                to?: string;
+            };
             header?: never;
             path?: never;
             cookie?: never;
@@ -3587,7 +3646,15 @@ export interface operations {
     };
     OrganizationsController_list: {
         parameters: {
-            query?: never;
+            query?: {
+                /** @description Itens por página (1 a 100, padrão 50). */
+                limit?: number;
+                /** @description Valor de `nextCursor` da página anterior. Opaco: não monte à mão. */
+                cursor?: string;
+                /** @description Parte do nome da organização ou do e-mail do dono, ou o código do estabelecimento. */
+                search?: string;
+                status?: components["schemas"]["SubscriptionStatus"];
+            };
             header?: never;
             path?: never;
             cookie?: never;
@@ -4228,7 +4295,15 @@ export interface operations {
     };
     AdminUsersController_list: {
         parameters: {
-            query?: never;
+            query?: {
+                /** @description Itens por página (1 a 100, padrão 50). */
+                limit?: number;
+                /** @description Valor de `nextCursor` da página anterior. Opaco: não monte à mão. */
+                cursor?: string;
+                /** @description Parte do nome ou do e-mail. */
+                search?: string;
+                active?: "true" | "false";
+            };
             header?: never;
             path?: never;
             cookie?: never;
@@ -6075,7 +6150,12 @@ export interface operations {
     };
     StaffController_list: {
         parameters: {
-            query?: never;
+            query?: {
+                /** @description Itens por página (1 a 100, padrão 50). */
+                limit?: number;
+                /** @description Valor de `nextCursor` da página anterior. Opaco: não monte à mão. */
+                cursor?: string;
+            };
             header?: never;
             path?: never;
             cookie?: never;
@@ -6536,7 +6616,12 @@ export interface operations {
     };
     SupportAccessController_list: {
         parameters: {
-            query?: never;
+            query?: {
+                /** @description Itens por página (1 a 100, padrão 50). */
+                limit?: number;
+                /** @description Valor de `nextCursor` da página anterior. Opaco: não monte à mão. */
+                cursor?: string;
+            };
             header?: never;
             path?: never;
             cookie?: never;
@@ -6582,7 +6667,12 @@ export interface operations {
     };
     UnitsController_listUnits: {
         parameters: {
-            query?: never;
+            query?: {
+                /** @description Itens por página (1 a 100, padrão 50). */
+                limit?: number;
+                /** @description Valor de `nextCursor` da página anterior. Opaco: não monte à mão. */
+                cursor?: string;
+            };
             header?: never;
             path?: never;
             cookie?: never;
