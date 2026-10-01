@@ -16,3 +16,5 @@ CLAUDE.md
 
 # Copiados do varal-docs (spec 08, RN-08.01)
 public/
+test-results/
+playwright-report/
