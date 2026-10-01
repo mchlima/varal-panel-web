@@ -44,6 +44,8 @@ export default defineNuxtPlugin({
       onConnected: () => {
         void resync()
       },
+      // Acesso mudou (permissões, unidade ou estação): recarrega o perfil antes de reconectar.
+      onAccessChanged: () => session.restore(),
       onSessionEnded: () => {
         void nuxtApp.runWithContext(() => session.handleSessionLost())
       },
@@ -57,6 +59,12 @@ export default defineNuxtPlugin({
       },
       { immediate: true },
     )
+
+    // Unidade, estações ou fluxo alterados: o `/auth/me` traz nomes, tipos e tempo de atraso
+    // (README da API, `unit.config_updated`).
+    client.subscribe('unit.config_updated', () => {
+      if (session.status === 'authenticated') void session.restore()
+    })
 
     /** Registra um gancho chamado a cada (re)conexão; devolve a função que o remove. */
     function onResync(handler: ResyncHandler): () => void {

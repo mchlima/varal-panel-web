@@ -6,6 +6,19 @@ import type { RefreshResult } from './session'
 type Schemas = components['schemas']
 export type EventSessionRevoked = Schemas['EventSessionRevoked']
 export type EventSessionExpired = Schemas['EventSessionExpired']
+export type EventSessionAccessChanged = Schemas['EventSessionAccessChanged']
+export type EventProductSoldOutChanged = Schemas['EventProductSoldOutChanged']
+export type EventMenuUpdated = Schemas['EventMenuUpdated']
+export type EventUnitConfigUpdated = Schemas['EventUnitConfigUpdated']
+
+/** Eventos de unidade que as telas ouvem (spec 03, seção 8; README da API). */
+export interface UnitEvents {
+  'product.sold_out_changed': EventProductSoldOutChanged
+  'menu.updated': EventMenuUpdated
+  'unit.config_updated': EventUnitConfigUpdated
+}
+export type UnitEventName = keyof UnitEvents
+export type EventHandler<T = unknown> = (payload: T) => void
 export type RealtimeErrorCode = Schemas['RealtimeErrorCode']
 
 export type RealtimeStatus = 'idle' | 'connecting' | 'connected' | 'disconnected'
@@ -28,6 +41,11 @@ export interface RealtimeClientOptions {
    * (RN-01.05) e disparar a fila offline.
    */
   onConnected: () => void
+  /**
+   * `session.access_changed` (spec 01, seção 10; spec 03): a sessão continua válida, mas
+   * as salas mudaram. O app recarrega o `/auth/me`; depois o socket reconecta.
+   */
+  onAccessChanged?: () => Promise<void>
   onStatus?: (status: RealtimeStatus) => void
   /** Espera antes de reconectar depois de uma renovação que falhou por rede. */
   retryDelayMs?: number
@@ -37,6 +55,11 @@ export interface RealtimeClientOptions {
 export interface RealtimeClient {
   connect: () => void
   disconnect: () => void
+  /**
+   * Ouve um evento do servidor, inclusive em sockets criados depois (novo login).
+   * Devolve a função que para de ouvir.
+   */
+  subscribe: <T = unknown>(event: string, handler: EventHandler<T>) => () => void
   readonly socket: Socket | null
 }
 
@@ -51,6 +74,9 @@ export function createRealtimeClient(options: RealtimeClientOptions): RealtimeCl
   let socket: Socket | null = null
   let ended = false
   let authRetries = 0
+  /** O servidor avisou `session.access_changed`: a próxima desconexão não é sessão vencida. */
+  let accessChanged = false
+  const handlers = new Map<string, Set<EventHandler>>()
   const setTimer = options.setTimer ?? ((fn: () => void, ms: number) => setTimeout(fn, ms))
 
   const status = (value: RealtimeStatus) => options.onStatus?.(value)
@@ -83,6 +109,37 @@ export function createRealtimeClient(options: RealtimeClientOptions): RealtimeCl
     }, options.retryDelayMs ?? 5_000)
   }
 
+  function dispatcherFor(event: string): EventHandler {
+    return (payload) => {
+      for (const handler of handlers.get(event) ?? []) handler(payload)
+    }
+  }
+
+  function subscribe<T>(event: string, handler: EventHandler<T>): () => void {
+    let set = handlers.get(event)
+    if (!set) {
+      set = new Set()
+      handlers.set(event, set)
+      socket?.on(event, dispatcherFor(event))
+    }
+    set.add(handler as EventHandler)
+    return () => {
+      set.delete(handler as EventHandler)
+    }
+  }
+
+  /** Recarrega o acesso (`/auth/me`) e reconecta, entrando nas salas novas. */
+  async function reloadAccessAndReconnect() {
+    accessChanged = false
+    status('connecting')
+    try {
+      await options.onAccessChanged?.()
+    } catch {
+      // Sem rede: a reconexão abaixo tenta de novo e o resync recarrega depois.
+    }
+    if (!ended && socket && !socket.connected) socket.connect()
+  }
+
   function connect() {
     if (socket) {
       if (!socket.connected) socket.connect()
@@ -108,6 +165,10 @@ export function createRealtimeClient(options: RealtimeClientOptions): RealtimeCl
       end(event?.data?.reason ?? 'revoked')
     })
 
+    socket.on('session.access_changed', () => {
+      accessChanged = true
+    })
+
     socket.on('session.expired', () => {
       // O servidor desconecta em seguida ('io server disconnect'); a renovação vem lá.
     })
@@ -117,8 +178,12 @@ export function createRealtimeClient(options: RealtimeClientOptions): RealtimeCl
       status('disconnected')
       // Desconexão pelo servidor não reconecta sozinha: trata como sessão vencida
       // (session.expired ou evento perdido). As demais o Socket.IO reconecta.
-      if (reason === 'io server disconnect') void renewAndReconnect()
+      if (reason !== 'io server disconnect') return
+      if (accessChanged) void reloadAccessAndReconnect()
+      else void renewAndReconnect()
     })
+
+    for (const event of handlers.keys()) socket.on(event, dispatcherFor(event))
 
     socket.on('connect_error', (error: Error & { data?: unknown }) => {
       if (ended) return
@@ -140,6 +205,7 @@ export function createRealtimeClient(options: RealtimeClientOptions): RealtimeCl
   return {
     connect,
     disconnect,
+    subscribe,
     get socket() {
       return socket
     },
