@@ -37,6 +37,12 @@ const revealed = ref(false)
 const inputType = computed(() =>
   props.type === 'password' && revealed.value ? 'text' : props.type,
 )
+/**
+ * Campo validado (o pai liga `error`, mesmo sem erro no momento): a linha da mensagem fica
+ * sempre reservada. O erro aparecer ou sumir não muda a altura do campo, e os botões abaixo
+ * não saem do lugar entre o toque (ou o mousedown) e o click, que senão se perderia.
+ */
+const reserveErrorLine = 'error' in (getCurrentInstance()?.vnode.props ?? {})
 const describedBy = computed(
   () =>
     [props.hint ? `${id}-hint` : '', props.error ? `${id}-error` : ''].filter(Boolean).join(' ') ||
@@ -88,9 +94,15 @@ const describedBy = computed(
         <AppIcon :name="revealed ? 'eye-off' : 'eye'" />
       </button>
     </div>
-    <p v-if="error" :id="`${id}-error`" class="flex items-center gap-1.5 text-sm text-error">
-      <AppIcon name="alert-circle" :size="16" />
-      {{ error }}
+    <p
+      v-if="reserveErrorLine || error"
+      :id="`${id}-error`"
+      class="flex min-h-lh items-center gap-1.5 text-sm text-error"
+    >
+      <template v-if="error">
+        <AppIcon name="alert-circle" :size="16" />
+        {{ error }}
+      </template>
     </p>
   </div>
 </template>

@@ -83,6 +83,8 @@ O middleware `app/middleware/auth.global.ts` leva páginas protegidas sem sessã
 
 Componentes próprios em `app/components` (`AppButton`, `AppTextField`, `AppSelect`, `AppCheckbox`, `AppAlert`, `AppIcon`, `StatusChip`, `ConfirmAction`, `SortableList`…), com Reka UI nas abas e nos painéis de edição (`AppDialog`: tela cheia no celular, janela a partir de 1024 px). O painel usa `PanelShell`: navegação lateral a partir de 1024 px e menu inferior abaixo disso (spec 08, seção 7). Uma única ação principal (botão preenchido) por tela, alvos de 48 px ou mais, foco visível e cores só dos tokens (spec 08).
 
+Campos validados (`AppTextField` e `AppSelect` com `error` ligado, mesmo vazio) reservam a linha da mensagem de erro: o erro aparecer ou sumir não muda a altura do formulário, e o botão de enviar não sai do lugar entre o toque e o clique. A mensagem fica ligada ao campo por `aria-describedby`, com `aria-invalid`, só quando há erro.
+
 ## Configuração da unidade (spec 03)
 
 - **Dinheiro:** `app/lib/money.ts` lê reais digitados ("12,50", "1.234,56", "12.5") e devolve centavos inteiros (`parseReais`), sem ponto flutuante; `formatCents` mostra "R$ 12,50". A API recebe sempre `priceCents`/`priceDeltaCents`.
