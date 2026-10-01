@@ -15,6 +15,8 @@ export interface Cart {
   lines: CartLine[]
   /** Recusas da última tentativa (`ORDER_REJECTED`, RN-04.17), por chave de linha. */
   rejections: Record<string, OrderItemRejection[]>
+  /** Nome do cliente do rascunho do paga antes (a comanda ainda não existe). */
+  customerName?: string
 }
 
 function readCarts(): Record<string, Cart> {
@@ -28,9 +30,15 @@ function readCarts(): Record<string, Cart> {
   }
 }
 
+/** Rascunho da comanda paga antes do turno (RN-05.12): a comanda só existe depois de paga. */
+export function payFirstCartKey(shiftId: string): string {
+  return `pay-first:${shiftId}`
+}
+
 /**
- * Pedido sendo montado em cada comanda (spec 04, seção 8.1). Fica neste aparelho até ser
- * enviado: sair da tela, recarregar ou perder a rede não perde o que já foi escolhido.
+ * Pedido sendo montado em cada comanda (spec 04, seção 8.1) ou no rascunho do paga antes. Fica
+ * neste aparelho até ser enviado: sair da tela, recarregar ou perder a rede não perde o que já
+ * foi escolhido.
  */
 export const useCartStore = defineStore('cart', () => {
   const carts = ref<Record<string, Cart>>(readCarts())
@@ -57,7 +65,7 @@ export const useCartStore = defineStore('cart', () => {
     update(tabId, (cart) => {
       const { [key]: _removed, ...others } = cart.rejections
       const rejections = quantity <= 0 ? others : cart.rejections
-      return { lines: setLineQuantity(cart.lines, key, quantity), rejections }
+      return { ...cart, lines: setLineQuantity(cart.lines, key, quantity), rejections }
     })
   }
 
@@ -79,6 +87,10 @@ export const useCartStore = defineStore('cart', () => {
     })
   }
 
+  function setCustomer(tabId: string, customerName: string) {
+    update(tabId, (cart) => ({ ...cart, customerName }))
+  }
+
   function setRejections(tabId: string, rejections: Record<string, OrderItemRejection[]>) {
     update(tabId, (cart) => ({ ...cart, rejections }))
   }
@@ -92,7 +104,7 @@ export const useCartStore = defineStore('cart', () => {
     update(tabId, (cart) => {
       let merged = cart.lines
       for (const line of lines) merged = addLine(merged, line)
-      return { lines: merged, rejections: { ...cart.rejections, ...rejections } }
+      return { ...cart, lines: merged, rejections: { ...cart.rejections, ...rejections } }
     })
   }
 
@@ -102,5 +114,15 @@ export const useCartStore = defineStore('cart', () => {
     persist()
   }
 
-  return { carts, cartOf, add, setQuantity, setNote, setRejections, restore, clear }
+  return {
+    carts,
+    cartOf,
+    add,
+    setQuantity,
+    setNote,
+    setCustomer,
+    setRejections,
+    restore,
+    clear,
+  }
 })

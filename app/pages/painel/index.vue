@@ -15,6 +15,12 @@ const sections: { to: string; title: string; text: string; icon: IconName }[] = 
     icon: 'calendar',
   },
   {
+    to: '/caixas',
+    title: 'Caixas',
+    text: 'Abrir caixa, sangria, suprimento e fechamento com conferência.',
+    icon: 'wallet',
+  },
+  {
     to: '/painel/unidades',
     title: 'Unidades',
     text: 'Barracas, tempo de atraso, estações e fluxo de etapas.',

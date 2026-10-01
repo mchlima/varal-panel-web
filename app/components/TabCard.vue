@@ -49,8 +49,17 @@ const lateLabel = computed(() =>
         <StageChip v-if="pending" status="pending" :label="pending" />
       </span>
     </span>
-    <span class="font-display text-lg font-semibold whitespace-nowrap tabular-nums">{{
-      formatCents(tab.totalCents)
-    }}</span>
+    <span class="flex flex-col items-end">
+      <span class="font-display text-lg font-semibold whitespace-nowrap tabular-nums">{{
+        formatCents(tab.totalCents)
+      }}</span>
+      <!-- Pagamento parcial (RN-05.07): quanto ainda falta receber. -->
+      <span
+        v-if="tab.paidCents > 0 && tab.balanceCents > 0"
+        class="text-sm whitespace-nowrap text-text-muted tabular-nums"
+        data-testid="tab-card-balance"
+        >falta {{ formatCents(tab.balanceCents) }}</span
+      >
+    </span>
   </NuxtLink>
 </template>

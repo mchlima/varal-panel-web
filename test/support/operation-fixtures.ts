@@ -84,7 +84,10 @@ export function tabSummary(overrides: Partial<TabSummary> = {}): TabSummary {
     discountType: null,
     discountValue: null,
     discountCents: 0,
+    discountReason: null,
     totalCents: 3600,
+    paidCents: 0,
+    balanceCents: 3600,
     itemCount: 3,
     readyItemCount: 0,
     lateItemCount: 0,
@@ -116,6 +119,7 @@ export function tab(overrides: Partial<Tab> = {}, items: OrderItem[] = [item()])
         items,
       },
     ],
+    payments: [],
     ...overrides,
   }
 }

@@ -16,8 +16,9 @@ const RELOAD_DEBOUNCE_MS = 400
 /**
  * Balcão (spec 04, seção 8.1): turno atual da unidade, fluxo de etapas e o varal de comandas
  * (`open` e `closing`). O REST é a fonte da verdade (RN-01.05); os eventos `tab.*` atualizam os
- * cartões por `version`. Avanço de item não muda a `version` da comanda, então os contadores de
- * prontos e atrasados vêm de uma recarga curta do varal depois de `order_item.*`.
+ * cartões por `version`, inclusive os contadores de prontos e atrasados (a API emite
+ * `tab.updated` quando uma mudança de etapa altera esses contadores). O fluxo vem de
+ * `GET /units/{id}/workflow`, que o colaborador da unidade também lê.
  */
 export const useCounterStore = defineStore('counter', () => {
   const unitId = ref<string | null>(null)
@@ -90,18 +91,16 @@ export const useCounterStore = defineStore('counter', () => {
       }
       const live = boardFor(open.id)
       if (!live.reloading) live.beginReload()
-      const [tabsResult, queueResult] = await Promise.all([
+      const [tabsResult, workflowResult] = await Promise.all([
         $api.GET('/api/v1/shifts/{id}/tabs', {
           params: { path: { id: open.id }, query: { status: 'open,closing' } },
         }),
-        // O fluxo de etapas vem com a fila da estação; a do balcão é sempre vazia, mas traz as
-        // etapas, que o colaborador não lê em `GET /units/{id}/workflow` (só o dono).
         stages.value.length === 0
-          ? $api.GET('/api/v1/stations/{id}/queue', { params: { path: { id: station } } })
+          ? $api.GET('/api/v1/units/{id}/workflow', { params: { path: { id: unit } } })
           : Promise.resolve(null),
       ])
       if (current !== generation) return
-      if (queueResult?.data) stages.value = queueResult.data.stages
+      if (workflowResult?.data) stages.value = workflowResult.data.stages
       if (!tabsResult.data) {
         loadError.value = apiErrorMessage(tabsResult.error)
         live.abortReload()
@@ -117,7 +116,7 @@ export const useCounterStore = defineStore('counter', () => {
     }
   }
 
-  /** Recarga curta e agrupada (contadores de prontos e atrasados mudam sem `tab.updated`). */
+  /** Recarga curta e agrupada (atrasos que surgem só com o passar do tempo). */
   function reloadSoon(): void {
     if (reloadTimer) clearTimeout(reloadTimer)
     reloadTimer = setTimeout(() => {

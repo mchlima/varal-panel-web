@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { useIntervalFn } from '@vueuse/core'
-import type { TabSummary } from '~/lib/operation'
+import type { TabMode, TabSummary } from '~/lib/operation'
 
 /**
  * Balcão (`/balcao`, spec 04, seção 8.1): varal de comandas do turno, busca e "Nova comanda".
@@ -11,8 +11,13 @@ useHead({ title: 'Balcão · Varal' })
 
 const { place, counter } = useCounterLive()
 const operations = useOperations()
+/** Paga antes recusada depois de sair da fila: o pedido volta ao rascunho e o aviso aparece. */
+const { notice: payFirstNotice } = usePayFirstFailures()
 
-/** Atrasos mudam com o relógio (RN-04.23): o varal recarrega a cada minuto. */
+/**
+ * Atrasos que surgem só com o relógio (RN-04.23) não geram evento (o `tab.updated` traz os
+ * contadores quando uma etapa muda): para eles, o varal recarrega a cada minuto.
+ */
 useIntervalFn(() => {
   if (document.visibilityState === 'visible' && counter.shift) counter.reloadSoon()
 }, 60_000)
@@ -29,9 +34,15 @@ const createError = ref('')
 /** Com rede a resposta chega rápido; passado isso, a comanda segue na fila e a tela libera. */
 const WAIT_FOR_NUMBER_MS = 2_500
 
-async function createTab(customerName: string) {
+async function createTab(customerName: string, mode: TabMode = 'open_tab') {
   const shift = counter.shift
   if (!shift) return
+  // Paga antes (RN-05.12): a comanda só nasce paga, depois de montar o pedido e receber.
+  if (mode === 'pay_first') {
+    openForm.value = false
+    await navigateTo({ path: '/balcao/paga-antes', query: { nome: customerName } })
+    return
+  }
   creating.value = true
   createError.value = ''
   try {
@@ -77,6 +88,16 @@ async function createTab(customerName: string) {
           <span class="hidden sm:inline">Turno</span>
           <span class="sr-only sm:hidden">Turno</span>
         </NuxtLink>
+        <NuxtLink
+          v-if="canManageShift"
+          :to="`/caixas?unidade=${place.unit.id}`"
+          class="flex min-h-12 items-center gap-1.5 rounded-button px-2 text-sm font-bold text-primary-deep"
+          data-testid="cash-link"
+        >
+          <AppIcon name="wallet" />
+          <span class="hidden sm:inline">Caixas</span>
+          <span class="sr-only sm:hidden">Caixas</span>
+        </NuxtLink>
         <button
           type="button"
           class="flex min-h-12 items-center gap-1.5 rounded-button px-2 text-sm font-bold text-primary-deep"
@@ -93,6 +114,10 @@ async function createTab(customerName: string) {
       </AppAlert>
       <template v-else>
         <AppAlert v-if="counter.loadError" tone="error">{{ counter.loadError }}</AppAlert>
+        <AppAlert v-if="payFirstNotice" tone="error">
+          <p>{{ payFirstNotice }}</p>
+          <NuxtLink to="/balcao/paga-antes" class="font-bold underline">Abrir o rascunho</NuxtLink>
+        </AppAlert>
         <p v-if="!counter.shiftLoaded && counter.loading" class="text-text-muted">Carregando…</p>
         <template v-else-if="counter.shiftLoaded && !counter.shift">
           <NoShiftNotice :unit-id="place.unit.id" />

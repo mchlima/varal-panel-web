@@ -1,5 +1,6 @@
 <script setup lang="ts">
-import { pendingLabel, pendingOperations } from '~/lib/operation-actions'
+import { formatCents } from '~/lib/money'
+import { pendingLabel, pendingOperations, tabActionName, tabIdOf } from '~/lib/operation-actions'
 import type { TabSummary } from '~/lib/operation'
 
 /**
@@ -37,29 +38,33 @@ const visible = computed<TabSummary[]>(() => {
   return counter.tabs.filter((tab) => normalize(tab.customerName).includes(query))
 })
 
+/**
+ * Comandas que ainda não existem na API: abertas sem rede e pagas antes ainda na fila. A paga
+ * antes diz que o pagamento não foi confirmado e que o pedido ainda não foi à cozinha
+ * (CA-04.10): nada é mostrado como pago antes da resposta.
+ */
 const queuedTabs = computed(() =>
-  pendingOperations(connection.pending, (meta) => meta.kind === 'tab.create').map((op) => ({
+  pendingOperations(
+    connection.pending,
+    (meta) => meta.kind === 'tab.create' || meta.kind === 'tab.pay_first',
+  ).map((op) => ({
     key: op.action.idempotencyKey,
-    name: op.meta.kind === 'tab.create' ? op.meta.customerName : '',
+    name: 'customerName' in op.meta ? op.meta.customerName : '',
+    detail:
+      op.meta.kind === 'tab.pay_first'
+        ? `Paga antes · ${formatCents(op.meta.totalCents)} · pagamento ainda não confirmado.`
+        : 'O número sai quando a API receber.',
     label: pendingLabel(op.action, connection.online),
   })),
 )
 
-/** Ação pendente por comanda ("Pedido na fila", "Pedindo a conta…"). */
+/** Ação pendente por comanda ("Pedido: na fila", "Pagamento: enviando…"). */
 const pendingByTab = computed(() => {
   const result: Record<string, string> = {}
-  for (const op of pendingOperations(connection.pending, (meta) => meta.kind.startsWith('tab.'))) {
-    if (op.meta.kind === 'tab.create') continue
-    const status = pendingLabel(op.action, connection.online)
-    const what =
-      op.meta.kind === 'tab.order'
-        ? 'Pedido'
-        : op.meta.kind === 'tab.request_bill'
-          ? 'Conta'
-          : op.meta.kind === 'tab.reopen'
-            ? 'Reabrir'
-            : 'Cancelar'
-    result[op.meta.tabId] = `${what}: ${status}`
+  for (const op of pendingOperations(connection.pending, (meta) => tabActionName(meta) !== null)) {
+    const tabId = tabIdOf(op.meta)
+    if (!tabId) continue
+    result[tabId] = `${tabActionName(op.meta)}: ${pendingLabel(op.action, connection.online)}`
   }
   return result
 })
@@ -116,7 +121,7 @@ const pendingByTab = computed(() => {
           </span>
           <span class="flex min-w-0 flex-1 flex-col gap-1">
             <span class="truncate text-lg font-bold">{{ queued.name }}</span>
-            <span class="text-sm text-text-muted">O número sai quando a API receber.</span>
+            <span class="text-sm text-text-muted">{{ queued.detail }}</span>
           </span>
           <StageChip status="pending" :label="queued.label" />
         </div>

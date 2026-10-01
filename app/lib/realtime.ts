@@ -19,10 +19,13 @@ export type EventOrderCreated = Schemas['EventOrderCreated']
 export type EventOrderItemStageChanged = Schemas['EventOrderItemStageChanged']
 export type EventOrderItemCanceled = Schemas['EventOrderItemCanceled']
 export type EventOrderCompleted = Schemas['EventOrderCompleted']
+export type EventCashRegisterOpened = Schemas['EventCashRegisterOpened']
+export type EventCashRegisterUpdated = Schemas['EventCashRegisterUpdated']
+export type EventCashRegisterClosed = Schemas['EventCashRegisterClosed']
 
 /**
  * Eventos de unidade e de estação que as telas ouvem (spec 03, seção 8; spec 04, seção 7.1;
- * README da API).
+ * spec 05, seção 7; README da API).
  */
 export interface UnitEvents {
   'product.sold_out_changed': EventProductSoldOutChanged
@@ -37,6 +40,9 @@ export interface UnitEvents {
   'order_item.stage_changed': EventOrderItemStageChanged
   'order_item.canceled': EventOrderItemCanceled
   'order.completed': EventOrderCompleted
+  'cash_register.opened': EventCashRegisterOpened
+  'cash_register.updated': EventCashRegisterUpdated
+  'cash_register.closed': EventCashRegisterClosed
 }
 export type UnitEventName = keyof UnitEvents
 export type EventHandler<T = unknown> = (payload: T) => void
