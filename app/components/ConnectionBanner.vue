@@ -26,7 +26,8 @@ const message = computed(() => {
 </script>
 
 <template>
-  <div class="sticky top-0 z-50">
+  <!-- Fica dentro da área fixa do topo, em app.vue. -->
+  <div>
     <div
       v-if="message"
       role="status"

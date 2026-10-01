@@ -20,6 +20,16 @@ const items: NavItem[] = [
   { to: '/painel/acesso-da-equipe', label: 'Acesso da equipe', short: 'Acesso', icon: 'qr' },
 ]
 
+/** Só na navegação lateral; no celular, o atalho fica no início do painel. */
+const sideOnly: NavItem[] = [
+  {
+    to: '/painel/acessos-de-suporte',
+    label: 'Acessos de suporte',
+    short: 'Suporte',
+    icon: 'eye',
+  },
+]
+
 const route = useRoute()
 function isActive(item: NavItem): boolean {
   if (item.to === '/painel') return route.path === '/painel' || route.path === '/painel/'
@@ -30,13 +40,15 @@ function isActive(item: NavItem): boolean {
 <template>
   <div class="min-h-dvh bg-bg">
     <AppHeader wide />
+    <OrganizationStatusBanner />
+    <AnnouncementsBanner />
     <div class="mx-auto flex w-full max-w-6xl">
       <nav
         aria-label="Painel"
-        class="sticky top-0 hidden h-dvh w-60 shrink-0 flex-col gap-1 self-start border-r border-border px-3 py-6 lg:flex"
+        class="sticky top-[var(--top-banners,0px)] hidden h-[calc(100dvh-var(--top-banners,0px))] w-60 shrink-0 flex-col gap-1 self-start border-r border-border px-3 py-6 lg:flex"
       >
         <NuxtLink
-          v-for="item in items"
+          v-for="item in [...items, ...sideOnly]"
           :key="item.to"
           :to="item.to"
           :aria-current="isActive(item) ? 'page' : undefined"

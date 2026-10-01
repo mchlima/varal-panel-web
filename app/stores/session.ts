@@ -1,11 +1,13 @@
 import { defineStore } from 'pinia'
 import type { components } from '~/api/schema'
-import { apiErrorMessage } from '~/lib/api-error'
+import { apiErrorCode, apiErrorMessage } from '~/lib/api-error'
 import { readLocal, requestPersistentStorage, writeLocal } from '~/lib/browser'
+import { impersonationErrorMessage } from '~/lib/impersonation'
 import { homePathFor, isPublicRoute } from '~/lib/routes'
 
 export type PanelMe = components['schemas']['PanelMe']
 export type PanelUnit = components['schemas']['PanelUnit']
+export type PanelImpersonation = components['schemas']['PanelImpersonation']
 export type SessionStatus = 'unknown' | 'authenticated' | 'anonymous'
 
 /** Último `/auth/me`, para o app abrir sem rede (PWA) com a sessão que já tinha. */
@@ -37,6 +39,10 @@ export const useSessionStore = defineStore('session', () => {
   const isAuthenticated = computed(() => status.value === 'authenticated' && me.value !== null)
   const isOwner = computed(() => me.value?.subject.type === 'owner')
   const homePath = computed(() => homePathFor(me.value?.subject.type ?? 'staff'))
+  /** Sessão de "entrar como" da equipe do Varal (spec 02, RN-02.19), ou `null`. */
+  const impersonation = computed<PanelImpersonation | null>(() => me.value?.impersonation ?? null)
+  /** O último "entrar como" deste aparelho terminou (encerrado ou vencido): aviso no login. */
+  const impersonationEnded = ref(false)
 
   function setMe(value: PanelMe) {
     me.value = value
@@ -51,6 +57,7 @@ export const useSessionStore = defineStore('session', () => {
     offline.value = false
     writeLocal(ME_CACHE_KEY, null)
     useWorkplaceStore().clear()
+    useAnnouncementsStore().clear()
   }
 
   /** Carrega a sessão ao abrir o app. Um 401 passa pela renovação do middleware. */
@@ -74,6 +81,7 @@ export const useSessionStore = defineStore('session', () => {
   }
 
   async function afterLogin(data: PanelMe): Promise<LoginResult> {
+    impersonationEnded.value = false
     setMe(data)
     void requestPersistentStorage()
     return { ok: true }
@@ -115,6 +123,41 @@ export const useSessionStore = defineStore('session', () => {
     }
   }
 
+  /**
+   * Troca o link do "entrar como" por uma sessão do app como o dono (spec 02, RN-02.21).
+   * A API exige, neste navegador, a sessão do admin que gerou o link.
+   */
+  async function exchangeImpersonation(token: string): Promise<LoginResult> {
+    const { $api, $deviceId } = useNuxtApp()
+    try {
+      const { data, error, response } = await $api.POST('/api/v1/auth/impersonation', {
+        params: { header: { 'X-Device-Id': $deviceId as string } },
+        body: { token },
+      })
+      if (data) {
+        // Havia outra sessão aberta neste aparelho: a troca de cookies pede um socket novo.
+        if (status.value === 'authenticated') clear()
+        return afterLogin(data)
+      }
+      return {
+        ok: false,
+        message: impersonationErrorMessage(
+          response.status,
+          apiErrorCode(error),
+          apiErrorMessage(error),
+        ),
+      }
+    } catch (error) {
+      return { ok: false, message: apiErrorMessage(error) }
+    }
+  }
+
+  /** "Encerrar acesso" (RN-02.19): o logout desta sessão encerra o "entrar como" na API. */
+  async function endImpersonation(): Promise<void> {
+    await logout()
+    impersonationEnded.value = true
+  }
+
   /** Encerra a sessão do aparelho. Sem rede, limpa o estado local mesmo assim. */
   async function logout(): Promise<void> {
     const { $api } = useNuxtApp()
@@ -129,6 +172,8 @@ export const useSessionStore = defineStore('session', () => {
   /** A renovação foi recusada (ou `session.revoked`): limpa e volta ao login. */
   async function handleSessionLost(): Promise<void> {
     const wasAuthenticated = status.value === 'authenticated'
+    // "Entrar como" encerrado pelo admin ou vencido (60 min, CA-02.08).
+    if (me.value?.impersonation) impersonationEnded.value = true
     clear()
     const route = useRoute()
     if (wasAuthenticated && !isPublicRoute(route.path)) {
@@ -143,7 +188,11 @@ export const useSessionStore = defineStore('session', () => {
     isAuthenticated,
     isOwner,
     homePath,
+    impersonation,
+    impersonationEnded,
     restore,
+    exchangeImpersonation,
+    endImpersonation,
     loginOwner,
     loginStaff,
     logout,

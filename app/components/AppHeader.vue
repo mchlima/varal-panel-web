@@ -42,7 +42,9 @@ async function logout() {
           </span>
         </p>
       </div>
+      <!-- No "entrar como", sair é o "Encerrar acesso" da faixa (RN-02.19). -->
       <AppButton
+        v-if="!session.impersonation"
         variant="ghost"
         :block="false"
         :loading="leaving"

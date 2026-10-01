@@ -32,6 +32,12 @@ const sections: { to: string; title: string; text: string; icon: IconName }[] = 
     text: 'Código, link e QR code para a equipe entrar.',
     icon: 'qr',
   },
+  {
+    to: '/painel/acessos-de-suporte',
+    title: 'Acessos de suporte',
+    text: 'Quando a equipe do Varal entrou na sua conta, e por quê.',
+    icon: 'eye',
+  },
 ]
 </script>
 
