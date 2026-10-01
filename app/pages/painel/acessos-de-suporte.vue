@@ -6,7 +6,8 @@ type SupportAccess = components['schemas']['SupportAccess']
 
 /**
  * Acessos de suporte (spec 02, RN-02.22; CA-02.09): cada "entrar como" da equipe do Varal na
- * conta, com admin, motivo, início e fim.
+ * conta, com admin, início e fim. O motivo só aparece nos acessos antigos, em que era
+ * informado; hoje o admin não informa motivo nem há prazo (RN-02.17).
  */
 useHead({ title: 'Acessos de suporte · Varal' })
 
@@ -20,6 +21,7 @@ onMounted(list.reload)
 function endLabel(access: SupportAccess): string {
   if (access.active || !access.endedAt) return 'Em andamento'
   const when = formatDateTime(access.endedAt)
+  // `expired` só nos acessos antigos, do tempo do limite de 60 minutos.
   return access.endedBy === 'expired' ? `${when} (tempo esgotado)` : when
 }
 </script>
@@ -29,7 +31,7 @@ function endLabel(access: SupportAccess): string {
     <div class="flex flex-col gap-1">
       <h1 class="text-2xl">Acessos de suporte</h1>
       <p class="text-text-muted">
-        Vezes em que a equipe do Varal entrou na sua conta para ajudar, com o motivo informado.
+        Vezes em que a equipe do Varal entrou na sua conta para ajudar, com quem entrou e quando.
       </p>
     </div>
 
@@ -45,6 +47,7 @@ function endLabel(access: SupportAccess): string {
         v-for="access in accesses"
         :key="access.id"
         data-testid="support-access"
+        :data-support-access-id="access.id"
         class="flex flex-col gap-2 rounded-card border border-border bg-surface p-4"
       >
         <div class="flex flex-wrap items-center gap-2">
@@ -54,7 +57,7 @@ function endLabel(access: SupportAccess): string {
             :label="access.active ? 'Em andamento' : 'Encerrado'"
           />
         </div>
-        <p><span class="text-text-muted">Motivo:</span> {{ access.reason }}</p>
+        <p v-if="access.reason"><span class="text-text-muted">Motivo:</span> {{ access.reason }}</p>
         <dl class="grid grid-cols-[auto_1fr] gap-x-3 gap-y-1 text-sm">
           <dt class="text-text-muted">Início</dt>
           <dd>{{ formatDateTime(access.startedAt) }}</dd>

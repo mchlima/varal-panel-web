@@ -1,9 +1,9 @@
 <script setup lang="ts">
-import { formatRemaining } from '~/lib/impersonation'
-
 /**
  * Faixa do "entrar como" (spec 02, RN-02.19; spec 08, seção 6): fixa no topo de todas as
- * telas enquanto a sessão de suporte durar. Fundo escuro com borda na primária, cor própria
+ * telas enquanto a sessão de suporte durar. Não há prazo (RN-02.17): a faixa não mostra
+ * tempo restante, e a sessão só acaba quando o admin encerra (aqui ou no admin, que chega
+ * pelo `session.revoked` do tempo real). Fundo escuro com borda na primária, cor própria
  * para nunca se confundir com os avisos comuns (amarelo, vermelho claro).
  * "Encerrar acesso" é o logout desta sessão, que encerra o "entrar como" na API.
  */
@@ -11,31 +11,9 @@ const session = useSessionStore()
 const connection = useConnectionStore()
 const impersonation = computed(() => session.impersonation)
 
-const now = ref(Date.now())
-let timer: ReturnType<typeof setInterval> | undefined
-onMounted(() => {
-  timer = setInterval(() => (now.value = Date.now()), 1_000)
-})
-onBeforeUnmount(() => clearInterval(timer))
-
-const remainingMs = computed(() =>
-  impersonation.value ? Date.parse(impersonation.value.expiresAt) - now.value : 0,
-)
-const remaining = computed(() => formatRemaining(remainingMs.value))
-
 const ending = ref(false)
 // Ações na fila são desta sessão: encerrar antes de enviá-las as deixaria sem dono.
 const blocked = computed(() => connection.pendingCount > 0)
-
-// Chegou ao fim (60 min, CA-02.08): a API já recusa a sessão; recarregar o perfil leva ao
-// login pela renovação recusada.
-watch(
-  () => impersonation.value !== null && remainingMs.value <= 0,
-  (expired) => {
-    if (expired && !ending.value) void session.restore()
-  },
-  { immediate: true },
-)
 
 async function end() {
   if (blocked.value || ending.value) return
@@ -61,14 +39,6 @@ async function end() {
           Você está acessando como {{ session.me?.organization.name }} —
           {{ impersonation.adminName }}
         </span>
-      </p>
-      <p
-        class="flex items-center gap-1 text-sm"
-        data-testid="impersonation-remaining"
-        aria-live="off"
-      >
-        <AppIcon name="clock" :size="16" />
-        Restam {{ remaining }}
       </p>
       <button
         type="button"
