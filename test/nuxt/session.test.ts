@@ -15,9 +15,16 @@ function json(status: number, body: unknown) {
 
 const me = {
   subject: { type: 'owner', id: DEVICE, name: 'Dono', email: 'd@v.l', username: null },
-  organization: { id: DEVICE, name: 'Org', accessCode: 'ESPT26', subscriptionStatus: 'pilot' },
+  organization: {
+    id: DEVICE,
+    name: 'Org',
+    accessCode: 'ESPT26',
+    subscriptionStatus: 'pilot',
+    suspendedReason: null,
+  },
   units: [],
   session: { id: DEVICE, deviceId: DEVICE, accessTokenExpiresAt: '', expiresAt: '' },
+  impersonation: null,
 }
 
 /** API falsa: o token de acesso vence até a primeira renovação. */

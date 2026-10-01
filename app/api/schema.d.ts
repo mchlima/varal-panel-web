@@ -4,6 +4,93 @@
  */
 
 export interface paths {
+    "/api/v1/admin/announcements": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Comunicados (mais novos primeiro), com contagem de leituras */
+        get: operations["AnnouncementsController_list"];
+        put?: never;
+        /** Cria um comunicado como rascunho (RN-02.13, RN-02.14) */
+        post: operations["AnnouncementsController_create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/announcements/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Comunicado, com quantos donos do público já leram */
+        get: operations["AnnouncementsController_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /** Edita rascunho ou agendado (RN-02.15) */
+        patch: operations["AnnouncementsController_update"];
+        trace?: never;
+    };
+    "/api/v1/admin/announcements/{id}/archive": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Arquiva o comunicado: some da faixa dos donos (RN-02.15) */
+        post: operations["AnnouncementsController_archive"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/announcements/{id}/publish": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Publica agora ou agenda para `publishAt` (RN-02.15) */
+        post: operations["AnnouncementsController_publish"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/audit-logs": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Auditoria com filtros por organização, ator, ação, entidade e período */
+        get: operations["AuditLogsController_list"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/admin/auth/login": {
         parameters: {
             query?: never;
@@ -123,6 +210,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/admin/emails": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Histórico de e-mails (mais novos primeiro), com filtros e o erro das falhas */
+        get: operations["AdminEmailsController_list"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/admin/emails/usage": {
         parameters: {
             query?: never;
@@ -140,6 +244,356 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/admin/impersonations": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Acessos de "entrar como" (mais novos primeiro) */
+        get: operations["ImpersonationsController_list"];
+        put?: never;
+        /** Abre um "entrar como" de 60 minutos e devolve o link de uso único do app (RN-02.17) */
+        post: operations["ImpersonationsController_start"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/impersonations/{id}/end": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Encerra o "entrar como" (só o próprio admin da sessão); a sessão do app cai na hora */
+        post: operations["ImpersonationsController_end"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/metrics/organizations": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Uso por organização no período, ordenável */
+        get: operations["MetricsController_organizations"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/metrics/overview": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Indicadores do período (padrão: últimos 30 dias) */
+        get: operations["MetricsController_overview"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/organizations": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Organizações, com busca e filtro por situação (mais novas primeiro) */
+        get: operations["OrganizationsController_list"];
+        put?: never;
+        /** Cria a organização com a primeira unidade, o dono e o convite por e-mail (RN-02.09, RN-02.10) */
+        post: operations["OrganizationsController_create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/organizations/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Detalhe da organização (spec 02, seção 4) */
+        get: operations["OrganizationsController_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /** Edita o nome da organização e o nome ou e-mail do dono */
+        patch: operations["OrganizationsController_update"];
+        trace?: never;
+    };
+    "/api/v1/admin/organizations/{id}/owner-invite": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Reenvia o convite do dono (o link anterior deixa de valer) */
+        post: operations["OrganizationsController_resendOwnerInvite"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/organizations/{id}/reactivate": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Reativa a organização para `active` ou `pilot` (RN-02.12) */
+        post: operations["OrganizationsController_reactivate"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/organizations/{id}/subscription-status": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /** Muda a situação da assinatura, com motivo (RN-02.11) */
+        put: operations["OrganizationsController_setSubscriptionStatus"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/organizations/{id}/suspend": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Suspende a organização, com motivo (RN-02.11, RN-02.12) */
+        post: operations["OrganizationsController_suspend"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/permissions": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Catálogo de permissões (RN-02.03) */
+        get: operations["RolesController_permissions"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/roles": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Papéis com as permissões de cada um */
+        get: operations["RolesController_list"];
+        put?: never;
+        /** Cria um papel personalizado (RN-02.07) */
+        post: operations["RolesController_create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/roles/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /** Exclui um papel personalizado sem usuários (RN-02.07) */
+        delete: operations["RolesController_remove"];
+        options?: never;
+        head?: never;
+        /** Edita um papel (Super admin não pode ser editado; RN-02.04) */
+        patch: operations["RolesController_update"];
+        trace?: never;
+    };
+    "/api/v1/admin/users": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Usuários do admin */
+        get: operations["AdminUsersController_list"];
+        put?: never;
+        /** Convida um usuário do admin (e-mail com link de 7 dias) */
+        post: operations["AdminUsersController_invite"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/users/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Usuário do admin, com papéis e permissões efetivas */
+        get: operations["AdminUsersController_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /** Edita nome e situação (desativar encerra as sessões; RN-02.05, RN-02.06) */
+        patch: operations["AdminUsersController_update"];
+        trace?: never;
+    };
+    "/api/v1/admin/users/{id}/password-link": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Reenvia o convite (sem senha) ou envia um link de redefinição por e-mail (spec 01, seção 7.4) */
+        post: operations["AdminUsersController_passwordLink"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/users/{id}/permissions": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /** Define as permissões avulsas do usuário (RN-02.02, RN-02.06) */
+        put: operations["AdminUsersController_setPermissions"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/users/{id}/roles": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /** Define os papéis do usuário (RN-02.05, RN-02.06) */
+        put: operations["AdminUsersController_setRoles"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/announcements/unread": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Comunicados publicados para a organização que o dono ainda não leu (mais novos primeiro) */
+        get: operations["OwnerAnnouncementsController_unread"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/announcements/{id}/read": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Marca o comunicado como lido pelo dono (RN-02.16)
+         * @description Repetir não muda nada. Num "entrar como" a leitura não é registrada: o comunicado continua não lido para o dono.
+         */
+        post: operations["OwnerAnnouncementsController_read"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/auth/access-code/{code}": {
         parameters: {
             query?: never;
@@ -151,6 +605,26 @@ export interface paths {
         get: operations["AuthController_accessCode"];
         put?: never;
         post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/auth/impersonation": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Troca o link de uso único do "entrar como" pela sessão do app (RN-02.21)
+         * @description Chamado pela página `/entrar-como` do painel com o token do fragmento. Exige o cookie de sessão do admin que gerou o link (mesmo navegador) e o `X-Device-Id` do painel. A sessão aberta é do dono, dura até o fim do "entrar como" (60 min, CA-02.08) e não dá acesso a outras organizações nem ao admin.
+         */
+        post: operations["ImpersonationAuthController_exchange"];
         delete?: never;
         options?: never;
         head?: never;
@@ -601,6 +1075,23 @@ export interface paths {
         patch: operations["UnitsController_updateStation"];
         trace?: never;
     };
+    "/api/v1/support-access": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Acessos de suporte feitos na organização (admin, motivo, início e fim) */
+        get: operations["SupportAccessController_list"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/units": {
         parameters: {
             query?: never;
@@ -723,6 +1214,11 @@ export interface components {
          * @enum {string}
          */
         ActorType: "owner" | "staff" | "platform_admin" | "system";
+        /**
+         * @description Códigos de erro do admin da plataforma (spec 02).
+         * @enum {string}
+         */
+        AdminErrorCode: "LAST_SUPER_ADMIN" | "CANNOT_CHANGE_OWN_ACCESS" | "ROLE_NOT_EDITABLE" | "ROLE_IN_USE" | "OWNER_EMAIL_TAKEN" | "OWNER_ALREADY_ACTIVE" | "ORGANIZATION_WITHOUT_OWNER" | "INVALID_STATUS_TRANSITION" | "ANNOUNCEMENT_NOT_EDITABLE" | "ANNOUNCEMENT_INVALID_TRANSITION" | "IMPERSONATION_NOT_ACTIVE";
         AdminLoginRequestInput: {
             /** Format: email */
             email: string;
@@ -735,13 +1231,186 @@ export interface components {
                 id: string;
                 name: string;
             };
+            /** @description Permissões efetivas (RN-02.02): o app esconde as ações sem permissão (RN-02.01). */
+            permissions: components["schemas"]["Permission"][];
+            roles: {
+                /** Format: uuid */
+                id: string;
+                isSystem: boolean;
+                name: string;
+                systemKey: string | null;
+            }[];
             session: components["schemas"]["SessionInfo"];
+        };
+        AdminPasswordLink: {
+            /** Format: date-time */
+            expiresAt: string;
+            /**
+             * @description `invite` se ainda não definiu a senha; senão `reset`.
+             * @enum {string}
+             */
+            kind: "invite" | "reset";
+        };
+        AdminRoleRef: {
+            /** Format: uuid */
+            id: string;
+            isSystem: boolean;
+            name: string;
+            systemKey: string | null;
+        };
+        AdminUser: {
+            active: boolean;
+            /** Format: date-time */
+            createdAt: string;
+            email: string;
+            /** @description Permissões avulsas, além das dos papéis (RN-02.02). */
+            extraPermissions: components["schemas"]["Permission"][];
+            /** Format: uuid */
+            id: string;
+            /** @description Ainda não definiu a senha pelo convite. */
+            invitePending: boolean;
+            lastLoginAt: string | null;
+            name: string;
+            /** @description Permissões efetivas: papéis + avulsas (RN-02.02). */
+            permissions: components["schemas"]["Permission"][];
+            roles: components["schemas"]["AdminRoleRef"][];
+        };
+        AdminUserListQueryInput: {
+            /** @enum {string} */
+            active?: "true" | "false";
+            /** @description Valor de `nextCursor` da página anterior. Opaco: não monte à mão. */
+            cursor?: string;
+            /**
+             * @description Itens por página (1 a 100, padrão 50).
+             * @default 50
+             */
+            limit: number;
+            /** @description Parte do nome ou do e-mail. */
+            search?: string;
+        };
+        AdminUserPage: {
+            data: components["schemas"]["AdminUser"][];
+            /** @description Cursor da próxima página; `null` na última. */
+            nextCursor: string | null;
+        };
+        Announcement: {
+            archivedAt: string | null;
+            /** @description Donos ativos no público hoje (para "X de Y leram"). */
+            audienceOwnerCount: number;
+            /** @description Só em `by_status`. */
+            audienceStatuses: components["schemas"]["SubscriptionStatus"][];
+            audienceType: components["schemas"]["AnnouncementAudienceType"];
+            body: string;
+            /** Format: date-time */
+            createdAt: string;
+            createdBy: {
+                /** Format: uuid */
+                id: string;
+                name: string;
+            };
+            /** Format: uuid */
+            id: string;
+            /** @description Só em `selected`. */
+            organizationIds: string[];
+            publishAt: string | null;
+            publishedAt: string | null;
+            /** @description Donos do público que já leram. */
+            readCount: number;
+            status: components["schemas"]["AnnouncementStatus"];
+            title: string;
+            /** Format: date-time */
+            updatedAt: string;
+        };
+        /**
+         * @description Público (RN-02.14): todas as organizações, as de certas situações de assinatura, ou as escolhidas uma a uma.
+         * @enum {string}
+         */
+        AnnouncementAudienceType: "all" | "by_status" | "selected";
+        AnnouncementListQueryInput: {
+            /** @description Valor de `nextCursor` da página anterior. Opaco: não monte à mão. */
+            cursor?: string;
+            /**
+             * @description Itens por página (1 a 100, padrão 50).
+             * @default 50
+             */
+            limit: number;
+            status?: components["schemas"]["AnnouncementStatus"];
+        };
+        AnnouncementPage: {
+            data: components["schemas"]["Announcement"][];
+            /** @description Cursor da próxima página; `null` na última. */
+            nextCursor: string | null;
+        };
+        /**
+         * @description Situação do comunicado (RN-02.15). Um agendado vira publicado na data marcada; publicado só pode ser arquivado.
+         * @enum {string}
+         */
+        AnnouncementStatus: "draft" | "scheduled" | "published" | "archived";
+        AuditLogEntry: {
+            /** @example organization.suspended */
+            action: string;
+            actorId: string | null;
+            actorType: components["schemas"]["ActorType"];
+            /** @description `{ before, after, metadata? }`, só com os campos alterados. */
+            changes: {
+                [key: string]: unknown;
+            };
+            /** Format: date-time */
+            createdAt: string;
+            deviceId: string | null;
+            entityId: string | null;
+            entityType: string;
+            /** Format: uuid */
+            id: string;
+            /** @description Sessão de "entrar como" em que a ação foi feita (RN-02.20). */
+            impersonationId: string | null;
+            /** @description Admin responsável, quando a ação foi feita num "entrar como" (RN-02.20). */
+            impersonatorId: string | null;
+            ip: string | null;
+            organizationId: string | null;
+            requestId: string | null;
+        };
+        AuditLogListQueryInput: {
+            /** @description Ação exata (`organization.suspended`) ou prefixo terminado em ponto (`organization.`). */
+            action?: string;
+            /** Format: uuid */
+            actorId?: string;
+            actorType?: components["schemas"]["ActorType"];
+            /** @description Valor de `nextCursor` da página anterior. Opaco: não monte à mão. */
+            cursor?: string;
+            /** Format: uuid */
+            entityId?: string;
+            entityType?: string;
+            /**
+             * Format: date-time
+             * @description A partir deste instante (inclusive).
+             */
+            from?: string;
+            /** Format: uuid */
+            impersonatorId?: string;
+            /**
+             * @description Itens por página (1 a 100, padrão 50).
+             * @default 50
+             */
+            limit: number;
+            /** Format: uuid */
+            organizationId?: string;
+            /**
+             * Format: date-time
+             * @description Antes deste instante.
+             */
+            to?: string;
+        };
+        AuditLogPage: {
+            data: components["schemas"]["AuditLogEntry"][];
+            /** @description Cursor da próxima página; `null` na última. */
+            nextCursor: string | null;
         };
         /**
          * @description Códigos de erro da autenticação (spec 01, seção 7).
          * @enum {string}
          */
-        AuthErrorCode: "INVALID_CREDENTIALS" | "INVALID_STAFF_CREDENTIALS" | "LOGIN_TEMPORARILY_LOCKED" | "INVALID_PASSWORD_TOKEN" | "WRONG_CURRENT_PASSWORD" | "PASSWORD_RESET_LIMIT_REACHED" | "STAFF_WITHOUT_UNIT" | "DEVICE_ID_REQUIRED";
+        AuthErrorCode: "INVALID_CREDENTIALS" | "INVALID_STAFF_CREDENTIALS" | "LOGIN_TEMPORARILY_LOCKED" | "INVALID_PASSWORD_TOKEN" | "WRONG_CURRENT_PASSWORD" | "PASSWORD_RESET_LIMIT_REACHED" | "STAFF_WITHOUT_UNIT" | "INVALID_IMPERSONATION_TOKEN" | "NOT_ALLOWED_DURING_IMPERSONATION" | "DEVICE_ID_REQUIRED";
         Category: {
             active: boolean;
             /**
@@ -767,6 +1436,25 @@ export interface components {
             currentPassword: string;
             /** @description Nova senha: de 8 a 128 caracteres. */
             newPassword: string;
+        };
+        CreateAdminUserRequestInput: {
+            email: string;
+            name: string;
+            /** @default [] */
+            permissions: components["schemas"]["Permission"][];
+            /** @default [] */
+            roleIds: string[];
+        };
+        /** @description Cria o comunicado como rascunho. */
+        CreateAnnouncementRequestInput: {
+            /** @default [] */
+            audienceStatuses: components["schemas"]["SubscriptionStatus"][];
+            audienceType: components["schemas"]["AnnouncementAudienceType"];
+            /** @description Markdown simples (RN-02.13). */
+            body: string;
+            /** @default [] */
+            organizationIds: string[];
+            title: string;
         };
         CreateCategoryRequestInput: {
             active?: boolean;
@@ -820,6 +1508,21 @@ export interface components {
             /** @description Posição na lista (1 é o primeiro). */
             sortOrder?: number;
         };
+        CreateOrganizationRequestInput: {
+            name: string;
+            owner: {
+                email: string;
+                name: string;
+            };
+            /**
+             * @description Situação inicial (padrão `active`).
+             * @default active
+             * @enum {string}
+             */
+            subscriptionStatus: "pilot" | "active";
+            /** @description Nome da primeira unidade. */
+            unitName: string;
+        };
         CreateProductRequestInput: {
             active?: boolean;
             /** Format: uuid */
@@ -831,6 +1534,12 @@ export interface components {
             /** @description Posição na lista (1 é o primeiro). */
             sortOrder?: number;
             stationId?: string | null;
+        };
+        CreateRoleRequestInput: {
+            /** @default  */
+            description: string;
+            name: string;
+            permissions: components["schemas"]["Permission"][];
         };
         CreateStaffMemberRequestInput: {
             email?: string | null;
@@ -855,6 +1564,47 @@ export interface components {
              */
             lateAfterMinutes: number;
             name: string;
+        };
+        EmailLog: {
+            /** Format: date-time */
+            createdAt: string;
+            /** @description Erro da última tentativa, se falhou. */
+            error: string | null;
+            /** Format: uuid */
+            id: string;
+            organizationId: string | null;
+            sentAt: string | null;
+            status: components["schemas"]["EmailStatus"];
+            to: string;
+            type: components["schemas"]["EmailType"];
+        };
+        EmailLogListQueryInput: {
+            /** @description Valor de `nextCursor` da página anterior. Opaco: não monte à mão. */
+            cursor?: string;
+            /**
+             * Format: date-time
+             * @description Criados a partir deste instante (inclusive).
+             */
+            from?: string;
+            /**
+             * @description Itens por página (1 a 100, padrão 50).
+             * @default 50
+             */
+            limit: number;
+            /** Format: uuid */
+            organizationId?: string;
+            status?: components["schemas"]["EmailStatus"];
+            /**
+             * Format: date-time
+             * @description Criados antes deste instante.
+             */
+            to?: string;
+            type?: components["schemas"]["EmailType"];
+        };
+        EmailLogPage: {
+            data: components["schemas"]["EmailLog"][];
+            /** @description Cursor da próxima página; `null` na última. */
+            nextCursor: string | null;
         };
         /**
          * @description Situação de um envio de e-mail.
@@ -1008,6 +1758,59 @@ export interface components {
             /** @enum {string} */
             status: "ok";
         };
+        Impersonation: {
+            active: boolean;
+            adminName: string;
+            /** @description Fim real; num acesso que venceu, o horário do vencimento. */
+            endedAt: string | null;
+            endedBy: components["schemas"]["ImpersonationEndedBy"] | null;
+            /** Format: date-time */
+            expiresAt: string;
+            /** Format: uuid */
+            id: string;
+            /** Format: uuid */
+            organizationId: string;
+            organizationName: string;
+            /** Format: uuid */
+            ownerId: string;
+            /** Format: uuid */
+            platformAdminId: string;
+            reason: string;
+            /** Format: date-time */
+            startedAt: string;
+        };
+        /**
+         * @description Como o "entrar como" terminou: pelo admin (ou "Encerrar acesso" no app) ou por tempo.
+         * @enum {string}
+         */
+        ImpersonationEndedBy: "admin" | "expired";
+        ImpersonationExchangeRequestInput: {
+            /** @description Token do link de uso único (fragmento `#token=` de `/entrar-como`). */
+            token: string;
+        };
+        ImpersonationListQueryInput: {
+            /** @enum {string} */
+            active?: "true" | "false";
+            /** @description Valor de `nextCursor` da página anterior. Opaco: não monte à mão. */
+            cursor?: string;
+            /**
+             * @description Itens por página (1 a 100, padrão 50).
+             * @default 50
+             */
+            limit: number;
+            /**
+             * @description Só os acessos do admin logado.
+             * @enum {string}
+             */
+            mine?: "true" | "false";
+            /** Format: uuid */
+            organizationId?: string;
+        };
+        ImpersonationPage: {
+            data: components["schemas"]["Impersonation"][];
+            /** @description Cursor da próxima página; `null` na última. */
+            nextCursor: string | null;
+        };
         /** @description Cardápio da unidade em ordem. O dono recebe tudo (com `active`); o colaborador só categorias, produtos e modificadores ativos (RN-03.10). */
         Menu: {
             categories: components["schemas"]["MenuCategory"][];
@@ -1055,6 +1858,57 @@ export interface components {
             /** @description Versão do produto (`product.sold_out_changed`). */
             version: number;
         };
+        /** @description Painel de métricas (spec 02, seção 6). Turnos e comandas vêm das specs 04 a 06; até lá ficam em zero. */
+        MetricsOverview: {
+            /** @description Organizações com pelo menos um turno aberto no período. */
+            activeOrganizations: number;
+            /** @description Valor vendido / comandas, em centavos (0 sem comandas). */
+            averageTicketCents: number;
+            /** @description Contagem atual por situação da assinatura. */
+            organizationsByStatus: {
+                [key: string]: number;
+            };
+            period: components["schemas"]["MetricsPeriod"];
+            shifts: {
+                byWeek: {
+                    count: number;
+                    /**
+                     * Format: date
+                     * @description Segunda-feira da semana.
+                     */
+                    weekStart: string;
+                }[];
+                /** @description Turnos fechados no período. */
+                total: number;
+            };
+            /** @description Valor vendido registrado, em centavos. */
+            soldCents: number;
+            /** @description Comandas pagas, penduradas ou quitadas no período. */
+            tabs: number;
+        };
+        MetricsPeriod: {
+            /** Format: date */
+            from: string;
+            /** @enum {string} */
+            timeZone: "America/Sao_Paulo";
+            /**
+             * Format: date
+             * @description Inclusive.
+             */
+            to: string;
+        };
+        MetricsPeriodQueryInput: {
+            /**
+             * Format: date
+             * @description Primeiro dia (AAAA-MM-DD, horário de Brasília). Padrão: 29 dias antes de `to`.
+             */
+            from?: string;
+            /**
+             * Format: date
+             * @description Último dia, inclusive (AAAA-MM-DD, horário de Brasília). Padrão: hoje.
+             */
+            to?: string;
+        };
         Modifier: {
             active: boolean;
             /** Format: uuid */
@@ -1089,6 +1943,136 @@ export interface components {
             /** @description QR code do link em SVG (escalável; mostre grande para escanear de outro celular). */
             qrSvg: string;
         };
+        OrganizationDetail: {
+            accessCode: string;
+            activeStaffCount: number;
+            /** Format: date-time */
+            createdAt: string;
+            /** Format: uuid */
+            id: string;
+            /** @description Último login ou renovação de sessão de qualquer usuário da organização (sem contar o "entrar como"). */
+            lastAccessAt: string | null;
+            name: string;
+            owner: components["schemas"]["OrganizationOwner"] | null;
+            /** @description Últimos 10 turnos. Vazio até a spec 04 criar os turnos. */
+            recentShifts: components["schemas"]["OrganizationShiftSummary"][];
+            subscriptionStatus: components["schemas"]["SubscriptionStatus"];
+            /** @description Motivo da suspensão ou do cancelamento. */
+            suspendedReason: string | null;
+            units: components["schemas"]["OrganizationUnit"][];
+            /** @description Comunicados publicados para a organização que o dono ainda não leu. */
+            unreadAnnouncements: number;
+        };
+        OrganizationListQueryInput: {
+            /** @description Valor de `nextCursor` da página anterior. Opaco: não monte à mão. */
+            cursor?: string;
+            /**
+             * @description Itens por página (1 a 100, padrão 50).
+             * @default 50
+             */
+            limit: number;
+            /** @description Parte do nome da organização ou do e-mail do dono, ou o código do estabelecimento. */
+            search?: string;
+            status?: components["schemas"]["SubscriptionStatus"];
+        };
+        OrganizationOwner: {
+            active: boolean;
+            email: string;
+            /** Format: uuid */
+            id: string;
+            inviteExpiresAt: string | null;
+            inviteStatus: components["schemas"]["OwnerInviteStatus"];
+            name: string;
+        };
+        OrganizationPage: {
+            data: components["schemas"]["OrganizationSummary"][];
+            /** @description Cursor da próxima página; `null` na última. */
+            nextCursor: string | null;
+        };
+        /** @description Turno no detalhe da organização (os turnos chegam com a spec 04). */
+        OrganizationShiftSummary: {
+            closedAt: string | null;
+            /** Format: uuid */
+            id: string;
+            /** Format: date-time */
+            openedAt: string;
+        };
+        OrganizationSummary: {
+            accessCode: string;
+            /** Format: date-time */
+            createdAt: string;
+            /** Format: uuid */
+            id: string;
+            name: string;
+            owner: components["schemas"]["OrganizationOwner"] | null;
+            subscriptionStatus: components["schemas"]["SubscriptionStatus"];
+            /** @description Motivo da suspensão ou do cancelamento. */
+            suspendedReason: string | null;
+        };
+        OrganizationUnit: {
+            active: boolean;
+            /** Format: uuid */
+            id: string;
+            name: string;
+        };
+        OrganizationUsage: {
+            lastAccessAt: string | null;
+            name: string;
+            /** Format: uuid */
+            organizationId: string;
+            shifts: number;
+            soldCents: number;
+            subscriptionStatus: components["schemas"]["SubscriptionStatus"];
+            tabs: number;
+        };
+        /** @description Uso por organização (todas, ordenadas). */
+        OrganizationUsageList: {
+            data: components["schemas"]["OrganizationUsage"][];
+            period: components["schemas"]["MetricsPeriod"];
+        };
+        OrganizationUsageQueryInput: {
+            /**
+             * Format: date
+             * @description Primeiro dia (AAAA-MM-DD, horário de Brasília). Padrão: 29 dias antes de `to`.
+             */
+            from?: string;
+            /**
+             * @default asc
+             * @enum {string}
+             */
+            order: "asc" | "desc";
+            /**
+             * @default name
+             * @enum {string}
+             */
+            sort: "name" | "shifts" | "tabs" | "soldCents" | "lastAccessAt";
+            /**
+             * Format: date
+             * @description Último dia, inclusive (AAAA-MM-DD, horário de Brasília). Padrão: hoje.
+             */
+            to?: string;
+        };
+        OwnerAnnouncement: {
+            /** @description Markdown simples (RN-02.13). */
+            body: string;
+            /** Format: uuid */
+            id: string;
+            /** Format: date-time */
+            publishedAt: string;
+            title: string;
+        };
+        OwnerAnnouncementList: {
+            data: components["schemas"]["OwnerAnnouncement"][];
+        };
+        OwnerInviteResponse: {
+            /** Format: date-time */
+            expiresAt: string;
+        };
+        /**
+         * @description `accepted`: o dono já definiu a senha; `pending`: convite válido sem uso; `expired`: convite vencido (reenvie).
+         * @enum {string}
+         */
+        OwnerInviteStatus: "pending" | "expired" | "accepted";
         OwnerLoginRequestInput: {
             /** Format: email */
             email: string;
@@ -1112,14 +2096,28 @@ export interface components {
              */
             limit: number;
         };
+        /** @description "Entrar como" (spec 02, seção 7): "Você está acessando como {organização} — {admin}". "Encerrar acesso" é o `POST /auth/logout`. */
+        PanelImpersonation: {
+            adminName: string;
+            /** Format: date-time */
+            expiresAt: string;
+            /** Format: uuid */
+            id: string;
+            /** Format: date-time */
+            startedAt: string;
+        };
         /** @description Perfil, organização, unidades e estações permitidas. */
         PanelMe: {
+            /** @description Preenchido quando a sessão é um "entrar como" da equipe do Varal: o app mostra a faixa fixa em todas as telas (RN-02.19). */
+            impersonation: components["schemas"]["PanelImpersonation"] | null;
             organization: {
                 accessCode: string;
                 /** Format: uuid */
                 id: string;
                 name: string;
                 subscriptionStatus: components["schemas"]["SubscriptionStatus"];
+                /** @description Motivo da suspensão ou do cancelamento, para a faixa do painel do dono (RN-02.12). */
+                suspendedReason: string | null;
             };
             session: components["schemas"]["SessionInfo"];
             subject: {
@@ -1144,6 +2142,19 @@ export interface components {
             stationIds: string[];
             /** @description Estações que o usuário pode abrir nesta unidade, ativas e em ordem: todas para o dono, as liberadas para o colaborador. */
             stations: components["schemas"]["StationSummary"][];
+        };
+        /**
+         * @description Permissão do admin da plataforma (`recurso:ação`, spec 02, seção 3.2). Catálogo fixo no código da API (RN-02.03).
+         * @enum {string}
+         */
+        Permission: "admin.users:manage" | "admin.roles:manage" | "organizations:read" | "organizations:create" | "organizations:update" | "organizations:suspend" | "subscriptions:update" | "announcements:read" | "announcements:manage" | "metrics:read" | "impersonation:use" | "emails:read" | "audit:read";
+        /** @description Catálogo de permissões (RN-02.03). */
+        PermissionCatalog: {
+            data: components["schemas"]["PermissionInfo"][];
+        };
+        PermissionInfo: {
+            description: string;
+            key: components["schemas"]["Permission"];
         };
         Product: {
             active: boolean;
@@ -1175,6 +2186,13 @@ export interface components {
             /** @description Todos os produtos da categoria, na nova ordem. */
             productIds: string[];
         };
+        PublishAnnouncementRequestInput: {
+            /**
+             * Format: date-time
+             * @description Data e hora da publicação. Ausente ou no passado: publica agora; no futuro: agenda.
+             */
+            publishAt?: string;
+        };
         PutStaffPermissionsRequestInput: {
             /** @description Todas as unidades liberadas (substitui as atuais). */
             units: components["schemas"]["StaffPermissionInputInput"][];
@@ -1193,6 +2211,15 @@ export interface components {
             }[];
             /** @description Versão que o app tem do registro. Se outro aparelho alterou antes, a API responde 409 `VERSION_CONFLICT` com `details.currentVersion`. Opcional. */
             version?: number;
+        };
+        ReactivateOrganizationRequestInput: {
+            reason: string;
+            /**
+             * @description Situação depois de reativar (RN-02.12).
+             * @default active
+             * @enum {string}
+             */
+            status: "active" | "pilot";
         };
         /**
          * @description Códigos de erro do tempo real (`/ws`): em `connect_error` (`err.data`, um `ErrorResponse`) e na resposta de `rooms.join`/`rooms.leave`.
@@ -1230,6 +2257,24 @@ export interface components {
             /** @description Token do link (fragmento `#token=`). */
             token: string;
         };
+        Role: {
+            /** @description Só papéis personalizados sem usuários podem ser excluídos (RN-02.04, RN-02.07). */
+            deletable: boolean;
+            description: string;
+            /** @description Falso no Super admin, que não pode ser editado (RN-02.04). */
+            editable: boolean;
+            /** Format: uuid */
+            id: string;
+            isSystem: boolean;
+            name: string;
+            permissions: components["schemas"]["Permission"][];
+            /** @description Chave dos papéis do sistema; `null` nos personalizados. */
+            systemKey: ("super_admin" | "support" | "finance" | "read_only") | null;
+            userCount: number;
+        };
+        RoleList: {
+            data: components["schemas"]["Role"][];
+        };
         SessionInfo: {
             /** Format: date-time */
             accessTokenExpiresAt: string;
@@ -1247,7 +2292,13 @@ export interface components {
          * @description Por que a sessão foi encerrada.
          * @enum {string}
          */
-        SessionRevocationReason: "logout" | "password_changed" | "password_reset" | "refresh_token_reused" | "new_login_on_device" | "staff_deactivated" | "staff_access_removed" | "subject_deactivated";
+        SessionRevocationReason: "logout" | "password_changed" | "password_reset" | "refresh_token_reused" | "new_login_on_device" | "staff_deactivated" | "staff_access_removed" | "subject_deactivated" | "impersonation_ended";
+        SetAdminUserPermissionsRequestInput: {
+            permissions: components["schemas"]["Permission"][];
+        };
+        SetAdminUserRolesRequestInput: {
+            roleIds: string[];
+        };
         SetStaffPasswordRequestInput: {
             /** @description Nova senha: de 8 a 128 caracteres. */
             password: string;
@@ -1323,6 +2374,22 @@ export interface components {
             unitId: string;
             unitName: string;
         };
+        StartImpersonationRequestInput: {
+            /** Format: uuid */
+            organizationId: string;
+            /** @description Motivo do acesso, pelo menos 10 caracteres (RN-02.17). */
+            reason: string;
+        };
+        StartedImpersonation: {
+            /** Format: date-time */
+            handoffExpiresAt: string;
+            /**
+             * Format: uri
+             * @description Link de uso único do app dos clientes (`{PANEL_URL}/entrar-como#token=...`), válido por 2 minutos. O admin abre numa nova aba, no mesmo navegador em que está logado no admin.
+             */
+            handoffUrl: string;
+            impersonation: components["schemas"]["Impersonation"];
+        };
         Station: {
             active: boolean;
             /** Format: uuid */
@@ -1348,10 +2415,40 @@ export interface components {
             name: string;
         };
         /**
+         * @description Erros da situação da assinatura ao abrir turno (RN-01.01, RN-02.12; CA-02.05).
+         * @enum {string}
+         */
+        SubscriptionErrorCode: "ORGANIZATION_SUSPENDED" | "ORGANIZATION_CANCELED";
+        /**
          * @description Situação da assinatura da organização (RN-02.11).
          * @enum {string}
          */
         SubscriptionStatus: "pilot" | "active" | "suspended" | "canceled";
+        SubscriptionStatusChangeRequestInput: {
+            reason: string;
+            status: components["schemas"]["SubscriptionStatus"];
+        };
+        /** @description Acesso de suporte ("entrar como") na conta (RN-02.22). */
+        SupportAccess: {
+            active: boolean;
+            adminName: string;
+            /** @description Fim do acesso; `null` enquanto está em andamento. */
+            endedAt: string | null;
+            endedBy: ("admin" | "expired") | null;
+            /** Format: uuid */
+            id: string;
+            reason: string;
+            /** Format: date-time */
+            startedAt: string;
+        };
+        SupportAccessPage: {
+            data: components["schemas"]["SupportAccess"][];
+            /** @description Cursor da próxima página; `null` na última. */
+            nextCursor: string | null;
+        };
+        SuspendOrganizationRequestInput: {
+            reason: string;
+        };
         Unit: {
             active: boolean;
             /** Format: date-time */
@@ -1369,6 +2466,20 @@ export interface components {
             data: components["schemas"]["Unit"][];
             /** @description Cursor da próxima página; `null` na última. */
             nextCursor: string | null;
+        };
+        UpdateAdminUserRequestInput: {
+            /** @description Desativar encerra as sessões do usuário na hora. */
+            active?: boolean;
+            name?: string;
+        };
+        /** @description Só rascunhos e agendados ainda não publicados (RN-02.15). */
+        UpdateAnnouncementRequestInput: {
+            audienceStatuses?: components["schemas"]["SubscriptionStatus"][];
+            audienceType?: components["schemas"]["AnnouncementAudienceType"];
+            /** @description Markdown simples (RN-02.13). */
+            body?: string;
+            organizationIds?: string[];
+            title?: string;
         };
         UpdateCategoryRequestInput: {
             active?: boolean;
@@ -1393,6 +2504,14 @@ export interface components {
             /** @description Posição na lista (1 é o primeiro). */
             sortOrder?: number;
         };
+        UpdateOrganizationRequestInput: {
+            name?: string;
+            /** @description Trocar o e-mail de um dono que ainda não aceitou o convite envia um convite novo para o e-mail novo. */
+            owner?: {
+                email?: string;
+                name?: string;
+            };
+        };
         UpdateProductRequestInput: {
             active?: boolean;
             /**
@@ -1409,6 +2528,11 @@ export interface components {
             stationId?: string | null;
             /** @description Versão que o app tem do registro. Se outro aparelho alterou antes, a API responde 409 `VERSION_CONFLICT` com `details.currentVersion`. Opcional. */
             version?: number;
+        };
+        UpdateRoleRequestInput: {
+            description?: string;
+            name?: string;
+            permissions?: components["schemas"]["Permission"][];
         };
         UpdateStaffMemberRequestInput: {
             /** @description Desativar encerra as sessões do colaborador na hora (RN-03.17). */
@@ -1484,6 +2608,348 @@ export interface components {
 }
 export type $defs = Record<string, never>;
 export interface operations {
+    AnnouncementsController_list: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AnnouncementPage"];
+                };
+            };
+            /** @description `UNAUTHENTICATED`: sem sessão do admin ou sessão encerrada. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description `FORBIDDEN`: falta a permissão `announcements:read`. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Erro no formato `ErrorResponse` (spec 01, seção 5). */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    AnnouncementsController_create: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateAnnouncementRequestInput"];
+            };
+        };
+        responses: {
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Announcement"];
+                };
+            };
+            /** @description `UNAUTHENTICATED`: sem sessão do admin ou sessão encerrada. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description `FORBIDDEN`: falta a permissão `announcements:manage`. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Erro no formato `ErrorResponse` (spec 01, seção 5). */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    AnnouncementsController_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Announcement"];
+                };
+            };
+            /** @description `UNAUTHENTICATED`: sem sessão do admin ou sessão encerrada. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description `FORBIDDEN`: falta a permissão `announcements:read`. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Erro no formato `ErrorResponse` (spec 01, seção 5). */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    AnnouncementsController_update: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UpdateAnnouncementRequestInput"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Announcement"];
+                };
+            };
+            /** @description `UNAUTHENTICATED`: sem sessão do admin ou sessão encerrada. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description `FORBIDDEN`: falta a permissão `announcements:manage`. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Erro no formato `ErrorResponse` (spec 01, seção 5). */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    AnnouncementsController_archive: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Announcement"];
+                };
+            };
+            /** @description `UNAUTHENTICATED`: sem sessão do admin ou sessão encerrada. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description `FORBIDDEN`: falta a permissão `announcements:manage`. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Erro no formato `ErrorResponse` (spec 01, seção 5). */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    AnnouncementsController_publish: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PublishAnnouncementRequestInput"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Announcement"];
+                };
+            };
+            /** @description `UNAUTHENTICATED`: sem sessão do admin ou sessão encerrada. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description `FORBIDDEN`: falta a permissão `announcements:manage`. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Erro no formato `ErrorResponse` (spec 01, seção 5). */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    AuditLogsController_list: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AuditLogPage"];
+                };
+            };
+            /** @description `UNAUTHENTICATED`: sem sessão do admin ou sessão encerrada. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description `FORBIDDEN`: falta a permissão `audit:read`. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Erro no formato `ErrorResponse` (spec 01, seção 5). */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
     AdminAuthController_login: {
         parameters: {
             query?: never;
@@ -1791,6 +3257,52 @@ export interface operations {
             };
         };
     };
+    AdminEmailsController_list: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["EmailLogPage"];
+                };
+            };
+            /** @description `UNAUTHENTICATED`: sem sessão do admin ou sessão encerrada. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description `FORBIDDEN`: falta a permissão `emails:read`. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Erro no formato `ErrorResponse` (spec 01, seção 5). */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
     AdminEmailsController_usage: {
         parameters: {
             query?: never;
@@ -1810,6 +3322,1333 @@ export interface operations {
             };
             /** @description `UNAUTHENTICATED`: sem sessão do admin ou sessão encerrada. */
             401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description `FORBIDDEN`: falta a permissão `emails:read`. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Erro no formato `ErrorResponse` (spec 01, seção 5). */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    ImpersonationsController_list: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ImpersonationPage"];
+                };
+            };
+            /** @description `UNAUTHENTICATED`: sem sessão do admin ou sessão encerrada. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description `FORBIDDEN`: falta a permissão `impersonation:use`. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Erro no formato `ErrorResponse` (spec 01, seção 5). */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    ImpersonationsController_start: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["StartImpersonationRequestInput"];
+            };
+        };
+        responses: {
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["StartedImpersonation"];
+                };
+            };
+            /** @description `UNAUTHENTICATED`: sem sessão do admin ou sessão encerrada. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description `FORBIDDEN`: falta a permissão `impersonation:use`. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Erro no formato `ErrorResponse` (spec 01, seção 5). */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    ImpersonationsController_end: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Impersonation"];
+                };
+            };
+            /** @description `UNAUTHENTICATED`: sem sessão do admin ou sessão encerrada. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description `FORBIDDEN`: ação não permitida para este admin. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Erro no formato `ErrorResponse` (spec 01, seção 5). */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    MetricsController_organizations: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["OrganizationUsageList"];
+                };
+            };
+            /** @description `UNAUTHENTICATED`: sem sessão do admin ou sessão encerrada. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description `FORBIDDEN`: falta a permissão `metrics:read`. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Erro no formato `ErrorResponse` (spec 01, seção 5). */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    MetricsController_overview: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MetricsOverview"];
+                };
+            };
+            /** @description `UNAUTHENTICATED`: sem sessão do admin ou sessão encerrada. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description `FORBIDDEN`: falta a permissão `metrics:read`. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Erro no formato `ErrorResponse` (spec 01, seção 5). */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    OrganizationsController_list: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["OrganizationPage"];
+                };
+            };
+            /** @description `UNAUTHENTICATED`: sem sessão do admin ou sessão encerrada. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description `FORBIDDEN`: falta a permissão `organizations:read`. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Erro no formato `ErrorResponse` (spec 01, seção 5). */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    OrganizationsController_create: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateOrganizationRequestInput"];
+            };
+        };
+        responses: {
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["OrganizationDetail"];
+                };
+            };
+            /** @description `UNAUTHENTICATED`: sem sessão do admin ou sessão encerrada. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description `FORBIDDEN`: falta a permissão `organizations:create`. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Erro no formato `ErrorResponse` (spec 01, seção 5). */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    OrganizationsController_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["OrganizationDetail"];
+                };
+            };
+            /** @description `UNAUTHENTICATED`: sem sessão do admin ou sessão encerrada. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description `FORBIDDEN`: falta a permissão `organizations:read`. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Erro no formato `ErrorResponse` (spec 01, seção 5). */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    OrganizationsController_update: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UpdateOrganizationRequestInput"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["OrganizationDetail"];
+                };
+            };
+            /** @description `UNAUTHENTICATED`: sem sessão do admin ou sessão encerrada. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description `FORBIDDEN`: falta a permissão `organizations:update`. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Erro no formato `ErrorResponse` (spec 01, seção 5). */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    OrganizationsController_resendOwnerInvite: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            202: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["OwnerInviteResponse"];
+                };
+            };
+            /** @description `UNAUTHENTICATED`: sem sessão do admin ou sessão encerrada. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description `FORBIDDEN`: falta a permissão `organizations:update`. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Erro no formato `ErrorResponse` (spec 01, seção 5). */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    OrganizationsController_reactivate: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ReactivateOrganizationRequestInput"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["OrganizationDetail"];
+                };
+            };
+            /** @description `UNAUTHENTICATED`: sem sessão do admin ou sessão encerrada. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description `FORBIDDEN`: falta a permissão `organizations:suspend`. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Erro no formato `ErrorResponse` (spec 01, seção 5). */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    OrganizationsController_setSubscriptionStatus: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SubscriptionStatusChangeRequestInput"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["OrganizationDetail"];
+                };
+            };
+            /** @description `UNAUTHENTICATED`: sem sessão do admin ou sessão encerrada. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description `FORBIDDEN`: falta a permissão `subscriptions:update`. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Erro no formato `ErrorResponse` (spec 01, seção 5). */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    OrganizationsController_suspend: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SuspendOrganizationRequestInput"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["OrganizationDetail"];
+                };
+            };
+            /** @description `UNAUTHENTICATED`: sem sessão do admin ou sessão encerrada. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description `FORBIDDEN`: falta a permissão `organizations:suspend`. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Erro no formato `ErrorResponse` (spec 01, seção 5). */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    RolesController_permissions: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PermissionCatalog"];
+                };
+            };
+            /** @description `UNAUTHENTICATED`: sem sessão do admin ou sessão encerrada. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description `FORBIDDEN`: ação não permitida para este admin. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Erro no formato `ErrorResponse` (spec 01, seção 5). */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    RolesController_list: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RoleList"];
+                };
+            };
+            /** @description `UNAUTHENTICATED`: sem sessão do admin ou sessão encerrada. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description `FORBIDDEN`: falta a permissão `admin.roles:manage` ou `admin.users:manage`. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Erro no formato `ErrorResponse` (spec 01, seção 5). */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    RolesController_create: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateRoleRequestInput"];
+            };
+        };
+        responses: {
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Role"];
+                };
+            };
+            /** @description `UNAUTHENTICATED`: sem sessão do admin ou sessão encerrada. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description `FORBIDDEN`: falta a permissão `admin.roles:manage`. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Erro no formato `ErrorResponse` (spec 01, seção 5). */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    RolesController_remove: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Papel excluído. */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description `UNAUTHENTICATED`: sem sessão do admin ou sessão encerrada. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description `FORBIDDEN`: falta a permissão `admin.roles:manage`. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Erro no formato `ErrorResponse` (spec 01, seção 5). */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    RolesController_update: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UpdateRoleRequestInput"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Role"];
+                };
+            };
+            /** @description `UNAUTHENTICATED`: sem sessão do admin ou sessão encerrada. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description `FORBIDDEN`: falta a permissão `admin.roles:manage`. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Erro no formato `ErrorResponse` (spec 01, seção 5). */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    AdminUsersController_list: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AdminUserPage"];
+                };
+            };
+            /** @description `UNAUTHENTICATED`: sem sessão do admin ou sessão encerrada. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description `FORBIDDEN`: falta a permissão `admin.users:manage`. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Erro no formato `ErrorResponse` (spec 01, seção 5). */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    AdminUsersController_invite: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateAdminUserRequestInput"];
+            };
+        };
+        responses: {
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AdminUser"];
+                };
+            };
+            /** @description `UNAUTHENTICATED`: sem sessão do admin ou sessão encerrada. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description `FORBIDDEN`: falta a permissão `admin.users:manage`. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Erro no formato `ErrorResponse` (spec 01, seção 5). */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    AdminUsersController_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AdminUser"];
+                };
+            };
+            /** @description `UNAUTHENTICATED`: sem sessão do admin ou sessão encerrada. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description `FORBIDDEN`: falta a permissão `admin.users:manage`. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Erro no formato `ErrorResponse` (spec 01, seção 5). */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    AdminUsersController_update: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UpdateAdminUserRequestInput"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AdminUser"];
+                };
+            };
+            /** @description `UNAUTHENTICATED`: sem sessão do admin ou sessão encerrada. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description `FORBIDDEN`: falta a permissão `admin.users:manage`. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Erro no formato `ErrorResponse` (spec 01, seção 5). */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    AdminUsersController_passwordLink: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            202: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AdminPasswordLink"];
+                };
+            };
+            /** @description `UNAUTHENTICATED`: sem sessão do admin ou sessão encerrada. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description `FORBIDDEN`: falta a permissão `admin.users:manage`. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Erro no formato `ErrorResponse` (spec 01, seção 5). */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    AdminUsersController_setPermissions: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SetAdminUserPermissionsRequestInput"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AdminUser"];
+                };
+            };
+            /** @description `UNAUTHENTICATED`: sem sessão do admin ou sessão encerrada. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description `FORBIDDEN`: falta a permissão `admin.users:manage`. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Erro no formato `ErrorResponse` (spec 01, seção 5). */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    AdminUsersController_setRoles: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SetAdminUserRolesRequestInput"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AdminUser"];
+                };
+            };
+            /** @description `UNAUTHENTICATED`: sem sessão do admin ou sessão encerrada. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description `FORBIDDEN`: falta a permissão `admin.users:manage`. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Erro no formato `ErrorResponse` (spec 01, seção 5). */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    OwnerAnnouncementsController_unread: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["OwnerAnnouncementList"];
+                };
+            };
+            /** @description `UNAUTHENTICATED`: sem sessão do app ou sessão encerrada. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description `FORBIDDEN`: só o dono pode usar esta rota. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Erro no formato `ErrorResponse` (spec 01, seção 5). */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    OwnerAnnouncementsController_read: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Lido. */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description `UNAUTHENTICATED`: sem sessão do app ou sessão encerrada. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description `FORBIDDEN`: só o dono pode usar esta rota. */
+            403: {
                 headers: {
                     [name: string]: unknown;
                 };
@@ -1857,6 +4696,69 @@ export interface operations {
                 };
             };
             /** @description `RATE_LIMITED`: mais de 30 requisições em 60 s deste IP. */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Erro no formato `ErrorResponse` (spec 01, seção 5). */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    ImpersonationAuthController_exchange: {
+        parameters: {
+            query?: never;
+            header: {
+                /** @description UUID guardado no aparelho; obrigatório no login e gravado na sessão (spec 01, seção 7.2). */
+                "X-Device-Id": string;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ImpersonationExchangeRequestInput"];
+            };
+        };
+        responses: {
+            /** @description Sessão do app aberta como o dono; cookies do app definidos. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PanelMe"];
+                };
+            };
+            /** @description `INVALID_IMPERSONATION_TOKEN` ou `DEVICE_ID_REQUIRED`. */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description `UNAUTHENTICATED`: sem a sessão do admin neste navegador. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description `RATE_LIMITED`: mais de 20 requisições em 60 s deste IP. */
             429: {
                 headers: {
                     [name: string]: unknown;
@@ -3614,6 +6516,52 @@ export interface operations {
             };
             /** @description `SHIFT_OPEN`: a unidade está com turno aberto (CA-03.03); `VERSION_CONFLICT`; nomes repetidos (`*_NAME_TAKEN`); `STATION_KIND_REQUIRED` ou `STATION_IN_USE`. */
             409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Erro no formato `ErrorResponse` (spec 01, seção 5). */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    SupportAccessController_list: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SupportAccessPage"];
+                };
+            };
+            /** @description `UNAUTHENTICATED`: sem sessão do app ou sessão encerrada. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description `FORBIDDEN`: só o dono pode usar esta rota. */
+            403: {
                 headers: {
                     [name: string]: unknown;
                 };
