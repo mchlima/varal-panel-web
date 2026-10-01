@@ -54,6 +54,7 @@ const paths = {
   ],
   store: ['M4 10v10h16V10', 'M3 4h18l-1.5 6h-15L3 4Z', 'M9 20v-6h6v6'],
   'chevron-right': ['M9 6l6 6-6 6'],
+  'chevrons-down': ['M7 6l5 5 5-5', 'M7 13l5 5 5-5'],
   'arrow-left': ['M19 12H5', 'M11 6l-6 6 6 6'],
   x: ['M6 6l12 12', 'M18 6L6 18'],
   clock: ['M12 7v5l3 2', 'M12 3a9 9 0 1 0 0 18 9 9 0 0 0 0-18Z'],

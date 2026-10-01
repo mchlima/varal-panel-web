@@ -1,6 +1,5 @@
 <script setup lang="ts">
 import type { components } from '~/api/schema'
-import { apiErrorMessage } from '~/lib/api-error'
 import { LATE_AFTER_MAX, LATE_AFTER_MIN, isNewer, parseInteger } from '~/lib/setup'
 
 type Unit = components['schemas']['Unit']
@@ -10,32 +9,9 @@ useHead({ title: 'Unidades · Varal' })
 
 const { $api } = useNuxtApp()
 const session = useSessionStore()
-const units = ref<Unit[]>([])
-const loading = ref(true)
-const loadError = ref('')
-
-/**
- * O OpenAPI ainda não publica `limit`/`cursor` de `GET /units` (a API pagina com 50 por
- * padrão): a tela mostra a primeira página e avisa se houver mais.
- */
-const hasMore = ref(false)
-
-async function load() {
-  loadError.value = ''
-  try {
-    const { data, error } = await $api.GET('/api/v1/units')
-    if (!data) {
-      loadError.value = apiErrorMessage(error)
-      return
-    }
-    units.value = data.data
-    hasMore.value = data.nextCursor !== null
-  } catch (error) {
-    loadError.value = apiErrorMessage(error)
-  } finally {
-    loading.value = false
-  }
-}
+const list = useCursorList<Unit>((query) => $api.GET('/api/v1/units', { params: { query } }))
+const units = list.items
+const load = list.reload
 
 /** Mudou a unidade: recarrega a lista e o `/auth/me` (unidades das outras telas). */
 async function refresh() {
@@ -130,11 +106,18 @@ async function create() {
       <AppButton variant="ghost" @click="creating = false">Cancelar</AppButton>
     </form>
 
-    <AppAlert v-if="loadError" tone="error">{{ loadError }}</AppAlert>
-    <p v-else-if="loading" class="text-text-muted">Carregando unidades…</p>
+    <AppAlert v-if="list.error.value && !units.length" tone="error">{{
+      list.error.value
+    }}</AppAlert>
+    <p v-else-if="list.loading.value" class="text-text-muted">Carregando unidades…</p>
     <div v-else class="grid grid-cols-1 gap-3 xl:grid-cols-2">
       <UnitCard v-for="unit in units" :key="unit.id" :unit="unit" @changed="refresh" />
     </div>
-    <AppAlert v-if="hasMore">Mostrando as primeiras 50 unidades.</AppAlert>
+    <AppAlert v-if="list.error.value && units.length" tone="error">{{ list.error.value }}</AppAlert>
+    <LoadMoreButton
+      v-if="list.hasMore.value"
+      :loading="list.loadingMore.value"
+      @click="list.loadMore"
+    />
   </PanelShell>
 </template>
