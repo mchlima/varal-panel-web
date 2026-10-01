@@ -6,7 +6,7 @@
   "description": "App dos clientes do Varal: balcão, estações, caixa e painel do dono.",
   "packageManager": "pnpm@10.32.1",
   "engines": {
-    "node": ">=22.19"
+    "node": ">=26"
   },
   "scripts": {
     "dev": "nuxt dev",
@@ -34,7 +34,7 @@
     "@nuxt/eslint": "^1.17.0",
     "@nuxt/test-utils": "^4.3.2",
     "@tailwindcss/vite": "^4.3.3",
-    "@types/node": "^22.20.4",
+    "@types/node": "^26.6.3",
     "@vue/test-utils": "^2.5.1",
     "eslint": "^10.11.0",
     "eslint-config-prettier": "^10.1.8",
