@@ -1,33 +1,13 @@
 <script setup lang="ts">
-import { apiErrorMessage } from '~/lib/api-error'
 import { permissionSummary, type StaffMember } from '~/lib/staff'
 
 /** Colaboradores e permissões (spec 03, seção 6 e tela "Colaboradores" da seção 9). */
 useHead({ title: 'Colaboradores · Varal' })
 
 const { $api } = useNuxtApp()
-const members = ref<StaffMember[]>([])
-const loading = ref(true)
-const loadError = ref('')
-/** O OpenAPI ainda não publica `limit`/`cursor` de `GET /staff`: primeira página (50). */
-const hasMore = ref(false)
-
-async function load() {
-  loadError.value = ''
-  try {
-    const { data, error } = await $api.GET('/api/v1/staff')
-    if (!data) {
-      loadError.value = apiErrorMessage(error)
-      return
-    }
-    members.value = data.data
-    hasMore.value = data.nextCursor !== null
-  } catch (error) {
-    loadError.value = apiErrorMessage(error)
-  } finally {
-    loading.value = false
-  }
-}
+const list = useCursorList<StaffMember>((query) => $api.GET('/api/v1/staff', { params: { query } }))
+const members = list.items
+const load = list.reload
 
 onMounted(load)
 useRealtimeResync(load)
@@ -65,8 +45,10 @@ async function created() {
       Novo colaborador
     </AppButton>
 
-    <AppAlert v-if="loadError" tone="error">{{ loadError }}</AppAlert>
-    <p v-else-if="loading" class="text-text-muted">Carregando equipe…</p>
+    <AppAlert v-if="list.error.value && !members.length" tone="error">
+      {{ list.error.value }}
+    </AppAlert>
+    <p v-else-if="list.loading.value" class="text-text-muted">Carregando equipe…</p>
     <AppAlert v-else-if="members.length === 0">Nenhum colaborador cadastrado ainda.</AppAlert>
     <ul v-else class="grid grid-cols-1 gap-3 xl:grid-cols-2">
       <li v-for="member in members" :key="member.id">
@@ -103,7 +85,14 @@ async function created() {
         </button>
       </li>
     </ul>
-    <AppAlert v-if="hasMore">Mostrando os primeiros 50 colaboradores.</AppAlert>
+    <AppAlert v-if="list.error.value && members.length" tone="error">
+      {{ list.error.value }}
+    </AppAlert>
+    <LoadMoreButton
+      v-if="list.hasMore.value"
+      :loading="list.loadingMore.value"
+      @click="list.loadMore"
+    />
 
     <AppDialog v-model:open="creating" title="Novo colaborador">
       <StaffCreateForm v-if="creating" @saved="created" @cancel="creating = false" />

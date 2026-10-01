@@ -1,6 +1,5 @@
 <script setup lang="ts">
 import type { components } from '~/api/schema'
-import { apiErrorMessage } from '~/lib/api-error'
 import { formatDateTime } from '~/lib/datetime'
 
 type SupportAccess = components['schemas']['SupportAccess']
@@ -12,23 +11,11 @@ type SupportAccess = components['schemas']['SupportAccess']
 useHead({ title: 'Acessos de suporte · Varal' })
 
 const { $api } = useNuxtApp()
-const accesses = ref<SupportAccess[] | null>(null)
-const hasMore = ref(false)
-const loadError = ref('')
-
-async function load() {
-  loadError.value = ''
-  try {
-    const { data, error } = await $api.GET('/api/v1/support-access')
-    if (data) {
-      accesses.value = data.data
-      hasMore.value = data.nextCursor !== null
-    } else loadError.value = apiErrorMessage(error)
-  } catch (error) {
-    loadError.value = apiErrorMessage(error)
-  }
-}
-onMounted(load)
+const list = useCursorList<SupportAccess>((query) =>
+  $api.GET('/api/v1/support-access', { params: { query } }),
+)
+const accesses = list.items
+onMounted(list.reload)
 
 function endLabel(access: SupportAccess): string {
   if (access.active || !access.endedAt) return 'Em andamento'
@@ -46,8 +33,10 @@ function endLabel(access: SupportAccess): string {
       </p>
     </div>
 
-    <AppAlert v-if="loadError" tone="error">{{ loadError }}</AppAlert>
-    <p v-else-if="!accesses" class="text-text-muted">Carregando…</p>
+    <AppAlert v-if="list.error.value && !accesses.length" tone="error">
+      {{ list.error.value }}
+    </AppAlert>
+    <p v-else-if="list.loading.value" class="text-text-muted">Carregando…</p>
     <AppAlert v-else-if="!accesses.length">
       Nenhum acesso de suporte foi feito na sua conta.
     </AppAlert>
@@ -74,6 +63,13 @@ function endLabel(access: SupportAccess): string {
         </dl>
       </li>
     </ul>
-    <p v-if="hasMore" class="text-sm text-text-muted">Mostrando os acessos mais recentes.</p>
+    <AppAlert v-if="list.error.value && accesses.length" tone="error">
+      {{ list.error.value }}
+    </AppAlert>
+    <LoadMoreButton
+      v-if="list.hasMore.value"
+      :loading="list.loadingMore.value"
+      @click="list.loadMore"
+    />
   </PanelShell>
 </template>
