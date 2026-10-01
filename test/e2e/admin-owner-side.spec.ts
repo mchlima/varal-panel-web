@@ -22,7 +22,7 @@ const suffix = Date.now().toString(36).slice(-5)
 
 interface StartedImpersonation {
   handoffUrl: string
-  impersonation: { id: string }
+  impersonation: { id: string; reason: string | null; expiresAt: string | null }
 }
 
 let admin: AdminSession
@@ -43,12 +43,14 @@ test.beforeEach(({ browserName }) => skipWithoutSessionCookies(browserName))
 test('"entrar como" de ponta a ponta: faixa em todas as telas, auditoria e lista do dono (CA-02.07, CA-02.09)', async ({
   page,
 }) => {
-  const reason = `Ajuda com o cardápio ${suffix}`
+  // RN-02.17: só a organização, sem motivo nem prazo.
   const started = await adminCall<StartedImpersonation>(admin, 'POST', '/impersonations', {
     organizationId: organization.id,
-    reason,
   })
   expect(started.handoffUrl).toContain('/entrar-como#token=')
+  expect(started.impersonation).toMatchObject({ reason: null, expiresAt: null })
+  const accessRow = (p: typeof page) =>
+    p.locator(`[data-support-access-id="${started.impersonation.id}"]`)
 
   // RN-02.21: o link troca o token pela sessão do app e abre o painel; o token sai da URL.
   // O navegador precisa ter a sessão do admin que gerou o link.
@@ -57,12 +59,13 @@ test('"entrar como" de ponta a ponta: faixa em todas as telas, auditoria e lista
   await expect(page).toHaveURL(/\/painel$/)
   expect(page.url()).not.toContain('token=')
 
-  // RN-02.19: faixa fixa com organização, admin, tempo restante e "Encerrar acesso".
+  // RN-02.19: faixa fixa com organização, admin e "Encerrar acesso"; sem tempo restante.
   const banner = page.getByTestId('impersonation-banner')
   await expect(banner).toContainText(
     `Você está acessando como ${seed.organizationName} — ${admin.name}`,
   )
-  await expect(page.getByTestId('impersonation-remaining')).toHaveText(/Restam (60|59) min/)
+  await expect(page.getByTestId('impersonation-remaining')).toHaveCount(0)
+  await expect(banner).not.toContainText('Restam')
   await expect(banner.getByRole('button', { name: 'Encerrar acesso' })).toBeVisible()
 
   // CA-02.07: a faixa fica visível em todas as telas.
@@ -77,9 +80,8 @@ test('"entrar como" de ponta a ponta: faixa em todas as telas, auditoria e lista
     await expect(banner, `faixa em ${path}`).toBeVisible()
   }
   // O acesso aparece em andamento na lista do dono (RN-02.22).
-  await expect(
-    page.getByTestId('support-access').filter({ hasText: reason }).first(),
-  ).toContainText('Em andamento')
+  await expect(accessRow(page)).toContainText('Em andamento')
+  await expect(accessRow(page)).not.toContainText('Motivo')
 
   // CA-02.07: alteração no cardápio feita no "entrar como" vai para a auditoria com o admin.
   const category = `Suporte ${suffix}`
@@ -126,11 +128,11 @@ test('"entrar como" de ponta a ponta: faixa em todas as telas, auditoria e lista
   const me = await page.context().request.get(`${apiBaseUrl}/api/v1/auth/me`)
   expect(me.status()).toBe(401)
 
-  // CA-02.09: o dono vê o acesso, com admin, motivo e horários.
+  // CA-02.09: o dono vê o acesso, com admin e horários (sem motivo).
   await loginOwner(page)
   await expect(page.getByTestId('impersonation-banner')).toHaveCount(0)
   await page.goto('/painel/acessos-de-suporte')
-  const access = page.getByTestId('support-access').filter({ hasText: reason }).first()
+  const access = accessRow(page)
   await expect(access).toContainText(admin.name)
   await expect(access).toContainText('Encerrado')
   await expect(access).toContainText('Início')
@@ -142,7 +144,6 @@ test('link do "entrar como" aberto em outro navegador não funciona (RN-02.21)',
 }) => {
   const started = await adminCall<StartedImpersonation>(admin, 'POST', '/impersonations', {
     organizationId: organization.id,
-    reason: `Teste de link vazado ${suffix}`,
   })
   const other = await browser.newContext()
   try {
@@ -163,7 +164,6 @@ test('admin encerra o acesso: o painel cai na hora e a sessão é recusada (RN-0
 }) => {
   const started = await adminCall<StartedImpersonation>(admin, 'POST', '/impersonations', {
     organizationId: organization.id,
-    reason: `Teste de encerramento ${suffix}`,
   })
   await shareAdminSession(admin, page.context())
   await page.goto(started.handoffUrl)

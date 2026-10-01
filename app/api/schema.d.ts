@@ -254,7 +254,7 @@ export interface paths {
         /** Acessos de "entrar como" (mais novos primeiro) */
         get: operations["ImpersonationsController_list"];
         put?: never;
-        /** Abre um "entrar como" de 60 minutos e devolve o link de uso único do app (RN-02.17) */
+        /** Abre um "entrar como" (sem prazo, até o admin encerrar) e devolve o link de uso único do app (RN-02.17) */
         post: operations["ImpersonationsController_start"];
         delete?: never;
         options?: never;
@@ -622,7 +622,7 @@ export interface paths {
         put?: never;
         /**
          * Troca o link de uso único do "entrar como" pela sessão do app (RN-02.21)
-         * @description Chamado pela página `/entrar-como` do painel com o token do fragmento. Exige o cookie de sessão do admin que gerou o link (mesmo navegador) e o `X-Device-Id` do painel. A sessão aberta é do dono, dura até o fim do "entrar como" (60 min, CA-02.08) e não dá acesso a outras organizações nem ao admin.
+         * @description Chamado pela página `/entrar-como` do painel com o token do fragmento. Exige o cookie de sessão do admin que gerou o link (mesmo navegador) e o `X-Device-Id` do painel. A sessão aberta é do dono, segue as regras normais de renovação e termina na hora em que o "entrar como" é encerrado (CA-02.08) e não dá acesso a outras organizações nem ao admin.
          */
         post: operations["ImpersonationAuthController_exchange"];
         delete?: never;
@@ -1202,7 +1202,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** Acessos de suporte feitos na organização (admin, motivo, início e fim) */
+        /** Acessos de suporte feitos na organização (admin, início e fim; motivo se houver) */
         get: operations["SupportAccessController_list"];
         put?: never;
         post?: never;
@@ -2206,11 +2206,14 @@ export interface components {
         Impersonation: {
             active: boolean;
             adminName: string;
-            /** @description Fim real; num acesso que venceu, o horário do vencimento. */
+            /** @description Fim do acesso; `null` enquanto está em andamento. */
             endedAt: string | null;
             endedBy: components["schemas"]["ImpersonationEndedBy"] | null;
-            /** Format: date-time */
-            expiresAt: string;
+            /**
+             * @deprecated
+             * @description Sempre `null`: o "entrar como" não tem prazo e dura até o admin encerrar (RN-02.17). Preenchido só nos acessos antigos, do tempo do limite de 60 minutos.
+             */
+            expiresAt: string | null;
             /** Format: uuid */
             id: string;
             /** Format: uuid */
@@ -2220,12 +2223,13 @@ export interface components {
             ownerId: string;
             /** Format: uuid */
             platformAdminId: string;
-            reason: string;
+            /** @description Motivo, só nos acessos em que foi informado (opcional, RN-02.17). */
+            reason: string | null;
             /** Format: date-time */
             startedAt: string;
         };
         /**
-         * @description Como o "entrar como" terminou: pelo admin (ou "Encerrar acesso" no app) ou por tempo.
+         * @description Como o "entrar como" terminou: pelo admin (ou "Encerrar acesso" no app). `expired` só aparece no histórico dos acessos antigos, do tempo em que havia limite de 60 minutos (RN-02.17).
          * @enum {string}
          */
         ImpersonationEndedBy: "admin" | "expired";
@@ -2672,8 +2676,11 @@ export interface components {
         /** @description "Entrar como" (spec 02, seção 7): "Você está acessando como {organização} — {admin}". "Encerrar acesso" é o `POST /auth/logout`. */
         PanelImpersonation: {
             adminName: string;
-            /** Format: date-time */
-            expiresAt: string;
+            /**
+             * @deprecated
+             * @description Sempre `null`: o "entrar como" não tem prazo e dura até o admin encerrar (RN-02.17).
+             */
+            expiresAt: string | null;
             /** Format: uuid */
             id: string;
             /** Format: date-time */
@@ -3020,8 +3027,8 @@ export interface components {
         StartImpersonationRequestInput: {
             /** Format: uuid */
             organizationId: string;
-            /** @description Motivo do acesso, pelo menos 10 caracteres (RN-02.17). */
-            reason: string;
+            /** @description Opcional, aceito só por compatibilidade: o admin não informa mais motivo (RN-02.17). Se vier, precisa ter pelo menos 10 caracteres. */
+            reason?: string;
         };
         StartedImpersonation: {
             /** Format: date-time */
@@ -3088,10 +3095,12 @@ export interface components {
             adminName: string;
             /** @description Fim do acesso; `null` enquanto está em andamento. */
             endedAt: string | null;
+            /** @description `expired` só no histórico dos acessos antigos, do tempo do limite de 60 minutos (RN-02.17). */
             endedBy: ("admin" | "expired") | null;
             /** Format: uuid */
             id: string;
-            reason: string;
+            /** @description Motivo, só nos acessos em que foi informado (opcional, RN-02.22). */
+            reason: string | null;
             /** Format: date-time */
             startedAt: string;
         };

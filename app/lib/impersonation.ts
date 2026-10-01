@@ -3,13 +3,6 @@
  * troca do link (RN-02.21).
  */
 
-/** Tempo restante da sessão de suporte, em minutos (arredondado para cima). */
-export function formatRemaining(ms: number): string {
-  if (ms <= 0) return 'encerrando…'
-  if (ms < 60_000) return 'menos de 1 min'
-  return `${Math.ceil(ms / 60_000)} min`
-}
-
 export const IMPERSONATION_LINK_MISSING =
   'Link incompleto. Volte ao admin do Varal e use "Entrar como" de novo.'
 

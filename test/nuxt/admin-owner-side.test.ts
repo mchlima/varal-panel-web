@@ -31,13 +31,13 @@ function me(overrides: Partial<PanelMe> = {}, org: Partial<PanelMe['organization
   }
 }
 
-function impersonating(minutesLeft: number): PanelMe['impersonation'] {
-  const now = Date.now()
+/** Sem prazo (RN-02.17): a API manda `expiresAt` sempre nulo. */
+function impersonating(startedMinutesAgo = 1): PanelMe['impersonation'] {
   return {
     id: ID,
     adminName: 'Bia do Suporte',
-    startedAt: new Date(now - 60_000).toISOString(),
-    expiresAt: new Date(now + minutesLeft * 60_000).toISOString(),
+    startedAt: new Date(Date.now() - startedMinutesAgo * 60_000).toISOString(),
+    expiresAt: null,
   }
 }
 
@@ -67,13 +67,14 @@ afterEach(() => {
 })
 
 describe('faixa do "entrar como" (spec 02, RN-02.19)', () => {
-  it('mostra organização, admin, tempo restante e "Encerrar acesso"', async () => {
-    signIn(me({ impersonation: impersonating(42) }))
+  it('mostra organização, admin e "Encerrar acesso", sem tempo restante (RN-02.17)', async () => {
+    signIn(me({ impersonation: impersonating() }))
     const wrapper = await mountSuspended(ImpersonationBanner)
     expect(wrapper.get('[data-testid="impersonation-text"]').text()).toBe(
       'Você está acessando como Espetinho do Piloto — Bia do Suporte',
     )
-    expect(wrapper.get('[data-testid="impersonation-remaining"]').text()).toBe('Restam 42 min')
+    expect(wrapper.find('[data-testid="impersonation-remaining"]').exists()).toBe(false)
+    expect(wrapper.text()).not.toMatch(/Restam|min/)
     expect(wrapper.get('button').text()).toBe('Encerrar acesso')
   })
 
@@ -84,7 +85,7 @@ describe('faixa do "entrar como" (spec 02, RN-02.19)', () => {
   })
 
   it('"Encerrar acesso" faz o logout desta sessão e volta ao login avisando', async () => {
-    const session = signIn(me({ impersonation: impersonating(30) }))
+    const session = signIn(me({ impersonation: impersonating() }))
     const post = vi.spyOn(useNuxtApp().$api, 'POST').mockResolvedValue(apiResponse(204) as never)
     const wrapper = await mountSuspended(ImpersonationBanner)
     await wrapper.get('button').trigger('click')
@@ -95,21 +96,22 @@ describe('faixa do "entrar como" (spec 02, RN-02.19)', () => {
     expect(navigateToMock).toHaveBeenCalledWith('/entrar', { replace: true })
   })
 
-  it('no fim dos 60 minutos, recarrega a sessão, que a API já recusa (CA-02.08)', async () => {
-    signIn(me({ impersonation: impersonating(-0.1) }))
-    const get = vi
-      .spyOn(useNuxtApp().$api, 'GET')
-      .mockResolvedValue(
-        apiResponse(401, { error: { code: 'UNAUTHENTICATED', message: '' } }) as never,
-      )
-    const wrapper = await mountSuspended(ImpersonationBanner)
-    await flushPromises()
-    expect(get).toHaveBeenCalledWith('/api/v1/auth/me')
-    expect(wrapper.get('[data-testid="impersonation-remaining"]').text()).toBe('Restam encerrando…')
+  it('sem prazo: depois de horas continua na tela e não recarrega a sessão (RN-02.17)', async () => {
+    vi.useFakeTimers()
+    try {
+      signIn(me({ impersonation: impersonating(5 * 60) }))
+      const get = vi.spyOn(useNuxtApp().$api, 'GET')
+      const wrapper = await mountSuspended(ImpersonationBanner)
+      await vi.advanceTimersByTimeAsync(2 * 60 * 60_000)
+      expect(get).not.toHaveBeenCalled()
+      expect(wrapper.find('[data-testid="impersonation-banner"]').exists()).toBe(true)
+    } finally {
+      vi.useRealTimers()
+    }
   })
 
   it('com ações na fila, espera o envio antes de encerrar', async () => {
-    signIn(me({ impersonation: impersonating(30) }))
+    signIn(me({ impersonation: impersonating() }))
     useConnectionStore().pendingCount = 2
     const wrapper = await mountSuspended(ImpersonationBanner)
     expect(wrapper.get('button').attributes('disabled')).toBeDefined()
@@ -200,7 +202,7 @@ describe('comunicados no painel (spec 02, RN-02.16; CA-02.06)', () => {
   })
 
   it('no "entrar como", não pede para registrar a leitura: só fecha nesta sessão', async () => {
-    signIn(me({ impersonation: impersonating(30) }))
+    signIn(me({ impersonation: impersonating() }))
     vi.spyOn(useNuxtApp().$api, 'GET').mockResolvedValue(
       apiResponse(200, { data: [announcement] }) as never,
     )

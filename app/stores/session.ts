@@ -172,7 +172,7 @@ export const useSessionStore = defineStore('session', () => {
   /** A renovação foi recusada (ou `session.revoked`): limpa e volta ao login. */
   async function handleSessionLost(): Promise<void> {
     const wasAuthenticated = status.value === 'authenticated'
-    // "Entrar como" encerrado pelo admin ou vencido (60 min, CA-02.08).
+    // "Entrar como" encerrado pelo admin (CA-02.08; não há prazo, RN-02.17).
     if (me.value?.impersonation) impersonationEnded.value = true
     clear()
     const route = useRoute()
