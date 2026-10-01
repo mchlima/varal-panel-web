@@ -1,0 +1,68 @@
+/*
+ * Tokens visuais do Varal. Fonte: varal-docs, spec 08 (identidade visual).
+ * Mudança de token é feita primeiro na spec e depois aqui e no varal-admin-web.
+ *
+ * Os tokens ficam no @theme do Tailwind: viram utilitários (bg-primary,
+ * text-status-ready-text, font-display, rounded-button...) e também variáveis
+ * CSS em :root (--color-primary...). A paleta padrão do Tailwind é removida,
+ * para que nenhuma cor fora destes tokens seja usada.
+ */
+@theme static {
+  --color-*: initial;
+
+  /* Spec 08, seção 3: cores */
+  --color-primary: #be185d;
+  --color-primary-ink: #ffffff;
+  --color-primary-soft: #fce7f3;
+  --color-primary-deep: #831843;
+  --color-bg: #f3f4f2;
+  --color-surface: #ffffff;
+  --color-surface-muted: #f6f7f5;
+  --color-text: #111315;
+  --color-text-muted: #5a6067;
+  --color-border: #d9dcd8;
+  --color-border-strong: #7a8085;
+  --color-focus: #111315;
+
+  /* Spec 08, seção 4: erro de formulário (texto sobre fundo branco) */
+  --color-error: #b91c1c;
+
+  /* Spec 08, seção 4: cores de status (fundo e texto) */
+  --color-status-new-bg: #be185d;
+  --color-status-new-text: #ffffff;
+  --color-status-preparing-bg: #fde68a;
+  --color-status-preparing-text: #713f12;
+  --color-status-ready-bg: #bbf7d0;
+  --color-status-ready-text: #14532d;
+  --color-status-late-bg: #fecaca;
+  --color-status-late-text: #7f1d1d;
+  --color-status-canceled-bg: #e2e8f0;
+  --color-status-canceled-text: #334155;
+
+  /* Spec 08, seção 5: tipografia */
+  --font-*: initial;
+  --font-sans: 'Atkinson Hyperlegible', ui-sans-serif, system-ui, sans-serif;
+  --font-display:
+    'Bricolage Grotesque', 'Atkinson Hyperlegible', ui-sans-serif, system-ui, sans-serif;
+
+  /* Escala: 13, 15, 17, 20, 24, 32 px; texto corrente 17 px no celular */
+  --text-*: initial;
+  --text-xs: 0.8125rem;
+  --text-xs--line-height: 1.35;
+  --text-sm: 0.9375rem;
+  --text-sm--line-height: 1.4;
+  --text-base: 1.0625rem;
+  --text-base--line-height: 1.5;
+  --text-lg: 1.25rem;
+  --text-lg--line-height: 1.35;
+  --text-xl: 1.5rem;
+  --text-xl--line-height: 1.25;
+  --text-2xl: 2rem;
+  --text-2xl--line-height: 1.15;
+
+  /* Spec 08, seção 6: cantos variam por função (6, 10, 12 px) */
+  --radius-*: initial;
+  --radius-chip: 6px;
+  --radius-button: 10px;
+  --radius-card: 12px;
+}

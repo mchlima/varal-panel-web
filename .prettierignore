@@ -1,0 +1,18 @@
+# Gerados
+.nuxt/
+.output/
+.data/
+dist/
+coverage/
+node_modules/
+pnpm-lock.yaml
+app/api/schema.d.ts
+CHANGELOG.md
+.release-please-manifest.json
+
+# Gerados a partir do varal-docs
+AGENTS.md
+CLAUDE.md
+
+# Copiados do varal-docs (spec 08, RN-08.01)
+public/
