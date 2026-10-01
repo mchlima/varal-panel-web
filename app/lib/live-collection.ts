@@ -8,6 +8,7 @@
  * por cima do estado recarregado (README da API, "Reconexão").
  */
 import type { OrderItem, TabSummary } from './operation'
+import type { CashRegister } from './payment'
 
 interface Versioned {
   id: string
@@ -123,6 +124,11 @@ export function createTabBoard(shiftId: string): LiveCollection<TabSummary> {
   return new LiveCollection<TabSummary>(
     (tab) => tab.shiftId === shiftId && (tab.status === 'open' || tab.status === 'closing'),
   )
+}
+
+/** Caixas de um turno (spec 05, seção 5): abertos e fechados, por `version`. */
+export function createRegisterList(shiftId: string): LiveCollection<CashRegister> {
+  return new LiveCollection<CashRegister>((register) => register.shiftId === shiftId)
 }
 
 /**

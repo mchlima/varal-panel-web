@@ -10,15 +10,22 @@ import {
   type OrderItem,
   type Tab,
 } from '~/lib/operation'
-import { pendingForItem, pendingLabel, pendingOperations } from '~/lib/operation-actions'
+import {
+  pendingForItem,
+  pendingLabel,
+  pendingOperations,
+  tabActionName,
+} from '~/lib/operation-actions'
 import { cartTotalCents, lineTotalCents } from '~/lib/order-builder'
+import { discountLabel } from '~/lib/payment'
 
 /**
  * Comanda (`/balcao/comandas/{numero}`, spec 04, seção 8.1): pedidos com os itens e a etapa de
  * cada um, "Entregue" nos prontos (RN-04.21), cancelar item com motivo (RN-04.25, RN-04.26),
- * "Novo pedido", "Pedir a conta", "Reabrir" (RN-04.12) e cancelar comanda. Receber é da spec 05.
- * Toda escrita vai pela fila local (spec 01, seção 11); o pendente aparece como "Enviando…" ou
- * "Na fila", sem prever o resultado.
+ * "Novo pedido", "Pedir a conta", "Reabrir" (RN-04.12), cancelar comanda e, em fechamento,
+ * "Receber" (spec 05). Na comanda paga, cancelar item vira o roteiro estornar → cancelar →
+ * receber de novo (RN-04.28, RN-05.14). Toda escrita vai pela fila local (spec 01, seção 11); o
+ * pendente aparece como "Enviando…" ou "Na fila", sem prever o resultado.
  */
 const route = useRoute()
 const number = computed(() => Number(route.params.numero))
@@ -38,6 +45,10 @@ const notices = ref<Record<string, string>>({})
 const tabError = ref('')
 
 const editable = computed(() => tab.value?.status === 'open' || tab.value?.status === 'closing')
+/** Comanda paga: entrega continua; cancelar item pede o estorno antes (RN-05.14). */
+const paid = computed(() => tab.value?.status === 'paid')
+/** Paga antes não reabre nem recebe outro pedido (`TAB_PAY_FIRST`, RN-04.11). */
+const payFirst = computed(() => tab.value?.mode === 'pay_first')
 const items = computed<OrderItem[]>(() => tab.value?.orders.flatMap((order) => order.items) ?? [])
 const activeItems = computed(() => items.value.filter((item) => item.canceledAt === null))
 const draft = computed(() => (tab.value ? cart.cartOf(tab.value.id) : null))
@@ -62,6 +73,17 @@ const pendingTabAction = computed(
           meta.kind === 'tab.cancel') &&
         meta.tabId === tabId.value,
     )[0] ?? null,
+)
+/** Pagamento, estorno ou desconto na fila: aparece, mas não muda a situação da comanda. */
+const pendingMoney = computed(() =>
+  pendingOperations(
+    connection.pending,
+    (meta) =>
+      (meta.kind === 'tab.payment' ||
+        meta.kind === 'payment.reverse' ||
+        meta.kind === 'tab.discount') &&
+      meta.tabId === tabId.value,
+  ),
 )
 const pendingTabText = computed(() => {
   const op = pendingTabAction.value
@@ -95,6 +117,30 @@ operations.onSettled((meta, outcome) => {
 
 // CA-04.05: outro aparelho mudou o item antes; o item mostra o estado atual e o aviso.
 useOperationFailures((meta, failure) => {
+  // RN-05.14: comanda paga (ou que ficaria abaixo do já pago) não cancela item direto.
+  if (
+    meta.kind === 'item.cancel' &&
+    meta.tabId === tabId.value &&
+    (failure.code === 'TAB_PAID' || failure.code === 'TAB_PAYMENTS_EXCEED_TOTAL')
+  ) {
+    notices.value = {
+      ...notices.value,
+      [meta.itemId]:
+        failure.code === 'TAB_PAID'
+          ? 'A comanda já está paga: estorne o pagamento em "Receber", cancele o item e receba de novo.'
+          : `${failure.message} Estorne um pagamento em "Receber" antes de cancelar.`,
+    }
+    reloadSoon()
+    return true
+  }
+  if (meta.kind === 'tab.cancel' && meta.tabId === tabId.value) {
+    if (failure.code === 'TAB_HAS_PAYMENTS' || failure.code === 'TAB_PAID') {
+      tabError.value =
+        'A comanda tem pagamento registrado: estorne os pagamentos em "Receber" antes de cancelar.'
+      reloadSoon()
+      return true
+    }
+  }
   if (!meta.kind.startsWith('item.') || !('itemId' in meta) || meta.tabId !== tabId.value) {
     return false
   }
@@ -205,8 +251,12 @@ function cancelTab(current: Tab) {
               <dt class="text-text-muted">Subtotal</dt>
               <dd class="text-right tabular-nums">{{ formatCents(tab.subtotalCents) }}</dd>
               <template v-if="tab.discountCents > 0">
-                <dt class="text-text-muted">Desconto</dt>
-                <dd class="text-right tabular-nums">- {{ formatCents(tab.discountCents) }}</dd>
+                <dt class="text-text-muted">
+                  Desconto ({{ discountLabel(tab.discountType, tab.discountValue) }})
+                </dt>
+                <dd class="text-right tabular-nums" data-testid="tab-discount">
+                  - {{ formatCents(tab.discountCents) }}
+                </dd>
               </template>
               <dt class="font-bold">Total</dt>
               <dd
@@ -215,8 +265,34 @@ function cancelTab(current: Tab) {
               >
                 {{ formatCents(tab.totalCents) }}
               </dd>
+              <template v-if="tab.paidCents > 0">
+                <dt class="text-text-muted">Pago</dt>
+                <dd class="text-right tabular-nums">{{ formatCents(tab.paidCents) }}</dd>
+                <dt class="text-text-muted">Saldo</dt>
+                <dd class="text-right font-bold tabular-nums" data-testid="tab-balance">
+                  {{ formatCents(tab.balanceCents) }}
+                </dd>
+              </template>
             </dl>
+            <p v-if="tab.discountReason && tab.discountCents > 0" class="text-sm text-text-muted">
+              Motivo do desconto: {{ tab.discountReason }}
+            </p>
             <StageChip v-if="pendingTabText" status="pending" :label="pendingTabText" />
+            <StageChip
+              v-for="op in pendingMoney"
+              :key="op.action.idempotencyKey"
+              status="pending"
+              :label="`${tabActionName(op.meta)}: ${pendingLabel(op.action, connection.online)} · não confirmado`"
+            />
+            <NuxtLink
+              v-if="editable"
+              :to="`/balcao/comandas/${tab.number}/receber?desconto=1`"
+              class="inline-flex min-h-12 items-center gap-1.5 self-start font-bold text-primary-deep underline-offset-4 hover:underline"
+              data-testid="tab-discount-link"
+            >
+              <AppIcon name="percent" />
+              {{ tab.discountCents > 0 ? 'Alterar desconto' : 'Dar desconto' }}
+            </NuxtLink>
           </div>
 
           <AppAlert v-if="orderNotice" tone="error">
@@ -275,7 +351,8 @@ function cancelTab(current: Tab) {
                 :item="item"
                 :stages="counter.stages"
                 :now="now"
-                :editable="editable"
+                :editable="editable || paid"
+                :paid-tab-number="paid ? tab.number : null"
                 :pending="itemPending(item)"
                 :notice="notices[item.id]"
                 @deliver="deliver(item)"
@@ -300,13 +377,14 @@ function cancelTab(current: Tab) {
               Pedir a conta
             </AppButton>
             <AppButton
-              v-if="tab.status === 'closing'"
+              v-if="tab.status === 'closing' && !payFirst"
               variant="secondary"
-              disabled
-              title="O recebimento chega com o módulo de caixa."
+              :disabled="!!pendingTabAction"
+              data-testid="reopen"
+              @click="tabAction('tab.reopen', tab)"
             >
-              <AppIcon name="receipt" />
-              Receber · disponível em breve
+              <AppIcon name="undo" />
+              Reabrir comanda
             </AppButton>
             <AppAlert v-if="tabError" tone="error">{{ tabError }}</AppAlert>
             <ConfirmAction
@@ -324,7 +402,7 @@ function cancelTab(current: Tab) {
       </section>
     </div>
 
-    <template v-if="tab && editable" #footer>
+    <template v-if="tab && (editable || paid)" #footer>
       <AppButton
         v-if="tab.status === 'open'"
         :to="`/balcao/comandas/${tab.number}/pedido`"
@@ -334,13 +412,21 @@ function cancelTab(current: Tab) {
         Novo pedido
       </AppButton>
       <AppButton
-        v-else
-        :disabled="!!pendingTabAction"
-        data-testid="reopen"
-        @click="tabAction('tab.reopen', tab)"
+        v-else-if="tab.status === 'closing'"
+        :to="`/balcao/comandas/${tab.number}/receber`"
+        data-testid="receive"
       >
-        <AppIcon name="undo" />
-        Reabrir comanda
+        <AppIcon name="wallet" />
+        Receber {{ formatCents(tab.balanceCents) }}
+      </AppButton>
+      <AppButton
+        v-else
+        :to="`/balcao/comandas/${tab.number}/receber`"
+        variant="secondary"
+        data-testid="view-payments"
+      >
+        <AppIcon name="receipt" />
+        Pagamentos e estorno
       </AppButton>
     </template>
   </OperationShell>

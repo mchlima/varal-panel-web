@@ -55,6 +55,11 @@ const loaded = ref(false)
 const loadError = ref('')
 const closedMessage = ref('')
 const summary = computed(() => summarizeTabs(tabs.value))
+/** Caixas abertos do turno: o turno só fecha com todos fechados (RN-04.07). */
+const shiftId = computed(() => shift.value?.id ?? null)
+const unitIdRef = computed(() => unit.value?.id ?? null)
+const cash = useCashRegisters(shiftId, unitIdRef)
+const openRegisters = computed(() => cash.openRegisters.value.length)
 const activeCategories = computed(() =>
   menu.categories
     .filter((category) => category.active)
@@ -315,7 +320,14 @@ const shiftWho = computed(() => {
               </dd>
             </div>
           </dl>
-          <p class="text-sm text-text-muted">Caixas: chegam com o módulo de caixa.</p>
+          <p class="text-sm" data-testid="shift-registers">
+            Caixas abertos: {{ openRegisters }}.
+            <NuxtLink
+              :to="`/caixas?unidade=${unit?.id}`"
+              class="inline-flex min-h-12 items-center font-bold text-primary-deep underline"
+              >Ver caixas</NuxtLink
+            >
+          </p>
           <div v-if="shift.agreement" class="rounded-card bg-surface-muted p-3">
             <p class="font-bold">Acordo com {{ shift.agreement.contractorName }}</p>
             <p>{{ MODALITY_LABELS[shift.agreement.modality] }}</p>
@@ -393,7 +405,8 @@ const shiftWho = computed(() => {
         <section class="flex flex-col gap-3" aria-labelledby="close-title">
           <h2 id="close-title" class="text-xl">Fechar turno</h2>
           <p class="text-text-muted">
-            Precisa de todas as comandas pagas, penduradas ou canceladas.
+            Precisa de todas as comandas pagas, penduradas ou canceladas e de todos os caixas
+            fechados.
           </p>
           <ConfirmAction
             label="Fechar turno"
@@ -418,7 +431,13 @@ const shiftWho = computed(() => {
                 </li>
               </ul>
               <p v-if="pending.cashRegisters.length" class="mt-2">
-                Caixas abertos: {{ pending.cashRegisters.map((cash) => cash.name).join(', ') }}
+                Caixas abertos:
+                {{ pending.cashRegisters.map((register) => register.name).join(', ') }}.
+                <NuxtLink
+                  :to="`/caixas?unidade=${unit?.id}`"
+                  class="inline-flex min-h-12 items-center font-bold underline"
+                  >Fechar caixas</NuxtLink
+                >
               </p>
             </div>
           </AppAlert>

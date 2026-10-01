@@ -128,6 +128,29 @@ const paths = {
   send: ['M4 12l16-8-6 16-2-6-8-2Z', 'M12 14l8-10'],
   'arrow-right': ['M5 12h14', 'M13 6l6 6-6 6'],
   calendar: ['M4 6h16v14H4Z', 'M4 10h16', 'M8 3v4', 'M16 3v4'],
+  /** Pix: losango de pontas abertas (sem a marca oficial). */
+  pix: [
+    'M12 3l4 4-4 4-4-4 4-4Z',
+    'M12 13l4 4-4 4-4-4 4-4Z',
+    'M3 12l4-4',
+    'M3 12l4 4',
+    'M21 12l-4-4',
+    'M21 12l-4 4',
+  ],
+  cash: [
+    'M3 7h18v10H3Z',
+    'M12 9.5a2.5 2.5 0 1 0 0 5 2.5 2.5 0 0 0 0-5Z',
+    'M6 10v.01',
+    'M18 14v.01',
+  ],
+  card: ['M3 6h18v12H3Z', 'M3 10h18', 'M7 15h3'],
+  wallet: ['M4 7h15a1 1 0 0 1 1 1v11H4Z', 'M4 7l11-3v3', 'M16 13h.01'],
+  percent: [
+    'M19 5L5 19',
+    'M7 5a2 2 0 1 0 0 4 2 2 0 0 0 0-4Z',
+    'M17 15a2 2 0 1 0 0 4 2 2 0 0 0 0-4Z',
+  ],
+  backspace: ['M8 5h12v14H8l-6-7 6-7Z', 'M12 9l5 6', 'M17 9l-5 6'],
 } as const
 
 export type IconName = keyof typeof paths

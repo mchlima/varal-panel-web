@@ -23,8 +23,13 @@ const props = withDefaults(
     editable: boolean
     pending?: string
     notice?: string
+    /**
+     * Número da comanda quando ela está paga (RN-04.28, RN-05.14): cancelar o item vira o
+     * roteiro estornar → cancelar → receber de novo, explicado no próprio item.
+     */
+    paidTabNumber?: number | null
   }>(),
-  { pending: undefined, notice: undefined },
+  { pending: undefined, notice: undefined, paidTabNumber: null },
 )
 const emit = defineEmits<{
   deliver: []
@@ -33,6 +38,7 @@ const emit = defineEmits<{
 }>()
 
 const canceling = ref(false)
+const explainingPaid = ref(false)
 const canceled = computed(() => props.item.canceledAt !== null)
 const late = computed(() => isItemLate(props.item, props.now))
 const ready = computed(() => isReadyToDeliver(props.stages, props.item))
@@ -117,11 +123,27 @@ function cancel(value: { quantity: number; reason: string }) {
         type="button"
         class="min-h-12 rounded-button px-3 font-bold text-status-late-text underline-offset-4 hover:underline disabled:opacity-50"
         :disabled="!!pending"
-        @click="canceling = true"
+        data-testid="cancel-item"
+        @click="paidTabNumber !== null ? (explainingPaid = !explainingPaid) : (canceling = true)"
       >
         Cancelar item
       </button>
     </div>
+    <AppAlert v-if="explainingPaid && paidTabNumber !== null">
+      <div data-testid="paid-cancel-guide">
+        <p class="font-bold">Esta comanda já está paga.</p>
+        <ol class="mt-1 list-decimal pl-5">
+          <li>Estorne o pagamento (a comanda volta para "Fechando").</li>
+          <li>Cancele o item aqui.</li>
+          <li>Receba de novo o valor certo.</li>
+        </ol>
+        <NuxtLink
+          :to="`/balcao/comandas/${paidTabNumber}/receber`"
+          class="mt-1 inline-flex min-h-12 items-center font-bold underline"
+          >Ir para o estorno</NuxtLink
+        >
+      </div>
+    </AppAlert>
     <CancelItemForm
       v-if="canceling"
       :quantity="item.quantity"
