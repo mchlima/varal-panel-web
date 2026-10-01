@@ -64,6 +64,10 @@ test.describe('com sessão', () => {
     context,
   }) => {
     await loginOwner(page)
+    // Espera o painel terminar de carregar: uma requisição em voo sem o cookie renovaria antes
+    // de o teste começar a ouvir a renovação.
+    await expect(page.getByRole('heading', { level: 1 })).toHaveText('Olá, Dono')
+    await page.waitForLoadState('networkidle')
     await context.clearCookies({ name: '__Host-varal_at' })
     const refreshed = page.waitForResponse(
       (r) => r.url().endsWith('/api/v1/auth/refresh') && r.status() === 200,

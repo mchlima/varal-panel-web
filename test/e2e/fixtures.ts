@@ -60,20 +60,37 @@ export function skipWithoutSessionCookies(browserName: string): void {
   )
 }
 
+/**
+ * A API limita logins a 20 por minuto por IP (RN-01.02), e a suíte inteira passa disso. Quando
+ * a tela mostra "Muitas tentativas", espera e tenta de novo, em vez de falhar.
+ */
+async function submitLogin(page: Page, done: RegExp): Promise<void> {
+  for (let attempt = 0; attempt < 8; attempt += 1) {
+    await page.getByRole('button', { name: 'Entrar' }).click()
+    const limited = page.getByText('Muitas tentativas')
+    const outcome = await Promise.race([
+      page.waitForURL(done, { timeout: 10_000 }).then(() => 'ok' as const),
+      limited.waitFor({ timeout: 10_000 }).then(() => 'limited' as const),
+    ]).catch(() => 'timeout' as const)
+    if (outcome === 'ok') return
+    if (outcome === 'limited') await page.waitForTimeout(10_000)
+    else break
+  }
+  await expect(page).toHaveURL(done)
+}
+
 export async function loginOwner(page: Page): Promise<void> {
   await page.goto('/entrar')
   await page.getByLabel('E-mail').fill(seed.ownerEmail)
   await page.getByLabel('Senha', { exact: true }).fill(seed.password)
-  await page.getByRole('button', { name: 'Entrar' }).click()
-  await expect(page).toHaveURL(/\/painel$/)
+  await submitLogin(page, /\/painel$/)
 }
 
 export async function loginStaffByLink(page: Page, username = seed.staffUsername): Promise<void> {
   await page.goto(`/e/${seed.accessCode}`)
   await page.getByLabel('Usuário').fill(username)
   await page.getByLabel('Senha', { exact: true }).fill(seed.password)
-  await page.getByRole('button', { name: 'Entrar' }).click()
-  await expect(page).toHaveURL(/\/estacoes$/)
+  await submitLogin(page, /\/estacoes$/)
 }
 
 /**
@@ -130,4 +147,124 @@ export async function seedOrganization(
   const organization = page.data.find((o) => o.accessCode === seed.accessCode)
   expect(organization, 'organização do seed não encontrada').toBeDefined()
   return organization!
+}
+
+/**
+ * Operação pela API como o dono (spec 04), para preparar comandas e pedidos sem passar pela
+ * tela. Um login por arquivo de teste.
+ */
+export interface OwnerApi {
+  request: APIRequestContext
+  unitId: string
+  shiftId: string
+  productId: (name: string) => string
+  modifierId: (product: string, modifier: string) => string
+  createTab: (customerName: string) => Promise<{ id: string; number: number }>
+  createOrder: (
+    tabId: string,
+    items: { product: string; quantity: number; modifiers?: string[] }[],
+  ) => Promise<{ id: string; items: { id: string; version: number; quantity: number }[] }>
+  getTab: (tabId: string) => Promise<{
+    orders: {
+      items: { id: string; quantity: number; stageName: string; canceledAt: string | null }[]
+    }[]
+    totalCents: number
+  }>
+}
+
+interface MenuForTests {
+  categories: {
+    products: {
+      id: string
+      name: string
+      modifierGroups: { modifiers: { id: string; name: string }[] }[]
+    }[]
+  }[]
+}
+
+export async function ownerApi(): Promise<OwnerApi> {
+  const request = await playwrightRequest.newContext({
+    extraHTTPHeaders: { 'X-Device-Id': crypto.randomUUID() },
+  })
+  let login = await request.post(`${apiBaseUrl}/api/v1/auth/owner/login`, {
+    data: { email: seed.ownerEmail, password: seed.password },
+  })
+  // Limite de logins por IP (RN-01.02): espera o tempo pedido pela API e tenta de novo.
+  for (let attempt = 0; login.status() === 429 && attempt < 6; attempt += 1) {
+    const body = (await login.json()) as { error: { details?: { retryAfterSeconds?: number } } }
+    await new Promise((done) =>
+      setTimeout(done, ((body.error.details?.retryAfterSeconds ?? 10) + 1) * 1000),
+    )
+    login = await request.post(`${apiBaseUrl}/api/v1/auth/owner/login`, {
+      data: { email: seed.ownerEmail, password: seed.password },
+    })
+  }
+  expect(login.status(), await login.text()).toBe(200)
+  const me = (await (await request.get(`${apiBaseUrl}/api/v1/auth/me`)).json()) as {
+    units: { id: string }[]
+  }
+  const unitId = me.units[0]!.id
+  const current = (await (
+    await request.get(`${apiBaseUrl}/api/v1/units/${unitId}/shifts/current`)
+  ).json()) as { shift: { id: string } | null }
+  expect(current.shift, 'o seed precisa de um turno aberto na unidade').not.toBeNull()
+  const menu = (await (
+    await request.get(`${apiBaseUrl}/api/v1/units/${unitId}/menu`)
+  ).json()) as MenuForTests
+  const products = menu.categories.flatMap((category) => category.products)
+  const product = (name: string) => {
+    const found = products.find((item) => item.name === name)
+    expect(found, `produto ${name} do seed`).toBeDefined()
+    return found!
+  }
+  const modifierId = (productName: string, modifier: string) =>
+    product(productName)
+      .modifierGroups.flatMap((group) => group.modifiers)
+      .find((item) => item.name === modifier)!.id
+
+  async function post<T>(path: string, data: unknown): Promise<T> {
+    const response = await request.post(`${apiBaseUrl}/api/v1${path}`, {
+      data: data as never,
+      headers: { 'Idempotency-Key': crypto.randomUUID() },
+    })
+    expect(response.ok(), `POST ${path}: ${await response.text()}`).toBe(true)
+    return (await response.json()) as T
+  }
+
+  return {
+    request,
+    unitId,
+    shiftId: current.shift!.id,
+    productId: (name) => product(name).id,
+    modifierId,
+    createTab: (customerName) => post(`/shifts/${current.shift!.id}/tabs`, { customerName }),
+    createOrder: (tabId, items) =>
+      post(`/tabs/${tabId}/orders`, {
+        items: items.map((item) => ({
+          productId: product(item.product).id,
+          quantity: item.quantity,
+          modifierIds: (item.modifiers ?? []).map((name) => modifierId(item.product, name)),
+        })),
+      }),
+    getTab: async (tabId) =>
+      (await (await request.get(`${apiBaseUrl}/api/v1/tabs/${tabId}`)).json()) as never,
+  }
+}
+
+/** Sufixo para os nomes criados: a suíte roda de novo no mesmo banco. */
+export function runSuffix(): string {
+  return Date.now().toString(36).slice(-5)
+}
+
+/**
+ * No `pnpm dev`, o botão flutuante do Nuxt DevTools fica no meio do rodapé, por cima da ação
+ * principal fixa das telas de operação (spec 08, seção 7). Ele não existe no build; nos testes,
+ * fica escondido.
+ */
+export async function hideDevtools(context: BrowserContext): Promise<void> {
+  await context.addInitScript(() => {
+    const style = document.createElement('style')
+    style.textContent = '[id^="nuxt-devtools"], .nuxt-devtools-panel { display: none !important; }'
+    document.addEventListener('DOMContentLoaded', () => document.head.appendChild(style))
+  })
 }

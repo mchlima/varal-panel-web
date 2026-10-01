@@ -1,5 +1,12 @@
 import { expect, test } from '@playwright/test'
-import { expectApiUp, loginOwner, loginStaffByLink, skipWithoutSessionCookies } from './fixtures'
+import {
+  apiBaseUrl,
+  expectApiUp,
+  loginOwner,
+  loginStaffByLink,
+  ownerApi,
+  skipWithoutSessionCookies,
+} from './fixtures'
 
 /**
  * Configuração da unidade (spec 03) contra a API real com o seed: o dono cria estação, edita
@@ -18,12 +25,27 @@ test.beforeEach(({ browserName }) => skipWithoutSessionCookies(browserName))
 test('dono cria estação e edita o fluxo da unidade (RN-03.05, RN-03.06)', async ({ page }) => {
   const station = `Fritadeira ${suffix}`
   const stage = `Fritando ${suffix}`
-  await loginOwner(page)
-  await page.goto('/painel/unidades')
-  await expect(page.getByTestId('unit-card').first()).toContainText('Barraca da Praça')
-  await page.getByRole('link', { name: 'Estações e fluxo' }).first().click()
-  await expect(page.getByRole('heading', { level: 1 })).toHaveText('Estações e fluxo')
+  // A Barraca da Praça do seed tem turno aberto (spec 04), e com turno aberto o fluxo trava
+  // (RN-03.07). O teste usa uma unidade nova, sem turno, desativada no fim.
+  const api = await ownerApi()
+  const created = await api.request.post(`${apiBaseUrl}/api/v1/units`, {
+    data: { name: `Unidade ${suffix}`, lateAfterMinutes: 15 },
+    headers: { 'Idempotency-Key': crypto.randomUUID() },
+  })
+  expect(created.ok(), await created.text()).toBe(true)
+  const unit = (await created.json()) as { id: string; version: number }
+  try {
+    await loginOwner(page)
+    await page.goto(`/painel/unidades/${unit.id}/fluxo`)
+    await expect(page.getByRole('heading', { level: 1 })).toHaveText('Estações e fluxo')
+    await editWorkflow(page, station, stage)
+  } finally {
+    await api.request.patch(`${apiBaseUrl}/api/v1/units/${unit.id}`, { data: { active: false } })
+    await api.request.dispose()
+  }
+})
 
+async function editWorkflow(page: import('@playwright/test').Page, station: string, stage: string) {
   // Estação nova (fila).
   await page.getByRole('button', { name: 'Nova estação' }).click()
   const form = page.getByRole('form', { name: 'Nova estação' })
@@ -63,7 +85,7 @@ test('dono cria estação e edita o fluxo da unidade (RN-03.05, RN-03.06)', asyn
   await page.getByRole('button', { name: 'Salvar fluxo' }).click()
   await expect(page.getByText('Fluxo salvo.')).toBeVisible()
   await expect(stages).toHaveCount(before)
-})
+}
 
 test('dono cria produto com modificador e marca esgotado; o colaborador da cozinha vê na hora (CA-03.05)', async ({
   page,
@@ -112,6 +134,8 @@ test('dono cria produto com modificador e marca esgotado; o colaborador da cozin
     await staff.getByRole('button', { name: /Cozinha/ }).click()
     await expect(staff).toHaveURL(/\/estacao\/[0-9a-f-]{36}$/)
     await expect(staff.getByTestId('realtime-status')).toContainText('Conectado')
+    // Atalho de esgotado da estação (spec 03, seção 9), aberto pelo cabeçalho da fila.
+    await staff.getByRole('button', { name: 'Esgotados' }).click()
     const staffToggle = staff.getByRole('button', { name: `Esgotado: ${product}` })
     await expect(staffToggle).toHaveAttribute('aria-pressed', 'false')
 
@@ -159,7 +183,8 @@ test('colaborador vê só as estações liberadas, com nome e tipo (RN-03.16)', 
   await expect(ana.nth(1)).toContainText('Balcão de entrega')
   await ana.nth(0).click()
   await expect(page).toHaveURL(/\/balcao$/)
-  await expect(page.getByRole('heading', { name: 'Esgotados' })).toBeVisible()
+  await page.getByRole('button', { name: 'Esgotados' }).click()
+  await expect(page.getByRole('heading', { name: 'Esgotados' }).first()).toBeVisible()
 })
 
 async function loginStaffByLinkAfterLogout(page: import('@playwright/test').Page) {

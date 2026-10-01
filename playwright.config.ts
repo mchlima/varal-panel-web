@@ -23,7 +23,8 @@ export default defineConfig({
   forbidOnly: !!process.env.CI,
   retries: process.env.CI ? 1 : 0,
   reporter: process.env.CI ? 'github' : 'list',
-  timeout: 60_000,
+  // Folga para a espera do limite de logins por IP (RN-01.02) quando a suíte roda inteira.
+  timeout: 120_000,
   use: {
     baseURL,
     locale: 'pt-BR',
