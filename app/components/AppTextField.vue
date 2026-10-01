@@ -5,12 +5,16 @@ const props = withDefaults(
     label: string
     type?: 'text' | 'email' | 'password'
     autocomplete?: string
-    inputmode?: 'text' | 'email' | 'numeric'
+    inputmode?: 'text' | 'email' | 'numeric' | 'decimal'
     autocapitalize?: 'none' | 'characters' | 'words' | 'sentences'
     hint?: string
     error?: string
     maxlength?: number
     required?: boolean
+    disabled?: boolean
+    placeholder?: string
+    /** Texto fixo antes do valor (ex.: "R$"). */
+    prefix?: string
   }>(),
   {
     type: 'text',
@@ -21,6 +25,9 @@ const props = withDefaults(
     error: undefined,
     maxlength: undefined,
     required: false,
+    disabled: false,
+    placeholder: undefined,
+    prefix: undefined,
   },
 )
 
@@ -42,6 +49,12 @@ const describedBy = computed(
     <label :for="id" class="font-bold">{{ label }}</label>
     <p v-if="hint" :id="`${id}-hint`" class="text-sm text-text-muted">{{ hint }}</p>
     <div class="relative">
+      <span
+        v-if="prefix"
+        aria-hidden="true"
+        class="pointer-events-none absolute top-0 left-0 flex h-12 items-center pl-4 font-bold text-text-muted"
+        >{{ prefix }}</span
+      >
       <input
         :id="id"
         v-model="model"
@@ -51,6 +64,8 @@ const describedBy = computed(
         :autocapitalize="autocapitalize"
         :maxlength="maxlength"
         :required="required"
+        :disabled="disabled"
+        :placeholder="placeholder"
         :aria-invalid="error ? 'true' : undefined"
         :aria-describedby="describedBy"
         spellcheck="false"
@@ -58,6 +73,8 @@ const describedBy = computed(
         :class="[
           error ? 'border-error' : 'border-border-strong',
           type === 'password' ? 'pr-14' : '',
+          prefix ? 'pl-12' : '',
+          disabled ? 'cursor-not-allowed bg-surface-muted text-text-muted' : '',
         ]"
       />
       <button
