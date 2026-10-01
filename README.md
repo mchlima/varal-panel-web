@@ -10,8 +10,8 @@ Nuxt 4 em modo SPA (`ssr: false`, build estático com `nuxt generate`), TypeScri
 
 ## Requisitos
 
-- Node 22.19 ou mais novo
-- pnpm 10 (`corepack enable`)
+- Node 26 (`.nvmrc`; com nvm: `nvm use`)
+- pnpm 10 (`npm install -g pnpm@10`; o Node 26 não traz mais o corepack)
 - Hooks de bloqueio da `main` ativos no clone: `git config core.hooksPath .githooks`
 
 ## Comandos
