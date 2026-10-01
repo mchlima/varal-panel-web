@@ -1,0 +1,58 @@
+{
+  "name": "varal-panel-web",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "description": "App dos clientes do Varal: balcão, estações, caixa e painel do dono.",
+  "packageManager": "pnpm@10.32.1",
+  "engines": {
+    "node": ">=22.19"
+  },
+  "scripts": {
+    "dev": "nuxt dev",
+    "build": "nuxt build",
+    "generate": "nuxt generate",
+    "preview": "nuxt preview",
+    "postinstall": "nuxt prepare",
+    "gen:api": "node scripts/gen-api.mjs",
+    "lint": "eslint . && prettier --check .",
+    "format": "eslint . --fix && prettier --write .",
+    "typecheck": "nuxt typecheck",
+    "test": "vitest run",
+    "test:watch": "vitest"
+  },
+  "dependencies": {
+    "@fontsource/atkinson-hyperlegible": "^5.3.0",
+    "@fontsource/bricolage-grotesque": "^5.3.0",
+    "nuxt": "^4.5.2",
+    "openapi-fetch": "^0.17.0",
+    "reka-ui": "^2.10.5",
+    "vue": "^3.5.43",
+    "vue-router": "^5.3.1"
+  },
+  "devDependencies": {
+    "@nuxt/eslint": "^1.17.0",
+    "@nuxt/test-utils": "^4.3.2",
+    "@tailwindcss/vite": "^4.3.3",
+    "@types/node": "^22.20.4",
+    "@vue/test-utils": "^2.5.1",
+    "eslint": "^10.11.0",
+    "eslint-config-prettier": "^10.1.8",
+    "happy-dom": "^20.14.5",
+    "openapi-typescript": "^7.13.0",
+    "prettier": "^3.9.9",
+    "tailwindcss": "^4.3.3",
+    "typescript": "^5.9.3",
+    "vitest": "^5.0.3",
+    "vue-tsc": "^3.3.11"
+  },
+  "pnpm": {
+    "onlyBuiltDependencies": [
+      "esbuild"
+    ],
+    "ignoredBuiltDependencies": [
+      "unrs-resolver",
+      "vue-demi"
+    ]
+  }
+}

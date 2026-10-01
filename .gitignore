@@ -9,7 +9,7 @@
 
 # Dependências e builds
 node_modules/
-dist/
+dist
 .output/
 .nuxt/
 coverage/
@@ -17,3 +17,6 @@ coverage/
 # Sistema e editores
 .DS_Store
 *.log
+.data/
+.nitro/
+.cache/
