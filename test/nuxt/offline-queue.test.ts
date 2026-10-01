@@ -137,6 +137,7 @@ describe('fila offline (spec 01, seção 11)', () => {
       status: 409,
       code: 'TAB_ALREADY_CLOSED',
       message: 'Esta comanda já foi fechada.',
+      details: {},
     })
     expect(network.sent).toHaveLength(2)
     expect(await queue.pending()).toHaveLength(0)
@@ -221,5 +222,83 @@ describe('espera crescente com jitter', () => {
     expect(backoffDelay(3, () => 1)).toBe(4_000)
     expect(backoffDelay(20, () => 1)).toBe(60_000)
     expect(backoffDelay(20, () => 0)).toBe(30_000)
+  })
+})
+
+describe('fila de escrita da operação (spec 04)', () => {
+  const order = {
+    method: 'POST' as const,
+    path: '/api/v1/tabs/t1/orders',
+    body: { items: [{ productId: 'p1', quantity: 2, modifierIds: [] }] },
+    label: 'Pedido da comanda 12 · Dona Marta',
+    meta: { kind: 'tab.order', tabId: 't1', tabNumber: 12, lines: [] },
+  }
+
+  it('guarda o meta da tela junto da ação e avisa a resposta da API a quem ouve', async () => {
+    const { queue, network } = setup()
+    network.reply.mockImplementationOnce(
+      () =>
+        new Response(JSON.stringify({ id: 'o1', numberInTab: 3 }), {
+          status: 201,
+          headers: { 'Content-Type': 'application/json' },
+        }),
+    )
+    const settled = vi.fn()
+    queue.onSettled(settled)
+    network.state.online = false
+    await queue.enqueue(order)
+    expect((await queue.pending())[0]!.meta).toEqual(order.meta)
+    expect(network.sent[0]?.body).toBeUndefined()
+
+    network.state.online = true
+    await queue.resetBackoff()
+    await queue.trigger()
+    expect(settled).toHaveBeenCalledTimes(1)
+    const [action, outcome] = settled.mock.calls[0]!
+    expect(action.meta).toEqual(order.meta)
+    expect(outcome).toEqual({ ok: true, status: 201, body: { id: 'o1', numberInTab: 3 } })
+    // O meta é da tela: nunca vai no corpo da requisição.
+    expect(network.sent[0]!.body).toEqual(order.body)
+  })
+
+  it('CA-04.05: ITEM_CHANGED vira falha definitiva com o estado atual do item em details', async () => {
+    const { queue, network } = setup()
+    const current = { id: 'i1', version: 4, stageName: 'Pronto' }
+    network.reply.mockImplementationOnce(
+      () =>
+        new Response(
+          JSON.stringify({
+            error: {
+              code: 'ITEM_CHANGED',
+              message: 'Outro aparelho já mudou este item. A tela foi atualizada.',
+              details: { item: current, currentVersion: 4 },
+            },
+          }),
+          { status: 409, headers: { 'Content-Type': 'application/json' } },
+        ),
+    )
+    const settled = vi.fn()
+    queue.onSettled(settled)
+    await queue.enqueue({ ...advance, meta: { kind: 'item.advance', itemId: 'i1' } })
+    await queue.trigger()
+
+    const [failed] = await queue.failed()
+    expect(failed!.lastError).toMatchObject({
+      code: 'ITEM_CHANGED',
+      details: { item: current, currentVersion: 4 },
+    })
+    expect(settled.mock.calls[0]![1]).toMatchObject({ ok: false, error: { code: 'ITEM_CHANGED' } })
+  })
+
+  it('um ouvinte com erro não trava a fila', async () => {
+    const { queue, network } = setup()
+    queue.onSettled(() => {
+      throw new Error('tela quebrada')
+    })
+    await queue.enqueue(order)
+    await queue.enqueue({ ...order, label: 'segundo' })
+    await queue.trigger()
+    expect(network.sent).toHaveLength(2)
+    expect(await queue.pending()).toHaveLength(0)
   })
 })

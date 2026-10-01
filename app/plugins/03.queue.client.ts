@@ -48,7 +48,9 @@ export default defineNuxtPlugin({
       // Contagem e falhas reativas, inclusive com mudanças feitas por outra aba.
       liveQuery(() => db.queue.toArray()).subscribe({
         next: (actions) => {
-          connection.pendingCount = actions.filter((a) => a.status === 'pending').length
+          const pending = actions.filter((a) => a.status === 'pending')
+          connection.pending = pending
+          connection.pendingCount = pending.length
           connection.failed = actions.filter((a) => a.status === 'failed')
         },
         error: () => {
