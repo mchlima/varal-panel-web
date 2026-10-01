@@ -15,11 +15,14 @@ const lastSeen = new Map<string, Tab>()
  * `GET /tabs/{id}` e mantém em tempo real. Itens mudam por `version` (`order_item.*`); pedido
  * novo, totais e situação recarregam por REST (`tab.updated`, `order.created`). A cada
  * reconexão, recarrega (RN-01.05).
+ *
+ * Com `tabId` (fiado, spec 06: `?comanda={id}`), a comanda é buscada direto pelo id, mesmo que
+ * seja de outro turno ou que não haja turno aberto (a quitação vale em qualquer turno, RN-06.09).
  */
-export function useTabDetail(number: Ref<number>) {
+export function useTabDetail(number: Ref<number>, tabId: Ref<string | null> = ref(null)) {
   const counter = useCounterStore()
   const { $api } = useNuxtApp()
-  const cacheKey = () => `${counter.shift?.id ?? ''}:${number.value}`
+  const cacheKey = () => tabId.value ?? `${counter.shift?.id ?? ''}:${number.value}`
   const tab = ref<Tab | null>(lastSeen.get(cacheKey()) ?? null)
   const loading = ref(false)
   const notFound = ref(false)
@@ -29,6 +32,7 @@ export function useTabDetail(number: Ref<number>) {
   let again = false
 
   async function resolveId(): Promise<string | null> {
+    if (tabId.value) return tabId.value
     if (tab.value?.number === number.value && tab.value.shiftId === counter.shift?.id) {
       return tab.value.id
     }
@@ -48,7 +52,7 @@ export function useTabDetail(number: Ref<number>) {
       again = true
       return
     }
-    if (!counter.shift) return
+    if (!counter.shift && !tabId.value) return
     inflight = true
     loading.value = true
     error.value = ''
@@ -68,7 +72,7 @@ export function useTabDetail(number: Ref<number>) {
       }
       notFound.value = false
       tab.value = data
-      lastSeen.set(`${data.shiftId}:${data.number}`, data)
+      lastSeen.set(tabId.value ?? `${data.shiftId}:${data.number}`, data)
     } catch (cause) {
       error.value = apiErrorMessage(cause)
     } finally {
@@ -97,10 +101,12 @@ export function useTabDetail(number: Ref<number>) {
   }
 
   watch(
-    () => [number.value, counter.shift?.id] as const,
-    ([, shiftId]) => {
-      if (tab.value?.number !== number.value) tab.value = lastSeen.get(cacheKey()) ?? null
-      if (shiftId) void load()
+    () => [number.value, counter.shift?.id, tabId.value] as const,
+    ([, shiftId, id]) => {
+      if (tab.value?.number !== number.value || (id && tab.value?.id !== id)) {
+        tab.value = lastSeen.get(cacheKey()) ?? null
+      }
+      if (shiftId || id) void load()
       else if (counter.shiftLoaded) tab.value = null
     },
     { immediate: true },

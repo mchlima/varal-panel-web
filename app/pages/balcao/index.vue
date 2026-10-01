@@ -9,6 +9,18 @@ import type { TabMode, TabSummary } from '~/lib/operation'
  */
 useHead({ title: 'Balcão · Varal' })
 
+/** Abas do balcão: o varal do turno e o fiado da unidade (spec 06, seção 8; `?aba=fiado`). */
+const route = useRoute()
+const view = computed<'board' | 'credit'>(() => (route.query.aba === 'fiado' ? 'credit' : 'board'))
+function showView(next: 'board' | 'credit') {
+  void navigateTo(
+    { query: { ...route.query, aba: next === 'credit' ? 'fiado' : undefined } },
+    {
+      replace: true,
+    },
+  )
+}
+
 const { place, counter } = useCounterLive()
 const operations = useOperations()
 /** Paga antes recusada depois de sair da fila: o pedido volta ao rascunho e o aviso aparece. */
@@ -118,7 +130,33 @@ async function createTab(customerName: string, mode: TabMode = 'open_tab') {
           <p>{{ payFirstNotice }}</p>
           <NuxtLink to="/balcao/paga-antes" class="font-bold underline">Abrir o rascunho</NuxtLink>
         </AppAlert>
-        <p v-if="!counter.shiftLoaded && counter.loading" class="text-text-muted">Carregando…</p>
+        <div role="tablist" aria-label="Balcão" class="grid grid-cols-2 gap-2">
+          <button
+            v-for="option in [
+              { value: 'board', label: 'Varal', icon: 'receipt' },
+              { value: 'credit', label: 'Fiado', icon: 'users' },
+            ] as const"
+            :key="option.value"
+            type="button"
+            role="tab"
+            :aria-selected="view === option.value"
+            class="flex min-h-12 items-center justify-center gap-2 rounded-button border-2 font-bold"
+            :class="
+              view === option.value
+                ? 'border-primary bg-primary-soft text-primary-deep'
+                : 'border-border bg-surface text-text'
+            "
+            :data-testid="`view-${option.value}`"
+            @click="showView(option.value)"
+          >
+            <AppIcon :name="option.icon" />
+            {{ option.label }}
+          </button>
+        </div>
+        <CreditBoard v-if="view === 'credit'" :unit-id="place.unit.id" />
+        <p v-else-if="!counter.shiftLoaded && counter.loading" class="text-text-muted">
+          Carregando…
+        </p>
         <template v-else-if="counter.shiftLoaded && !counter.shift">
           <NoShiftNotice :unit-id="place.unit.id" />
           <MenuSoldOutList :unit-id="place.unit.id" />
@@ -126,7 +164,7 @@ async function createTab(customerName: string, mode: TabMode = 'open_tab') {
         <TabBoard v-else-if="counter.shift" />
       </template>
 
-      <template v-if="place && counter.shift" #footer>
+      <template v-if="place && counter.shift && view === 'board'" #footer>
         <AppButton data-testid="new-tab" @click="((createError = ''), (openForm = true))">
           <AppIcon name="plus" />
           Nova comanda

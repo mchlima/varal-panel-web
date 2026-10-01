@@ -869,6 +869,25 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/customers/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Cliente com as comandas penduradas e quitadas, o saldo e o histórico de quitações */
+        get: operations["CreditController_detail"];
+        put?: never;
+        post?: never;
+        /** Remove o cliente a pedido (LGPD): apaga nome e dados, mantém as comandas; recusado com valor a receber (RN-06.03, CA-06.05) */
+        delete: operations["CreditController_remove"];
+        options?: never;
+        head?: never;
+        /** Edita cliente (dono); `null` apaga um dado opcional */
+        patch: operations["CreditController_update"];
+        trace?: never;
+    };
     "/api/v1/health": {
         parameters: {
             query?: never;
@@ -1031,7 +1050,7 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** Estorna um pagamento, com motivo, com turno e caixa abertos; comanda paga volta a `closing` (RN-05.13 a RN-05.15) */
+        /** Estorna um pagamento, com motivo, com turno e caixa abertos; comanda paga volta a `closing` (RN-05.13 a RN-05.15) e quitada volta a `on_credit` (RN-06.12) */
         post: operations["CashController_reverse"];
         delete?: never;
         options?: never;
@@ -1393,8 +1412,25 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** Registra um pagamento da comanda em `closing`: Pix e cartões até o saldo, dinheiro com troco; com saldo zero a comanda fica `paid` (RN-05.04 a RN-05.10) */
+        /** Registra um pagamento da comanda em `closing`: Pix e cartões até o saldo, dinheiro com troco; com saldo zero a comanda fica `paid` (RN-05.04 a RN-05.10). Em `on_credit` é quitação de fiado, em qualquer turno aberto da unidade, parcial ou total; com saldo zero fica `settled` (RN-06.09 a RN-06.11) */
         post: operations["CashController_pay"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/tabs/{id}/put-on-credit": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Pendura a comanda em `closing` num cliente da unidade: vai a `on_credit` com o saldo (RN-06.04 a RN-06.08, CA-06.01, CA-06.02) */
+        post: operations["CreditController_putOnCredit"];
         delete?: never;
         options?: never;
         head?: never;
@@ -1487,6 +1523,24 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/units/{id}/customers": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Busca clientes da unidade por nome, telefone, CPF ou referência, com os dados de identificação (RN-06.02, CA-06.04) */
+        get: operations["CreditController_list"];
+        put?: never;
+        /** Cadastra cliente na unidade; só o nome é obrigatório, telefone e CPF únicos na unidade (RN-06.01, RN-06.02) */
+        post: operations["CreditController_create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/units/{id}/menu": {
         parameters: {
             query?: never;
@@ -1496,6 +1550,23 @@ export interface paths {
         };
         /** Cardápio completo da unidade (dono e colaboradores da unidade) */
         get: operations["MenuController_readMenu"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/units/{id}/receivables": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Valores a receber da unidade: comandas `on_credit` mais antigas primeiro, com cliente, data e saldo, e totais por cliente */
+        get: operations["CreditController_receivables"];
         put?: never;
         post?: never;
         delete?: never;
@@ -1824,6 +1895,8 @@ export interface components {
         };
         /** @description Dinheiro esperado = fundo + pagamentos + suprimentos − sangrias (RN-05.19). */
         CashBreakdown: {
+            /** @description Parte de `paymentsCents` que veio de quitações de fiado (RN-05.22). */
+            creditSettlementsCents: number;
             depositsCents: number;
             openingFloatCents: number;
             /** @description Pagamentos em dinheiro aplicados, sem estornos. */
@@ -1863,6 +1936,8 @@ export interface components {
             closingNote: string | null;
             /** @description Conferência gravada no fechamento (vazia enquanto aberto). */
             counts: components["schemas"]["CashRegisterCount"][];
+            /** @description Total de quitações de fiado recebidas neste caixa, em todas as formas (RN-05.22). */
+            creditSettlementsCents: number;
             /** @description Esperado por forma, na ordem `cash`, `pix`, `credit_card`, `debit_card` (tabela da seção 5). */
             expected: components["schemas"]["CashRegisterExpected"][];
             /** Format: uuid */
@@ -1881,6 +1956,8 @@ export interface components {
             version: number;
         };
         CashRegisterCount: {
+            /** @description Quitações de fiado recebidas neste caixa (não estornadas), separadas do recebido das comandas do turno (RN-05.22). Já estão somadas no esperado. */
+            creditSettlementsCents: number;
             /** @description Informado − esperado (RN-05.20). */
             differenceCents: number;
             expectedCents: number;
@@ -1894,6 +1971,8 @@ export interface components {
             closingNote: string | null;
             /** @description Conferência gravada no fechamento (vazia enquanto aberto). */
             counts: components["schemas"]["CashRegisterCount"][];
+            /** @description Total de quitações de fiado recebidas neste caixa, em todas as formas (RN-05.22). */
+            creditSettlementsCents: number;
             /** @description Esperado por forma, na ordem `cash`, `pix`, `credit_card`, `debit_card` (tabela da seção 5). */
             expected: components["schemas"]["CashRegisterExpected"][];
             /** Format: uuid */
@@ -1915,8 +1994,12 @@ export interface components {
             version: number;
         };
         CashRegisterExpected: {
+            /** @description Quitações de fiado recebidas neste caixa (não estornadas), separadas do recebido das comandas do turno (RN-05.22). Já estão somadas no esperado. */
+            creditSettlementsCents: number;
             expectedCents: number;
             method: components["schemas"]["PaymentMethod"];
+            /** @description Pagamentos das comandas do turno nesta forma (sem quitações de fiado, sem fundo e movimentos). */
+            salesCents: number;
         };
         CashRegisterList: {
             data: components["schemas"]["CashRegister"][];
@@ -1994,6 +2077,19 @@ export interface components {
             sortOrder?: number;
             /** Format: uuid */
             unitId: string;
+        };
+        /** @description Cadastro (também o rápido, no pendurar): só o nome é obrigatório (CA-06.06). */
+        CreateCustomerRequestInput: {
+            /** @description CPF validado pelos dígitos verificadores, guardado só com dígitos; único na unidade (RN-06.02). */
+            cpf?: string | null;
+            /** @description Obrigatório, até 60 caracteres. */
+            name: string;
+            /** @description Observação, até 140 caracteres (RN-06.01). */
+            note?: string | null;
+            /** @description Telefone com DDD; pontuação é ignorada e fica guardado só com dígitos. Único na unidade (RN-06.02). */
+            phone?: string | null;
+            /** @description Até 60 caracteres (RN-06.01). */
+            reference?: string | null;
         };
         CreateModifierGroupRequestInput: {
             /** @description Máximo de escolhas, pelo menos 1. */
@@ -2125,6 +2221,65 @@ export interface components {
         CurrentShift: {
             /** @description `null` sem turno aberto. */
             shift: components["schemas"]["Shift"] | null;
+        };
+        /** @description Cliente do fiado, por unidade (RN-06.01). Na busca, aparece com os dados de identificação que tiver, para não confundir homônimos (RN-06.02). */
+        Customer: {
+            /** @description Só dígitos (RN-06.01). */
+            cpf: string | null;
+            /** Format: date-time */
+            createdAt: string;
+            /** Format: uuid */
+            id: string;
+            /** @description "Cliente removido" depois da remoção (RN-06.03). */
+            name: string;
+            note: string | null;
+            /** @description Só dígitos, com DDD (RN-06.01). */
+            phone: string | null;
+            /** @description Referência para diferenciar homônimos (ex.: "apto 42, bloco B"). */
+            reference: string | null;
+            /** @description Removido a pedido (LGPD): nome e dados apagados, comandas mantidas (RN-06.03). */
+            removedAt: string | null;
+            /** Format: uuid */
+            unitId: string;
+            version: number;
+        };
+        /** @description Cliente com o fiado e o histórico de quitações. */
+        CustomerDetail: {
+            /** @description Total a receber do cliente. */
+            balanceCents: number;
+            /** @description Só dígitos (RN-06.01). */
+            cpf: string | null;
+            /** Format: date-time */
+            createdAt: string;
+            /** Format: uuid */
+            id: string;
+            /** @description "Cliente removido" depois da remoção (RN-06.03). */
+            name: string;
+            note: string | null;
+            /** @description Só dígitos, com DDD (RN-06.01). */
+            phone: string | null;
+            /** @description Referência para diferenciar homônimos (ex.: "apto 42, bloco B"). */
+            reference: string | null;
+            /** @description Removido a pedido (LGPD): nome e dados apagados, comandas mantidas (RN-06.03). */
+            removedAt: string | null;
+            /** @description Histórico de quitações (`isCreditSettlement`), inclusive estornadas. */
+            settlements: components["schemas"]["Payment"][];
+            /** @description Comandas penduradas e quitadas do cliente, mais recentes primeiro. */
+            tabs: components["schemas"]["TabSummary"][];
+            /** Format: uuid */
+            unitId: string;
+            version: number;
+        };
+        CustomerList: {
+            data: components["schemas"]["Customer"][];
+        };
+        CustomerReceivable: {
+            /** @description Soma dos saldos das comandas penduradas. */
+            balanceCents: number;
+            customer: components["schemas"]["Customer"];
+            /** Format: date-time */
+            oldestCreditAt: string;
+            tabCount: number;
         };
         /**
          * @description Desconto da comanda (spec 05): `amount` em centavos ou `percent` de 1 a 100.
@@ -2718,10 +2873,10 @@ export interface components {
             type: components["schemas"]["ShiftType"];
         };
         /**
-         * @description Códigos de erro da operação (specs 04 e 05): turno, comandas, pedidos, itens, descontos, pagamentos e caixas. `SHIFT_OPEN` (spec 03) e `ORGANIZATION_SUSPENDED`/`ORGANIZATION_CANCELED` (spec 02) também aparecem nestas rotas.
+         * @description Códigos de erro da operação (specs 04 a 06): turno, comandas, pedidos, itens, descontos, pagamentos, caixas e fiado. `SHIFT_OPEN` (spec 03) e `ORGANIZATION_SUSPENDED`/`ORGANIZATION_CANCELED` (spec 02) também aparecem nestas rotas.
          * @enum {string}
          */
-        OperationErrorCode: "SHIFT_ALREADY_OPEN" | "UNIT_INACTIVE" | "SHIFT_CLOSED" | "SHIFT_HAS_PENDING_ITEMS" | "INVALID_SHIFT_PRICE" | "TAB_NOT_OPEN" | "TAB_NOT_CLOSING" | "TAB_CLOSED" | "TAB_HAS_ACTIVE_ITEMS" | "TAB_CHANGED" | "ORDER_REJECTED" | "ITEM_CHANGED" | "ITEM_CANCELED" | "ITEM_IN_FINAL_STAGE" | "NO_PREVIOUS_STAGE" | "INVALID_QUANTITY" | "NO_CASH_REGISTER_OPEN" | "CASH_REGISTER_REQUIRED" | "INVALID_CASH_REGISTER" | "CASH_REGISTER_CLOSED" | "CASH_REGISTER_NAME_TAKEN" | "WITHDRAWAL_EXCEEDS_CASH" | "CLOSING_NOTE_REQUIRED" | "PAYMENT_EXCEEDS_BALANCE" | "TAB_NOTHING_TO_PAY" | "PAYMENT_INSUFFICIENT" | "PAYMENT_ALREADY_REVERSED" | "TAB_PAYMENTS_EXCEED_TOTAL" | "TAB_HAS_PAYMENTS" | "TAB_PAID" | "TAB_PAY_FIRST";
+        OperationErrorCode: "SHIFT_ALREADY_OPEN" | "UNIT_INACTIVE" | "SHIFT_CLOSED" | "SHIFT_HAS_PENDING_ITEMS" | "INVALID_SHIFT_PRICE" | "TAB_NOT_OPEN" | "TAB_NOT_CLOSING" | "TAB_CLOSED" | "TAB_HAS_ACTIVE_ITEMS" | "TAB_CHANGED" | "ORDER_REJECTED" | "ITEM_CHANGED" | "ITEM_CANCELED" | "ITEM_IN_FINAL_STAGE" | "NO_PREVIOUS_STAGE" | "INVALID_QUANTITY" | "NO_CASH_REGISTER_OPEN" | "CASH_REGISTER_REQUIRED" | "INVALID_CASH_REGISTER" | "CASH_REGISTER_CLOSED" | "CASH_REGISTER_NAME_TAKEN" | "WITHDRAWAL_EXCEEDS_CASH" | "CLOSING_NOTE_REQUIRED" | "PAYMENT_EXCEEDS_BALANCE" | "TAB_NOTHING_TO_PAY" | "PAYMENT_INSUFFICIENT" | "PAYMENT_ALREADY_REVERSED" | "TAB_PAYMENTS_EXCEED_TOTAL" | "TAB_HAS_PAYMENTS" | "TAB_PAID" | "TAB_PAY_FIRST" | "CUSTOMER_PHONE_TAKEN" | "CUSTOMER_CPF_TAKEN" | "CUSTOMER_HAS_RECEIVABLE" | "CUSTOMER_REMOVED" | "INVALID_CUSTOMER" | "CUSTOMER_REQUIRED" | "NO_SHIFT_OPEN" | "CUSTOMER_CHANGED";
         Order: {
             completedAt: string | null;
             createdBy: components["schemas"]["ActorRef"];
@@ -3173,6 +3328,15 @@ export interface components {
             /** @description Versão da comanda que o aparelho tem (opcional). Diferente da atual: 409 `TAB_CHANGED` com `details.currentVersion`. */
             version?: number;
         };
+        PutOnCreditRequestInput: {
+            /**
+             * Format: uuid
+             * @description Cliente da unidade (RN-06.05). Opcional só no turno contratado `consumption_billed`: sem ele, a comanda vai para o cliente com o nome do contratante, criado se preciso (RN-06.08).
+             */
+            customerId?: string;
+            /** @description Versão da comanda que o aparelho tem (opcional; `TAB_CHANGED`). */
+            version?: number;
+        };
         PutShiftPricesRequestInput: {
             /** @description A tabela inteira; substitui a anterior. */
             prices: components["schemas"]["ShiftPriceInput"][];
@@ -3236,6 +3400,17 @@ export interface components {
              * @example station:01922f2c-7a3b-7c00-8000-0000000000e1
              */
             room: string;
+        };
+        /** @description Valores a receber da unidade (spec 06, seção 7). */
+        Receivables: {
+            /** @description Totais por cliente, maior saldo primeiro. */
+            customers: components["schemas"]["CustomerReceivable"][];
+            /** @description Comandas `on_credit` da unidade, mais antigas primeiro (`creditAt`), com cliente e saldo (`balanceCents`). */
+            tabs: components["schemas"]["TabSummary"][];
+            /** @description Total a receber da unidade. */
+            totalCents: number;
+            /** Format: uuid */
+            unitId: string;
         };
         RemoveDiscountRequestInput: {
             /** @description Motivo da remoção (RN-05.01). */
@@ -3527,6 +3702,10 @@ export interface components {
             /** @description Saldo a receber: `totalCents − paidCents` (RN-05.07). */
             balanceCents: number;
             closedAt: string | null;
+            /** @description Quando foi pendurada (spec 06). */
+            creditAt: string | null;
+            /** @description Cliente do fiado (`on_credit`, `settled`; RN-06.05); `null` nas outras. */
+            customer: components["schemas"]["TabCustomer"] | null;
             customerName: string;
             discountCents: number;
             /** @description Motivo do desconto (RN-05.01). */
@@ -3552,6 +3731,8 @@ export interface components {
             payments: components["schemas"]["Payment"][];
             /** @description Unidades na etapa anterior à final (prontas para entregar): o sinal do cartão no varal. */
             readyItemCount: number;
+            /** @description Quando o saldo pendurado chegou a zero (RN-06.10). */
+            settledAt: string | null;
             /** Format: uuid */
             shiftId: string;
             status: components["schemas"]["TabStatus"];
@@ -3566,6 +3747,14 @@ export interface components {
         TabActionRequestInput: {
             /** @description Versão da comanda que o aparelho tem (opcional). Diferente da atual: 409 `TAB_CHANGED` com `details.currentVersion`. */
             version?: number;
+        };
+        TabCustomer: {
+            /** Format: uuid */
+            id: string;
+            name: string;
+            reference: string | null;
+            /** @description Removido a pedido (RN-06.03). */
+            removed: boolean;
         };
         TabList: {
             data: components["schemas"]["TabSummary"][];
@@ -3585,6 +3774,10 @@ export interface components {
             /** @description Saldo a receber: `totalCents − paidCents` (RN-05.07). */
             balanceCents: number;
             closedAt: string | null;
+            /** @description Quando foi pendurada (spec 06). */
+            creditAt: string | null;
+            /** @description Cliente do fiado (`on_credit`, `settled`; RN-06.05); `null` nas outras. */
+            customer: components["schemas"]["TabCustomer"] | null;
             customerName: string;
             discountCents: number;
             /** @description Motivo do desconto (RN-05.01). */
@@ -3606,6 +3799,8 @@ export interface components {
             paidCents: number;
             /** @description Unidades na etapa anterior à final (prontas para entregar): o sinal do cartão no varal. */
             readyItemCount: number;
+            /** @description Quando o saldo pendurado chegou a zero (RN-06.10). */
+            settledAt: string | null;
             /** Format: uuid */
             shiftId: string;
             status: components["schemas"]["TabStatus"];
@@ -3656,6 +3851,20 @@ export interface components {
             name?: string;
             /** @description Posição na lista (1 é o primeiro). */
             sortOrder?: number;
+        };
+        /** @description Campos ausentes não mudam; `null` ou texto vazio apaga um dado opcional. */
+        UpdateCustomerRequestInput: {
+            /** @description CPF validado pelos dígitos verificadores, guardado só com dígitos; único na unidade (RN-06.02). */
+            cpf?: string | null;
+            name?: string;
+            /** @description Observação, até 140 caracteres (RN-06.01). */
+            note?: string | null;
+            /** @description Telefone com DDD; pontuação é ignorada e fica guardado só com dígitos. Único na unidade (RN-06.02). */
+            phone?: string | null;
+            /** @description Até 60 caracteres (RN-06.01). */
+            reference?: string | null;
+            /** @description Versão que o app tem do registro. Se outro aparelho alterou antes, a API responde 409 `VERSION_CONFLICT` com `details.currentVersion`. Opcional. */
+            version?: number;
         };
         UpdateModifierGroupRequestInput: {
             maxChoices?: number;
@@ -6844,6 +7053,222 @@ export interface operations {
             };
         };
     };
+    CreditController_detail: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CustomerDetail"];
+                };
+            };
+            /** @description `UNAUTHENTICATED`: sem sessão do app ou sessão encerrada. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description `FORBIDDEN`: é preciso ter acesso ao balcão da unidade. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description `NOT_FOUND`: não existe ou é de outra organização. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Erro no formato `ErrorResponse` (spec 01, seção 5). */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    CreditController_remove: {
+        parameters: {
+            query?: never;
+            header?: {
+                /** @description UUID gerado no aparelho. Repetir a mesma chave devolve a mesma resposta por 24 h, sem repetir a ação. */
+                "Idempotency-Key"?: string;
+            };
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Customer"];
+                };
+            };
+            /** @description `UNAUTHENTICATED`: sem sessão do app ou sessão encerrada. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description `FORBIDDEN`: só o dono edita e remove clientes. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description `NOT_FOUND`: não existe ou é de outra organização. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /**
+             * @description `CUSTOMER_HAS_RECEIVABLE` (`details.balanceCents`) ou `CUSTOMER_REMOVED`.
+             *
+             *     `IDEMPOTENCY_KEY_REUSED` (mesma chave com outro corpo) ou `IDEMPOTENCY_REQUEST_IN_PROGRESS`.
+             */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Erro no formato `ErrorResponse` (spec 01, seção 5). */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    CreditController_update: {
+        parameters: {
+            query?: never;
+            header?: {
+                /** @description UUID gerado no aparelho. Repetir a mesma chave devolve a mesma resposta por 24 h, sem repetir a ação. */
+                "Idempotency-Key"?: string;
+            };
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UpdateCustomerRequestInput"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Customer"];
+                };
+            };
+            /** @description `VALIDATION_FAILED`. */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description `UNAUTHENTICATED`: sem sessão do app ou sessão encerrada. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description `FORBIDDEN`: só o dono edita e remove clientes. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description `NOT_FOUND`: não existe ou é de outra organização. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /**
+             * @description `CUSTOMER_PHONE_TAKEN` ou `CUSTOMER_CPF_TAKEN` (RN-06.02, CA-06.06), `CUSTOMER_REMOVED` ou `CUSTOMER_CHANGED`.
+             *
+             *     `IDEMPOTENCY_KEY_REUSED` (mesma chave com outro corpo) ou `IDEMPOTENCY_REQUEST_IN_PROGRESS`.
+             */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Erro no formato `ErrorResponse` (spec 01, seção 5). */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
     HealthController_check: {
         parameters: {
             query?: never;
@@ -9389,7 +9814,93 @@ export interface operations {
                 };
             };
             /**
-             * @description `NO_CASH_REGISTER_OPEN` (CA-05.08), `CASH_REGISTER_REQUIRED` (`details.cashRegisters`), `CASH_REGISTER_CLOSED`, `PAYMENT_EXCEEDS_BALANCE` (CA-05.03), `TAB_NOTHING_TO_PAY`, `TAB_CHANGED` ou `SHIFT_CLOSED`, `TAB_NOT_CLOSING` (RN-05.07) ou `TAB_CLOSED`.
+             * @description `NO_CASH_REGISTER_OPEN` (CA-05.08), `CASH_REGISTER_REQUIRED` (`details.cashRegisters`), `CASH_REGISTER_CLOSED`, `PAYMENT_EXCEEDS_BALANCE` (CA-05.03), `TAB_NOTHING_TO_PAY`, `TAB_CHANGED` ou `SHIFT_CLOSED`, `TAB_NOT_CLOSING` (RN-05.07), `NO_SHIFT_OPEN` (quitação, RN-06.09) ou `TAB_CLOSED`.
+             *
+             *     `IDEMPOTENCY_KEY_REUSED` (mesma chave com outro corpo) ou `IDEMPOTENCY_REQUEST_IN_PROGRESS`.
+             */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Erro no formato `ErrorResponse` (spec 01, seção 5). */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    CreditController_putOnCredit: {
+        parameters: {
+            query?: never;
+            header?: {
+                /** @description UUID gerado no aparelho. Repetir a mesma chave devolve a mesma resposta por 24 h, sem repetir a ação. */
+                "Idempotency-Key"?: string;
+            };
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PutOnCreditRequestInput"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Tab"];
+                };
+            };
+            /** @description `INVALID_CUSTOMER`, `CUSTOMER_REQUIRED` ou `VALIDATION_FAILED`. */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description `UNAUTHENTICATED`: sem sessão do app ou sessão encerrada. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description `FORBIDDEN`: é preciso ter acesso ao balcão da unidade. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description `NOT_FOUND`: não existe ou é de outra organização. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /**
+             * @description `TAB_NOT_CLOSING` (CA-06.02), `TAB_CLOSED`, `TAB_NOTHING_TO_PAY`, `TAB_CHANGED` ou `SHIFT_CLOSED`.
              *
              *     `IDEMPOTENCY_KEY_REUSED` (mesma chave com outro corpo) ou `IDEMPOTENCY_REQUEST_IN_PROGRESS`.
              */
@@ -9823,6 +10334,154 @@ export interface operations {
             };
         };
     };
+    CreditController_list: {
+        parameters: {
+            query?: {
+                /** @description Busca por nome, telefone, CPF ou referência (RN-06.02); vazio lista todos. Removidos não aparecem. */
+                q?: string;
+                /** @description Quantidade máxima de resultados (1 a 100, padrão 50), em ordem de nome. */
+                limit?: number;
+            };
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CustomerList"];
+                };
+            };
+            /** @description `UNAUTHENTICATED`: sem sessão do app ou sessão encerrada. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description `FORBIDDEN`: é preciso ter acesso ao balcão da unidade. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description `NOT_FOUND`: não existe ou é de outra organização. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Erro no formato `ErrorResponse` (spec 01, seção 5). */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    CreditController_create: {
+        parameters: {
+            query?: never;
+            header?: {
+                /** @description UUID gerado no aparelho. Repetir a mesma chave devolve a mesma resposta por 24 h, sem repetir a ação. */
+                "Idempotency-Key"?: string;
+            };
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateCustomerRequestInput"];
+            };
+        };
+        responses: {
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Customer"];
+                };
+            };
+            /** @description `VALIDATION_FAILED` (telefone com DDD, CPF pelos dígitos verificadores). */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description `UNAUTHENTICATED`: sem sessão do app ou sessão encerrada. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description `FORBIDDEN`: é preciso ter acesso ao balcão da unidade. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description `NOT_FOUND`: não existe ou é de outra organização. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /**
+             * @description `CUSTOMER_PHONE_TAKEN` ou `CUSTOMER_CPF_TAKEN` (RN-06.02, CA-06.06).
+             *
+             *     `IDEMPOTENCY_KEY_REUSED` (mesma chave com outro corpo) ou `IDEMPOTENCY_REQUEST_IN_PROGRESS`.
+             */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Erro no formato `ErrorResponse` (spec 01, seção 5). */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
     MenuController_readMenu: {
         parameters: {
             query?: never;
@@ -9852,6 +10511,63 @@ export interface operations {
                 };
             };
             /** @description `FORBIDDEN`: colaborador sem acesso à unidade. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description `NOT_FOUND`: não existe ou é de outra organização. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Erro no formato `ErrorResponse` (spec 01, seção 5). */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    CreditController_receivables: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Receivables"];
+                };
+            };
+            /** @description `UNAUTHENTICATED`: sem sessão do app ou sessão encerrada. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description `FORBIDDEN`: é preciso ter acesso ao balcão ou operar o caixa da unidade. */
             403: {
                 headers: {
                     [name: string]: unknown;

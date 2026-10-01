@@ -237,6 +237,26 @@ export function expectedOf(
   return register.expected.find((entry) => entry.method === method)?.expectedCents ?? 0
 }
 
+/**
+ * Esperado de uma forma separado em vendas do turno e quitações de fiado (RN-05.22): as
+ * quitações entram no caixa em que foram recebidas, mas aparecem à parte na conferência.
+ */
+export function expectedSplit(
+  register: Pick<CashRegister, 'expected'>,
+  method: PaymentMethod,
+): { salesCents: number; creditSettlementsCents: number } {
+  const entry = register.expected.find((item) => item.method === method)
+  return {
+    salesCents: entry?.salesCents ?? 0,
+    creditSettlementsCents: entry?.creditSettlementsCents ?? 0,
+  }
+}
+
+/** "vendas R$ 30,00 · fiado R$ 60,00" (RN-05.22). */
+export function splitLabel(split: { salesCents: number; creditSettlementsCents: number }): string {
+  return `vendas ${formatCents(split.salesCents)} · quitações de fiado ${formatCents(split.creditSettlementsCents)}`
+}
+
 export interface CountRow {
   method: PaymentMethod
   expectedCents: number

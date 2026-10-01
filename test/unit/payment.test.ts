@@ -22,10 +22,20 @@ import {
 
 const register = {
   expected: [
-    { method: 'cash' as const, expectedCents: 25_000 },
-    { method: 'pix' as const, expectedCents: 5_000 },
-    { method: 'credit_card' as const, expectedCents: 0 },
-    { method: 'debit_card' as const, expectedCents: 1_200 },
+    {
+      method: 'cash' as const,
+      expectedCents: 25_000,
+      salesCents: 25_000,
+      creditSettlementsCents: 0,
+    },
+    { method: 'pix' as const, expectedCents: 5_000, salesCents: 5_000, creditSettlementsCents: 0 },
+    { method: 'credit_card' as const, expectedCents: 0, salesCents: 0, creditSettlementsCents: 0 },
+    {
+      method: 'debit_card' as const,
+      expectedCents: 1_200,
+      salesCents: 1_200,
+      creditSettlementsCents: 0,
+    },
   ],
 }
 

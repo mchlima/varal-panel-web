@@ -1,7 +1,8 @@
 /**
  * Ações operacionais que passam pela fila local (spec 01, seção 11). Spec 04: abrir comanda,
  * enviar pedido, avançar, voltar, cancelar item, entregar, pedir a conta, reabrir e cancelar
- * comanda. Spec 05: desconto, pagamento, estorno, comanda paga antes e sangria/suprimento. O
+ * comanda. Spec 05: desconto, pagamento, estorno, comanda paga antes e sangria/suprimento.
+ * Spec 06: pendurar (a quitação é um `tab.payment` numa comanda `on_credit`). O
  * `meta` de cada ação diz à tela onde mostrar "Enviando…"/"Na fila" e sobrevive a um
  * recarregamento (fica no IndexedDB junto com a ação).
  */
@@ -65,6 +66,17 @@ export type OperationMeta =
       totalCents: number
     }
   | {
+      kind: 'tab.put_on_credit'
+      tabId: string
+      tabNumber: number
+      /** `null` no turno contratado `consumption_billed` (RN-06.08): a API usa o contratante. */
+      customerId: string | null
+      /** Nome mostrado em "Pendurar em Seu Zé: na fila". */
+      customerName: string
+      /** Saldo pendurado visto no aparelho ao confirmar (RN-06.06). */
+      balanceCents: number
+    }
+  | {
       kind: 'cash.movement'
       cashRegisterId: string
       type: CashMovementType
@@ -86,6 +98,7 @@ const KINDS: readonly OperationKind[] = [
   'tab.payment',
   'payment.reverse',
   'tab.pay_first',
+  'tab.put_on_credit',
   'cash.movement',
 ]
 
@@ -153,6 +166,8 @@ export function tabActionName(meta: OperationMeta): string | null {
       return 'Pagamento'
     case 'payment.reverse':
       return 'Estorno'
+    case 'tab.put_on_credit':
+      return 'Pendurar'
     default:
       return null
   }

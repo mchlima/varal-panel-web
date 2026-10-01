@@ -9,6 +9,8 @@ import {
   PAYMENT_METHODS,
   closingRows,
   countsOf,
+  expectedSplit,
+  splitLabel,
   differenceLabel,
   hasDifference,
   type CashRegisterDetail,
@@ -88,6 +90,16 @@ const informed = computed(() => {
 })
 const rows = computed(() => (register.value ? closingRows(register.value, informed.value) : []))
 const differs = computed(() => hasDifference(rows.value))
+/** Vendas do turno e quitações de fiado separadas no esperado de cada forma (RN-05.22). */
+const splits = computed(() => {
+  const current = register.value
+  return Object.fromEntries(
+    PAYMENT_METHODS.map((method) => [
+      method,
+      current ? splitLabel(expectedSplit(current, method)) : '',
+    ]),
+  ) as Record<PaymentMethod, string>
+})
 
 function fieldError(method: PaymentMethod): string {
   if (!touched.value) return ''
@@ -144,13 +156,20 @@ async function close() {
   if (code === 'CLOSING_NOTE_REQUIRED') {
     // A API devolve a prévia das diferenças: a tela mostra com a observação obrigatória.
     const preview = countsOf(action.error.value?.details)
-    if (preview.length && register.value) {
+    const current = register.value
+    if (preview.length && current) {
       register.value = {
-        ...register.value,
-        expected: preview.map((count) => ({
-          method: count.method,
-          expectedCents: count.expectedCents,
-        })),
+        ...current,
+        expected: preview.map((count) => {
+          const before = current.expected.find((entry) => entry.method === count.method)
+          return {
+            method: count.method,
+            expectedCents: count.expectedCents,
+            salesCents: before?.salesCents ?? 0,
+            creditSettlementsCents:
+              count.creditSettlementsCents ?? before?.creditSettlementsCents ?? 0,
+          }
+        }),
       }
     }
   } else if (code === 'VERSION_CONFLICT' || code === 'CASH_REGISTER_CLOSED') {
@@ -217,6 +236,9 @@ const back = computed(() =>
             <span class="flex-1 font-bold">{{ PAYMENT_METHOD_LABELS[count.method] }}</span>
             <span class="tabular-nums">{{ formatCents(count.informedCents) }}</span>
           </div>
+          <p v-if="count.creditSettlementsCents > 0" class="text-sm text-text-muted tabular-nums">
+            Inclui {{ formatCents(count.creditSettlementsCents) }} de quitações de fiado
+          </p>
           <p class="text-sm text-text-muted tabular-nums">
             Esperado {{ formatCents(count.expectedCents) }} ·
             <span :class="count.differenceCents === 0 ? '' : 'font-bold text-error'">{{
@@ -257,6 +279,12 @@ const back = computed(() =>
               }}</strong></span
             >
           </div>
+          <p
+            class="-mt-1 text-sm text-text-muted tabular-nums"
+            :data-testid="`count-split-${row.method}`"
+          >
+            {{ splits[row.method] }}
+          </p>
           <AppTextField
             v-model="inputs[row.method]"
             :label="`${PAYMENT_METHOD_LABELS[row.method]} conferido`"
