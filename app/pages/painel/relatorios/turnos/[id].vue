@@ -170,13 +170,13 @@ const cancellationCount = computed(
         <dl class="grid grid-cols-1 gap-x-4 gap-y-1 text-sm sm:grid-cols-2">
           <div>
             <dt class="inline text-text-muted">Abertura:</dt>
-            <dd class="inline">
+            <dd class="ml-1 inline">
               {{ formatDateTime(report.shift.openedAt) }} por {{ actorName(report.shift.openedBy) }}
             </dd>
           </div>
           <div>
             <dt class="inline text-text-muted">Fechamento:</dt>
-            <dd class="inline">
+            <dd class="ml-1 inline">
               <template v-if="report.shift.closedAt">
                 {{ formatDateTime(report.shift.closedAt) }} por
                 {{ actorName(report.shift.closedBy) }}
@@ -442,61 +442,42 @@ const cancellationCount = computed(
               <dd class="tabular-nums">{{ formatCents(register.creditSettlementsCents) }}</dd>
             </div>
           </dl>
-          <div class="overflow-x-auto">
-            <table class="w-full text-sm tabular-nums">
-              <thead>
-                <tr class="text-left text-text-muted">
-                  <th scope="col" class="py-1 pr-2 font-normal">Forma</th>
-                  <th scope="col" class="py-1 pr-2 text-right font-normal">Esperado</th>
-                  <th
-                    v-if="register.counts.length"
-                    scope="col"
-                    class="py-1 pr-2 text-right font-normal"
-                  >
-                    Informado
-                  </th>
-                  <th v-if="register.counts.length" scope="col" class="py-1 text-right font-normal">
-                    Diferença
-                  </th>
-                </tr>
-              </thead>
-              <tbody>
-                <template v-if="register.counts.length">
-                  <tr
-                    v-for="count in register.counts"
-                    :key="count.method"
-                    class="border-t border-border"
-                  >
-                    <th scope="row" class="py-1.5 pr-2 text-left font-bold">
-                      {{ PAYMENT_METHOD_LABELS[count.method] }}
-                    </th>
-                    <td class="py-1.5 pr-2 text-right">{{ formatCents(count.expectedCents) }}</td>
-                    <td class="py-1.5 pr-2 text-right">{{ formatCents(count.informedCents) }}</td>
-                    <td
-                      class="py-1.5 text-right font-bold"
-                      :class="count.differenceCents === 0 ? '' : 'text-error'"
-                    >
-                      {{ differenceLabel(count.differenceCents) }}
-                    </td>
-                  </tr>
-                </template>
-                <template v-else>
-                  <tr
-                    v-for="expected in register.expected"
-                    :key="expected.method"
-                    class="border-t border-border"
-                  >
-                    <th scope="row" class="py-1.5 pr-2 text-left font-bold">
-                      {{ PAYMENT_METHOD_LABELS[expected.method] }}
-                    </th>
-                    <td class="py-1.5 pr-2 text-right">
-                      {{ formatCents(expected.expectedCents) }}
-                    </td>
-                  </tr>
-                </template>
-              </tbody>
-            </table>
-          </div>
+          <ul class="flex flex-col divide-y divide-border text-sm" data-testid="register-counts">
+            <template v-if="register.counts.length">
+              <li
+                v-for="count in register.counts"
+                :key="count.method"
+                class="flex flex-wrap items-baseline gap-x-3 py-1.5"
+              >
+                <span class="min-w-0 flex-1">
+                  <span class="font-bold">{{ PAYMENT_METHOD_LABELS[count.method] }}</span>
+                  <span class="block text-text-muted tabular-nums">
+                    esperado {{ formatCents(count.expectedCents) }} · informado
+                    {{ formatCents(count.informedCents) }}
+                  </span>
+                </span>
+                <span
+                  class="font-bold whitespace-nowrap tabular-nums"
+                  :class="count.differenceCents === 0 ? '' : 'text-error'"
+                  >{{ differenceLabel(count.differenceCents) }}</span
+                >
+              </li>
+            </template>
+            <template v-else>
+              <li
+                v-for="expected in register.expected"
+                :key="expected.method"
+                class="flex items-baseline gap-3 py-1.5"
+              >
+                <span class="min-w-0 flex-1 font-bold">{{
+                  PAYMENT_METHOD_LABELS[expected.method]
+                }}</span>
+                <span class="text-text-muted tabular-nums"
+                  >esperado {{ formatCents(expected.expectedCents) }}</span
+                >
+              </li>
+            </template>
+          </ul>
           <p v-if="register.status === 'closed'" class="text-sm font-bold">
             Diferença total: {{ differenceLabel(register.differenceCents) }}
           </p>
