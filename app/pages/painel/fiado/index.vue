@@ -27,52 +27,38 @@ const unitParam = typeof route.query.unidade === 'string' ? route.query.unidade 
 if (unitParam && units.value.some((unit) => unit.id === unitParam)) select(unitParam)
 const receivables = useReceivables(unitId)
 
-const PAGE = 20
-const MAX_LIMIT = 100
 const query = ref('')
-const limit = ref(PAGE)
-const customers = ref<Customer[]>([])
-const customersLoading = ref(false)
-const customersError = ref('')
-let generation = 0
+/** Texto da busca em andamento: o "Carregar mais" continua a mesma busca. */
+const searchedText = ref('')
 
-async function search(text: string, size: number): Promise<Customer[]> {
+/** Clientes da unidade em ordem de nome, paginados por cursor (spec 06, seção 7). */
+const customers = useCursorList<Customer>((page) =>
+  $api.GET('/api/v1/units/{id}/customers', {
+    params: {
+      path: { id: unitId.value ?? '' },
+      query: { q: searchedText.value || undefined, ...page },
+    },
+  }),
+)
+
+function loadCustomers() {
+  if (!unitId.value) return
+  searchedText.value = query.value.trim()
+  void customers.reset()
+}
+const searchSoon = useDebounceFn(loadCustomers, 250)
+watch(query, () => void searchSoon())
+watch(unitId, loadCustomers, { immediate: true })
+useRealtimeResync(() => (unitId.value ? customers.reload() : undefined))
+
+async function search(text: string): Promise<Customer[]> {
   const unit = unitId.value
   if (!unit) return []
   const { data, error } = await $api.GET('/api/v1/units/{id}/customers', {
-    params: { path: { id: unit }, query: { q: text || undefined, limit: size } },
+    params: { path: { id: unit }, query: { q: text || undefined, limit: 50 } },
   })
   if (!data) throw new Error(apiErrorMessage(error))
   return data.data
-}
-
-async function loadCustomers() {
-  const current = ++generation
-  customersLoading.value = true
-  customersError.value = ''
-  try {
-    const found = await search(query.value.trim(), limit.value)
-    if (current === generation) customers.value = found
-  } catch (cause) {
-    if (current === generation) customersError.value = apiErrorMessage(cause)
-  } finally {
-    if (current === generation) customersLoading.value = false
-  }
-}
-const searchSoon = useDebounceFn(() => {
-  limit.value = PAGE
-  void loadCustomers()
-}, 250)
-watch(query, () => void searchSoon())
-watch(unitId, () => void loadCustomers(), { immediate: true })
-useRealtimeResync(() => loadCustomers())
-
-/** A busca não tem cursor: "Carregar mais" aumenta o limite até 100; depois disso, busque. */
-const hasMore = computed(() => customers.value.length === limit.value && limit.value < MAX_LIMIT)
-const reachedMax = computed(() => customers.value.length >= MAX_LIMIT)
-function loadMore() {
-  limit.value = Math.min(limit.value + PAGE, MAX_LIMIT)
-  void loadCustomers()
 }
 
 const balanceByCustomer = computed(() => {
@@ -104,7 +90,7 @@ async function create(values: CustomerFormValues) {
   }
 }
 function findSameName(name: string) {
-  return search(name, 50)
+  return search(name)
 }
 </script>
 
@@ -189,15 +175,18 @@ function findSameName(name: string) {
           />
         </span>
       </label>
-      <AppAlert v-if="customersError" tone="error">{{ customersError }}</AppAlert>
+      <AppAlert v-if="customers.error.value" tone="error">{{ customers.error.value }}</AppAlert>
+      <p v-if="customers.loading.value && !customers.error.value" class="text-text-muted">
+        Carregando…
+      </p>
       <p
-        v-if="!customersLoading && customers.length === 0 && !customersError"
+        v-else-if="customers.items.value.length === 0 && !customers.error.value"
         class="text-text-muted"
       >
-        {{ query.trim() ? 'Nenhum cliente encontrado.' : 'Nenhum cliente cadastrado ainda.' }}
+        {{ searchedText ? 'Nenhum cliente encontrado.' : 'Nenhum cliente cadastrado ainda.' }}
       </p>
       <ul class="flex flex-col gap-2">
-        <li v-for="customer in customers" :key="customer.id">
+        <li v-for="customer in customers.items.value" :key="customer.id">
           <NuxtLink
             :to="`/painel/fiado/${customer.id}`"
             class="flex min-h-14 items-center gap-3 rounded-card border-2 border-border bg-surface px-4 py-2 hover:border-border-strong"
@@ -218,10 +207,11 @@ function findSameName(name: string) {
           </NuxtLink>
         </li>
       </ul>
-      <LoadMoreButton v-if="hasMore" :loading="customersLoading" @click="loadMore" />
-      <p v-else-if="reachedMax" class="text-sm text-text-muted">
-        Mostrando os {{ MAX_LIMIT }} primeiros em ordem de nome: busque para achar outros.
-      </p>
+      <LoadMoreButton
+        v-if="customers.hasMore.value"
+        :loading="customers.loadingMore.value"
+        @click="customers.loadMore"
+      />
     </section>
 
     <AppDialog v-model:open="creating" title="Novo cliente">
