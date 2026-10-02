@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.7.1](https://github.com/mchlima/varal-panel-web/compare/v0.7.0...v0.7.1) (2026-10-02)
+
+
+### Bug Fixes
+
+* **orders:** contador e botão de tirar no próprio produto ao montar o pedido ([#28](https://github.com/mchlima/varal-panel-web/issues/28)) ([ffe45d5](https://github.com/mchlima/varal-panel-web/commit/ffe45d542b6a3fa348841d93928986a0ef14b05d))
+
 ## [0.7.0](https://github.com/mchlima/varal-panel-web/compare/v0.6.0...v0.7.0) (2026-10-02)
 
 
