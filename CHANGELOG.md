@@ -1,5 +1,16 @@
 # Changelog
 
+## [0.7.0](https://github.com/mchlima/varal-panel-web/compare/v0.6.0...v0.7.0) (2026-10-02)
+
+
+### ⚠ BREAKING CHANGES
+
+* **cash:** depende da API da fase 7.5 (rotas de turno removidas).
+
+### Features
+
+* **cash:** redesenho pós-teste — caixa da unidade, tabelas de preço, eventos e KDS (fase 7.5) ([#26](https://github.com/mchlima/varal-panel-web/issues/26)) ([d32dc14](https://github.com/mchlima/varal-panel-web/commit/d32dc147a8c4f7aad523fb73878180140ba0bea4))
+
 ## [0.6.0](https://github.com/mchlima/varal-panel-web/compare/v0.5.0...v0.6.0) (2026-10-02)
 
 
