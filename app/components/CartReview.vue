@@ -37,6 +37,10 @@ function saveNote(key: string) {
   editingNote.value = null
 }
 
+function clearLines() {
+  for (const line of current.value.lines) cart.setQuantity(props.cartKey, line.key, 0)
+}
+
 function lineProblems(key: string): string[] {
   const problems: string[] = []
   if (unavailable.value.has(key))
@@ -130,6 +134,15 @@ function lineProblems(key: string): string[] {
       </li>
     </ul>
     <p v-if="current.lines.length === 0" class="text-text-muted">O pedido está vazio.</p>
+    <button
+      v-else
+      type="button"
+      class="min-h-12 self-start rounded-button px-3 font-bold text-status-late-text underline-offset-4 hover:underline"
+      data-testid="cart-clear"
+      @click="clearLines"
+    >
+      Tirar todos os itens
+    </button>
     <div class="flex items-baseline justify-between border-t border-border pt-3">
       <span class="font-bold">Total do pedido</span>
       <span class="font-display text-2xl font-extrabold tabular-nums" data-testid="cart-total">{{

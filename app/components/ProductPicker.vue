@@ -88,6 +88,15 @@ function choose(product: MenuProduct) {
   lastAdded.value = `${product.name} adicionado.`
 }
 
+/** Tira uma unidade do produto, da última linha dele no carrinho (sem abrir a revisão). */
+function removeOne(product: MenuProduct) {
+  const lines = cart.cartOf(props.cartKey).lines.filter((line) => line.productId === product.id)
+  const last = lines.at(-1)
+  if (!last) return
+  cart.setQuantity(props.cartKey, last.key, last.quantity - 1)
+  lastAdded.value = `${product.name} retirado.`
+}
+
 function addLine(line: CartLine) {
   cart.add(props.cartKey, line)
   lastAdded.value = `${line.quantity} ${line.productName} adicionado.`
@@ -142,10 +151,10 @@ function addLine(line: CartLine) {
       <template v-else>O cardápio desta unidade está vazio.</template>
     </p>
     <ul class="grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-4">
-      <li v-for="product in products" :key="product.id">
+      <li v-for="product in products" :key="product.id" class="relative">
         <button
           type="button"
-          class="flex min-h-24 w-full flex-col items-start justify-between gap-1 rounded-card border-2 p-3 text-left"
+          class="flex h-full min-h-24 w-full flex-col items-start justify-between gap-1 rounded-card border-2 p-3 text-left"
           :class="
             product.soldOut
               ? 'cursor-not-allowed border-border bg-surface-muted text-text-muted'
@@ -158,23 +167,42 @@ function addLine(line: CartLine) {
           data-testid="product-button"
           @click="choose(product)"
         >
-          <span class="text-base leading-tight font-bold">{{ product.name }}</span>
-          <span class="flex w-full flex-wrap items-center gap-1.5">
+          <span
+            class="text-base leading-tight font-bold"
+            :class="inCart[product.id] && !product.soldOut ? 'pr-10' : ''"
+            >{{ product.name }}</span
+          >
+          <span
+            v-if="inCart[product.id] && !product.soldOut"
+            class="absolute top-2 right-2 flex size-9 items-center justify-center rounded-full bg-primary font-display text-lg font-extrabold text-white tabular-nums"
+            aria-hidden="true"
+            data-testid="product-count"
+            >{{ inCart[product.id] }}</span
+          >
+          <span
+            class="flex w-full flex-wrap items-center gap-1.5"
+            :class="inCart[product.id] && !product.soldOut ? 'pr-14' : ''"
+          >
             <span class="font-display text-lg font-semibold tabular-nums">{{
               formatCents(effectivePriceCents(product))
             }}</span>
             <StageChip v-if="product.soldOut" status="late" label="Esgotado" />
-            <StageChip
-              v-else-if="inCart[product.id]"
-              status="new"
-              :label="`${inCart[product.id]} no pedido`"
-            />
           </span>
           <span
             v-if="priceListName && effectivePriceCents(product) !== product.priceCents"
             class="text-xs text-text-muted"
             >preço {{ priceListName }}</span
           >
+        </button>
+        <button
+          v-if="inCart[product.id] && !product.soldOut && !disabled"
+          type="button"
+          class="absolute right-2 bottom-2 flex size-12 items-center justify-center rounded-button border-2 border-border-strong bg-surface text-text"
+          :aria-label="`Tirar 1 ${product.name}`"
+          data-testid="product-remove-one"
+          @click="removeOne(product)"
+        >
+          <AppIcon name="minus" />
         </button>
       </li>
     </ul>
