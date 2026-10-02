@@ -3,6 +3,9 @@ import {
   actorName,
   addDays,
   agreementDifferenceLabel,
+  consumptionLabel,
+  dayReportPath,
+  eventDates,
   daysInRange,
   filtersFromQuery,
   filtersToQuery,
@@ -12,13 +15,17 @@ import {
   historyQuery,
   isForbidden,
   isValidDay,
+  periodReportPath,
   presetOf,
   presetRange,
   rangeError,
+  rangeFromQuery,
+  receivedDetail,
   todayInSaoPaulo,
+  todaySummaryQuery,
 } from '../../app/lib/report'
 
-describe('dia de hoje em Brasília (spec 07, seção 11)', () => {
+describe('dia de hoje em Brasília (spec 07, seção 13)', () => {
   it('usa o fuso de Brasília, não o UTC', () => {
     // 02:30 UTC do dia 2 ainda é dia 1 em Brasília (UTC−3).
     expect(todayInSaoPaulo(new Date('2026-10-02T02:30:00Z'))).toBe('2026-10-01')
@@ -26,7 +33,7 @@ describe('dia de hoje em Brasília (spec 07, seção 11)', () => {
   })
 })
 
-describe('atalhos de período (spec 07, seção 5)', () => {
+describe('atalhos de período (spec 07, seção 7)', () => {
   const today = '2026-10-15'
 
   it('hoje, 7 dias, 30 dias e mês atual contam o dia de hoje', () => {
@@ -66,41 +73,63 @@ describe('período escolhido à mão (1 a 366 dias)', () => {
 describe('filtros do histórico na URL', () => {
   const today = '2026-10-15'
 
-  it('sem filtros, os últimos 30 dias de todas as unidades e tipos', () => {
+  it('sem filtros, os últimos 30 dias de todas as unidades, na aba Dias', () => {
     expect(filtersFromQuery({}, today)).toEqual({
       from: '2026-09-16',
       to: today,
       unitId: null,
-      type: null,
+      tab: 'dias',
     })
   })
 
-  it('lê e escreve período, unidade e tipo; valores inválidos caem no padrão', () => {
+  it('lê e escreve período, unidade e aba; valores inválidos caem no padrão', () => {
     const filters = filtersFromQuery(
-      { de: '2026-09-01', ate: '2026-09-30', unidade: 'u1', tipo: 'contracted' },
+      { de: '2026-09-01', ate: '2026-09-30', unidade: 'u1', aba: 'caixas' },
       today,
     )
-    expect(filters).toEqual({
-      from: '2026-09-01',
-      to: '2026-09-30',
-      unitId: 'u1',
-      type: 'contracted',
-    })
+    expect(filters).toEqual({ from: '2026-09-01', to: '2026-09-30', unitId: 'u1', tab: 'caixas' })
     expect(filtersToQuery(filters)).toEqual({
       de: '2026-09-01',
       ate: '2026-09-30',
       unidade: 'u1',
-      tipo: 'contracted',
+      aba: 'caixas',
     })
-    expect(historyQuery(filters)).toEqual({
-      from: '2026-09-01',
-      to: '2026-09-30',
-      unitId: 'u1',
-      type: 'contracted',
-    })
-    const invalid = filtersFromQuery({ de: '2026-10-02', ate: '2026-10-01', tipo: 'x' }, today)
-    expect(invalid).toMatchObject({ from: '2026-09-16', to: today, type: null })
+    expect(historyQuery(filters)).toEqual({ from: '2026-09-01', to: '2026-09-30', unitId: 'u1' })
+    const invalid = filtersFromQuery({ de: '2026-10-02', ate: '2026-10-01', aba: 'x' }, today)
+    expect(invalid).toMatchObject({ from: '2026-09-16', to: today, tab: 'dias' })
     expect(historyQuery(invalid)).toEqual({ from: '2026-09-16', to: today })
+    expect(filtersToQuery(invalid)).not.toHaveProperty('aba')
+  })
+
+  it('o relatório do período sem datas é o de hoje', () => {
+    expect(rangeFromQuery({}, today, 'today')).toEqual({ from: today, to: today })
+    expect(rangeFromQuery({ de: '2026-10-01', ate: '2026-10-07' }, today, 'today')).toEqual({
+      from: '2026-10-01',
+      to: '2026-10-07',
+    })
+  })
+})
+
+describe('links e consultas dos relatórios (spec 01, seção 14.1)', () => {
+  it('relatório do período com unidade e datas na URL', () => {
+    expect(periodReportPath({ unitId: 'u1', from: '2026-10-01', to: '2026-10-07' })).toBe(
+      '/painel/relatorios/periodo?unidade=u1&de=2026-10-01&ate=2026-10-07',
+    )
+    expect(periodReportPath({ unitId: null, from: '2026-10-01', to: '2026-10-01' })).toBe(
+      '/painel/relatorios/periodo?de=2026-10-01&ate=2026-10-01',
+    )
+  })
+
+  it('resumo de hoje do início do painel usa o dia de operação, não o relógio (CA-07.08)', () => {
+    // Feira que passou da meia-noite: o dia de operação continua 01/10.
+    expect(todaySummaryQuery('u1', '2026-10-01')).toEqual({
+      unitId: 'u1',
+      from: '2026-10-01',
+      to: '2026-10-01',
+    })
+    expect(dayReportPath('u1', '2026-10-01')).toBe(
+      '/painel/relatorios/periodo?unidade=u1&de=2026-10-01&ate=2026-10-01',
+    )
   })
 })
 
@@ -124,6 +153,20 @@ describe('textos dos relatórios', () => {
     expect(agreementDifferenceLabel(-5)).toBe('Passou 5 do combinado')
     expect(agreementDifferenceLabel(0)).toBe('Consumiu exatamente o combinado')
     expect(agreementDifferenceLabel(null)).toBe('Sem quantidade combinada')
+  })
+
+  it('datas do evento, consumo contra o combinado e recebido separado', () => {
+    expect(eventDates({ startsOn: '2026-10-01', endsOn: null })).toBe('01/10/2026')
+    expect(eventDates({ startsOn: '2026-10-01', endsOn: '2026-10-02' })).toBe(
+      '01/10/2026 a 02/10/2026',
+    )
+    expect(consumptionLabel({ consumedQuantity: 462, agreedQuantity: 500 })).toBe('462 de 500')
+    expect(consumptionLabel({ consumedQuantity: 12, agreedQuantity: null })).toBe('12 consumidos')
+    expect(
+      receivedDetail({ receivedSalesCents: 8000, receivedSettlementsCents: 5000 }, (cents) =>
+        String(cents / 100),
+      ),
+    ).toBe('vendas 80 · quitações 50')
   })
 
   it('reconhece o 403 de colaborador pedindo relatório (RN-07.07, CA-07.06)', () => {

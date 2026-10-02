@@ -1,30 +1,41 @@
 /**
- * Relatórios do painel do dono (spec 07): tipos da API, atalhos de período, rótulos e
- * filtros do histórico. Tudo puro (sem Vue), para ser testado sozinho.
+ * Relatórios do painel do dono (spec 07): tipos da API, atalhos de período (em dias de operação,
+ * RN-04.29), rótulos e filtros do histórico. Tudo puro (sem Vue), para ser testado sozinho.
  */
 import type { components } from '../api/schema'
 import { apiErrorCode } from './api-error'
+import { addDays, todayInSaoPaulo as todayInSaoPauloAt } from './operation'
 
 type Schemas = components['schemas']
-export type ShiftReport = Schemas['ShiftReport']
-export type ShiftReportSummary = Schemas['ShiftReportSummary']
-export type ShiftReportAgreement = Schemas['ShiftReportAgreement']
-export type ShiftHistory = Schemas['ShiftHistory']
-export type ShiftHistoryRow = Schemas['ShiftHistoryRow']
-export type ShiftHistoryTotals = Schemas['ShiftHistoryTotals']
+export type SummaryReport = Schemas['SummaryReport']
+export type ReportSummary = Schemas['ReportSummary']
+export type ReportTotals = Schemas['ReportTotals']
+export type DayHistory = Schemas['DayHistory']
+export type DayHistoryRow = Schemas['DayHistoryRow']
+export type CashSessionHistory = Schemas['CashSessionHistory']
+export type ReportCashSessionLine = Schemas['ReportCashSessionLine']
+export type CashSessionReport = Schemas['CashSessionReport']
+export type EventHistory = Schemas['EventHistory']
+export type EventHistoryRow = Schemas['EventHistoryRow']
+export type EventReport = Schemas['EventReport']
+export type ReportProductLine = Schemas['ReportProductLine']
 export type ReportActor = Schemas['ReportActor']
-export type ReportCashRegister = Schemas['ReportCashRegister']
-export type ShiftType = Schemas['ShiftType']
+export type ReportCreditTab = Schemas['ReportCreditTab']
+export type ReportSettlement = Schemas['ReportSettlement']
+export type ReportCanceledItem = Schemas['ReportCanceledItem']
+export type ReportCanceledTab = Schemas['ReportCanceledTab']
 
-/** Fuso de exibição e dos dias do período (spec 07, seção 11). */
+export { addDays }
+
+/** Fuso de exibição e dos dias do período (spec 07, seção 13). */
 export const REPORT_TIME_ZONE = 'America/Sao_Paulo'
 
-/** O período do histórico vai de 1 a 366 dias (spec 07, seção 11). */
+/** O período vai de 1 a 366 dias (spec 07, seção 13). */
 export const MAX_PERIOD_DAYS = 366
 
 export type PeriodPreset = 'today' | '7d' | '30d' | 'month'
 
-/** Atalhos do período (spec 07, seção 5), na ordem dos botões. */
+/** Atalhos do período (spec 07, seção 7), na ordem dos botões. */
 export const PERIOD_PRESETS: readonly { value: PeriodPreset; label: string }[] = [
   { value: 'today', label: 'Hoje' },
   { value: '7d', label: '7 dias' },
@@ -32,26 +43,19 @@ export const PERIOD_PRESETS: readonly { value: PeriodPreset; label: string }[] =
   { value: 'month', label: 'Mês atual' },
 ]
 
-/** Padrão do histórico: os últimos 30 dias até hoje (spec 07, seção 11). */
+/** Padrão do histórico: os últimos 30 dias até hoje (spec 07, seção 13). */
 export const DEFAULT_PRESET: PeriodPreset = '30d'
 
 export interface DayRange {
-  /** AAAA-MM-DD, horário de Brasília. */
+  /** Dia de operação AAAA-MM-DD. */
   from: string
   /** AAAA-MM-DD, inclusive. */
   to: string
 }
 
-const isoDay = new Intl.DateTimeFormat('en-CA', {
-  timeZone: REPORT_TIME_ZONE,
-  year: 'numeric',
-  month: '2-digit',
-  day: '2-digit',
-})
-
 /** Dia de hoje (ou de `now`) em Brasília, como `AAAA-MM-DD`. */
 export function todayInSaoPaulo(now: Date = new Date()): string {
-  return isoDay.format(now)
+  return todayInSaoPauloAt(now.getTime())
 }
 
 const DAY_PATTERN = /^(\d{4})-(\d{2})-(\d{2})$/
@@ -70,11 +74,6 @@ export function isValidDay(value: string): boolean {
 function dayToUtc(day: string): number {
   const [year, month, date] = day.split('-').map(Number) as [number, number, number]
   return Date.UTC(year, month - 1, date)
-}
-
-/** Soma (ou subtrai) dias a um `AAAA-MM-DD`, sem passar por fuso. */
-export function addDays(day: string, days: number): string {
-  return new Date(dayToUtc(day) + days * 86_400_000).toISOString().slice(0, 10)
 }
 
 /** Dias do período, contando o primeiro e o último. */
@@ -115,7 +114,7 @@ export function rangeError(range: DayRange): string | null {
   return null
 }
 
-/** `2026-10-01` → `01/10/2026` (dia já em Brasília: não converte fuso). */
+/** `2026-10-01` → `01/10/2026` (dia de operação: não converte fuso). */
 export function formatDay(day: string): string {
   const [year, month, date] = day.split('-')
   return `${date}/${month}/${year}`
@@ -135,6 +134,11 @@ export function formatRange(range: DayRange): string {
     : `${formatDay(range.from)} a ${formatDay(range.to)}`
 }
 
+/** Datas do evento: o dia, ou `01/10/2026 a 02/10/2026` nos eventos de mais de um dia. */
+export function eventDates(event: { startsOn: string; endsOn: string | null }): string {
+  return formatRange({ from: event.startsOn, to: event.endsOn ?? event.startsOn })
+}
+
 /** Nome de quem fez a ação: dono e colaborador pelo nome; sistema e suporte pelo papel. */
 export function actorName(actor: ReportActor | null | undefined): string {
   if (!actor) return '—'
@@ -151,13 +155,21 @@ export function isForbidden(error: unknown): boolean {
 
 export const FORBIDDEN_MESSAGE = 'Relatórios são só do dono da conta.'
 
+/** Abas do histórico (spec 07, seção 7). */
+export type HistoryTab = 'dias' | 'caixas' | 'eventos'
+export const HISTORY_TABS: readonly { value: HistoryTab; label: string }[] = [
+  { value: 'dias', label: 'Dias' },
+  { value: 'caixas', label: 'Caixas' },
+  { value: 'eventos', label: 'Eventos' },
+]
+
 /**
- * Filtros do histórico na URL (`?de=&ate=&unidade=&tipo=`), para voltar do relatório de um
- * turno com os mesmos filtros. Valores inválidos caem no padrão.
+ * Filtros do histórico na URL (`?aba=&de=&ate=&unidade=`), para voltar de um relatório com os
+ * mesmos filtros. Valores inválidos caem no padrão.
  */
 export interface HistoryFilters extends DayRange {
   unitId: string | null
-  type: ShiftType | null
+  tab: HistoryTab
 }
 
 type QueryValue = string | null | undefined | (string | null)[]
@@ -167,45 +179,83 @@ function single(value: QueryValue): string | null {
   return typeof first === 'string' && first ? first : null
 }
 
-export function filtersFromQuery(query: Record<string, QueryValue>, today: string): HistoryFilters {
-  const fallback = presetRange(DEFAULT_PRESET, today)
+/** Período da URL (`de`, `ate`), ou o padrão quando falta ou é inválido. */
+export function rangeFromQuery(
+  query: Record<string, QueryValue>,
+  today: string,
+  fallback: PeriodPreset = DEFAULT_PRESET,
+): DayRange {
   const from = single(query.de)
   const to = single(query.ate)
   const custom = from && to ? { from, to } : null
-  const range = custom && !rangeError(custom) ? custom : fallback
-  const type = single(query.tipo)
+  return custom && !rangeError(custom) ? custom : presetRange(fallback, today)
+}
+
+export function filtersFromQuery(query: Record<string, QueryValue>, today: string): HistoryFilters {
+  const tab = single(query.aba)
   return {
-    ...range,
+    ...rangeFromQuery(query, today),
     unitId: single(query.unidade),
-    type: type === 'direct_sale' || type === 'contracted' ? type : null,
+    tab: tab === 'caixas' || tab === 'eventos' ? tab : 'dias',
   }
 }
 
 export function filtersToQuery(filters: HistoryFilters): Record<string, string> {
   const query: Record<string, string> = { de: filters.from, ate: filters.to }
   if (filters.unitId) query.unidade = filters.unitId
-  if (filters.type) query.tipo = filters.type
+  if (filters.tab !== 'dias') query.aba = filters.tab
   return query
 }
 
-/** Parâmetros do `GET /reports/shifts` (spec 07, seção 8). */
-export function historyQuery(filters: HistoryFilters): {
+/** Parâmetros comuns do histórico e do relatório do período (spec 07, seção 10). */
+export function historyQuery(filters: DayRange & { unitId: string | null }): {
   from: string
   to: string
   unitId?: string
-  type?: ShiftType
 } {
   return {
     from: filters.from,
     to: filters.to,
     ...(filters.unitId ? { unitId: filters.unitId } : {}),
-    ...(filters.type ? { type: filters.type } : {}),
   }
 }
 
-/** "1 turno", "3 turnos" e afins. */
+/** Link do relatório do dia ou período (`/painel/relatorios/periodo?unidade=&de=&ate=`). */
+export function periodReportPath(filters: DayRange & { unitId: string | null }): string {
+  const query = new URLSearchParams()
+  if (filters.unitId) query.set('unidade', filters.unitId)
+  query.set('de', filters.from)
+  query.set('ate', filters.to)
+  return `/painel/relatorios/periodo?${query.toString()}`
+}
+
+/**
+ * Resumo de hoje no início do painel (spec 07, seção 11; spec 01, RN-01.24): consulta do
+ * `GET /reports/summary` para o dia de operação atual da unidade.
+ */
+export function todaySummaryQuery(
+  unitId: string,
+  businessDate: string,
+): { unitId: string; from: string; to: string } {
+  return { unitId, from: businessDate, to: businessDate }
+}
+
+/** Link do relatório do dia de uma unidade (o "Ver relatório do dia" do início). */
+export function dayReportPath(unitId: string, businessDate: string): string {
+  return periodReportPath({ unitId, from: businessDate, to: businessDate })
+}
+
+/** "1 comanda", "3 comandas" e afins. */
 export function plural(count: number, one: string, many: string): string {
   return `${count} ${count === 1 ? one : many}`
+}
+
+/** "vendas R$ 30,00 · quitações R$ 60,00" (RN-07.02), com o formatador de moeda do app. */
+export function receivedDetail(
+  values: { receivedSalesCents: number; receivedSettlementsCents: number },
+  format: (cents: number) => string,
+): string {
+  return `vendas ${format(values.receivedSalesCents)} · quitações ${format(values.receivedSettlementsCents)}`
 }
 
 /**
@@ -218,4 +268,14 @@ export function agreementDifferenceLabel(difference: number | null): string {
   return difference > 0
     ? `Faltaram ${difference} para o combinado`
     : `Passou ${-difference} do combinado`
+}
+
+/** Consumo contra o combinado numa linha do histórico de eventos: "462 de 500". */
+export function consumptionLabel(row: {
+  consumedQuantity: number
+  agreedQuantity: number | null
+}): string {
+  return row.agreedQuantity === null
+    ? `${row.consumedQuantity} consumidos`
+    : `${row.consumedQuantity} de ${row.agreedQuantity}`
 }

@@ -1,6 +1,6 @@
 <script setup lang="ts">
 /**
- * Seção recolhível do relatório do turno (spec 07, seção 9): o título e um número de destaque
+ * Seção recolhível dos relatórios (spec 07, seção 11): o título e um número de destaque
  * ficam sempre à vista; o conteúdo abre com um toque, para o relatório caber no celular.
  */
 withDefaults(defineProps<{ title: string; aside?: string; open?: boolean }>(), {
