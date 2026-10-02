@@ -12,9 +12,9 @@ import {
 } from './fixtures'
 
 /**
- * Fiado (spec 06) contra a API real, com o seed (turno aberto na Barraca da Praça e um caixa
- * aberto). A quitação em outro turno usa uma unidade nova, com cardápio, turnos e caixas
- * próprios, desativada no fim para não mexer no turno do seed.
+ * Fiado (spec 06) contra a API real, com o seed ("Caixa 1" aberto na Barraca da Praça). A
+ * quitação em outra abertura de caixa usa uma unidade nova, com cardápio e caixa próprios,
+ * desativada no fim para não mexer no caixa do seed.
  */
 
 let api: OwnerApi
@@ -22,6 +22,7 @@ let api: OwnerApi
 test.beforeAll(async () => {
   await expectApiUp()
   api = await ownerApi()
+  await api.ensureRegisterOpen()
 })
 
 test.afterAll(async () => {
@@ -67,18 +68,30 @@ async function chooseRegisterIfAsked(page: Page) {
   if (await option.isVisible().catch(() => false)) await option.click()
 }
 
-/** Primeiro caixa aberto do turno (o seed pode ter sobras de outras execuções). */
-async function openRegisterOf(shiftId: string): Promise<string> {
-  const list = await call<{ data: { id: string; status: string }[] }>(
-    'GET',
-    `/shifts/${shiftId}/cash-registers`,
-  )
-  const open = list.data.find((register) => register.status === 'open')
-  expect(open, 'o turno precisa de um caixa aberto').toBeDefined()
-  return open!.id
+/** Balcão da ana: ela opera caixa (entra no painel) e tem um único balcão na unidade. */
+async function openCounter(page: Page) {
+  await loginStaffByLink(page, 'ana', /\/painel$/)
+  await page.goto('/balcao')
+  await expect(page.getByTestId('realtime-status')).toContainText('Conectado')
 }
 
-/** Comanda em `closing` no turno do seed com `quantity` mandiocas (R$ 15,00 cada). */
+/** Fecha a abertura em andamento conferindo exatamente o esperado. */
+async function closeSession(sessionId: string) {
+  const preview = await call<{
+    session: { version: number; expected: { method: string; expectedCents: number }[] }
+  }>('GET', `/cash-register-sessions/${sessionId}/close-preview`)
+  await call('POST', `/cash-register-sessions/${sessionId}/close`, {
+    counts: preview.session.expected.map((e) => ({
+      method: e.method,
+      informedCents: e.expectedCents,
+    })),
+    version: preview.session.version,
+    finishPendingItems: true,
+    finishEvent: false,
+  })
+}
+
+/** Comanda em `closing` na unidade do seed com `quantity` mandiocas (R$ 15,00 cada). */
 async function closingTab(customerName: string, quantity: number) {
   const tab = await api.createTab(customerName)
   await api.createOrder(tab.id, [{ product: 'Mandioca frita', quantity }])
@@ -97,15 +110,13 @@ test('pendura com cliente novo só com nome, em cliente existente e avisa do hom
   await call('POST', `/tabs/${first.id}/payments`, {
     method: 'pix',
     amountCents: 2_000,
-    cashRegisterId: await openRegisterOf(api.shiftId),
+    cashRegisterId: api.cashRegisterId,
   })
 
   const counter = await device(browser, baseURL)
   try {
     const page = counter.page
-    await loginStaffByLink(page, 'ana')
-    await page.getByRole('button', { name: /^Balcão Balcão de pedidos/ }).click()
-    await expect(page.getByTestId('realtime-status')).toContainText('Conectado')
+    await openCounter(page)
 
     await page.goto(`/balcao/comandas/${first.number}/receber`)
     await expect(page.getByTestId('receive-balance')).toHaveText('R$ 100,00')
@@ -167,7 +178,7 @@ test('pendura com cliente novo só com nome, em cliente existente e avisa do hom
   }
 })
 
-test('quita em partes em outro turno e o caixa mostra a quitação separada (CA-06.03, RN-05.22)', async ({
+test('quita em partes em outra abertura de caixa e o caixa mostra a quitação separada (CA-06.03, RN-05.22)', async ({
   page,
 }) => {
   const suffix = runSuffix()
@@ -185,18 +196,22 @@ test('quita em partes em outro turno e o caixa mostra a quitação separada (CA-
       name: 'Espeto de picanha',
       priceCents: 10_000,
     })
-    // Turno A: comanda de R$ 100,00 pendurada no cliente, itens entregues, caixa e turno fechados.
-    const shiftA = await call<{ id: string }>('POST', `/units/${unit.id}/shifts`, {
-      type: 'direct_sale',
-    })
-    const registerA = await call<{ id: string }>('POST', `/shifts/${shiftA.id}/cash-registers`, {
-      openingFloatCents: 0,
-    })
+    const registers = await call<{ data: { id: string }[] }>(
+      'GET',
+      `/units/${unit.id}/cash-registers`,
+    )
+    const registerId = registers.data[0]!.id
+    // Abertura A: comanda de R$ 100,00 pendurada no cliente, itens entregues, caixa fechado.
+    const openedA = await call<{ session: { id: string } }>(
+      'POST',
+      `/cash-registers/${registerId}/open`,
+      { openingFloatCents: 0 },
+    )
     const customer = await call<{ id: string }>('POST', `/units/${unit.id}/customers`, {
       name: `Cliente ${suffix}`,
       phone: '(11) 98765-4321',
     })
-    const tab = await call<{ id: string; number: number }>('POST', `/shifts/${shiftA.id}/tabs`, {
+    const tab = await call<{ id: string; number: number }>('POST', `/units/${unit.id}/tabs`, {
       customerName: 'Mesa 1',
     })
     await call('POST', `/tabs/${tab.id}/orders`, {
@@ -223,24 +238,14 @@ test('quita em partes em outro turno e o caixa mostra a quitação separada (CA-
     }
     await call('POST', `/tabs/${tab.id}/request-bill`, {})
     await call('POST', `/tabs/${tab.id}/put-on-credit`, { customerId: customer.id })
-    const closingA = await call<{
-      version: number
-      expected: { method: string; expectedCents: number }[]
-    }>('GET', `/cash-registers/${registerA.id}`)
-    await call('POST', `/cash-registers/${registerA.id}/close`, {
-      counts: closingA.expected.map((e) => ({ method: e.method, informedCents: e.expectedCents })),
-      version: closingA.version,
-    })
-    await call('POST', `/shifts/${shiftA.id}/close`)
+    await closeSession(openedA.session.id)
 
-    // Turno B com um caixa: a quitação entra nele.
-    const shiftB = await call<{ id: string }>('POST', `/units/${unit.id}/shifts`, {
-      type: 'direct_sale',
-    })
-    const registerB = await call<{ id: string }>('POST', `/shifts/${shiftB.id}/cash-registers`, {
-      name: `Caixa B ${suffix}`,
-      openingFloatCents: 0,
-    })
+    // Abertura B do mesmo caixa: a quitação entra nela (CA-05.12).
+    const openedB = await call<{ session: { id: string } }>(
+      'POST',
+      `/cash-registers/${registerId}/open`,
+      { openingFloatCents: 0 },
+    )
 
     await page.setViewportSize({ width: 1024, height: 900 })
     await hideDevtools(page.context())
@@ -270,40 +275,38 @@ test('quita em partes em outro turno e o caixa mostra a quitação separada (CA-
 
     const settled = (await api.getTab(tab.id)) as unknown as {
       status: string
-      payments: { amountCents: number; shiftId: string; isCreditSettlement: boolean }[]
+      payments: {
+        amountCents: number
+        cashRegisterSessionId: string
+        isCreditSettlement: boolean
+      }[]
     }
     expect(settled.status).toBe('settled')
     expect(
-      settled.payments.map((p) => [p.amountCents, p.shiftId === shiftB.id, p.isCreditSettlement]),
+      settled.payments.map((p) => [
+        p.amountCents,
+        p.cashRegisterSessionId === openedB.session.id,
+        p.isCreditSettlement,
+      ]),
     ).toEqual([
       [6_000, true, true],
       [4_000, true, true],
     ])
 
-    // Caixa do turno B: vendas e quitações separadas (RN-05.22).
+    // Caixa aberto: as quitações aparecem separadas no esperado (RN-05.22).
     await page.goto(`/caixas?unidade=${unit.id}`)
-    const card = page.getByTestId('register-card').filter({ hasText: `Caixa B ${suffix}` })
-    await expect(card.getByTestId('split-pix')).toContainText(
-      'vendas R$ 0,00 · quitações de fiado R$ 100,00',
-    )
-    await expect(card.getByTestId('register-credit-settlements')).toContainText('R$ 100,00')
+    const card = page.getByTestId('register-card')
+    await expect(card.getByTestId('expected-pix')).toContainText('R$ 100,00')
+    await expect(card).toContainText('quitações de fiado')
     await card.getByTestId('close-register-link').click()
-    await expect(page.getByTestId('count-split-pix')).toContainText('quitações de fiado R$ 100,00')
+    await expect(page.getByTestId('count-pix')).toContainText('quitações de fiado')
 
     // Histórico de quitações no cliente.
     await page.goto(`/painel/fiado/${customer.id}`)
     await expect(page.getByTestId('customer-balance')).toHaveText('R$ 0,00')
     await expect(page.getByTestId('settlement-row')).toHaveCount(2)
 
-    const closingB = await call<{
-      version: number
-      expected: { method: string; expectedCents: number }[]
-    }>('GET', `/cash-registers/${registerB.id}`)
-    await call('POST', `/cash-registers/${registerB.id}/close`, {
-      counts: closingB.expected.map((e) => ({ method: e.method, informedCents: e.expectedCents })),
-      version: closingB.version,
-    })
-    await call('POST', `/shifts/${shiftB.id}/close`)
+    await closeSession(openedB.session.id)
   } finally {
     await api.request.patch(`${apiBaseUrl}/api/v1/units/${unit.id}`, { data: { active: false } })
   }
@@ -359,8 +362,7 @@ test('pendurar sem conexão fica "Na fila" e vai quando a rede volta, sem duplic
   const counter = await device(browser, baseURL)
   try {
     const { page, context } = counter
-    await loginStaffByLink(page, 'ana')
-    await page.getByRole('button', { name: /^Balcão Balcão de pedidos/ }).click()
+    await openCounter(page)
     await page.goto(`/balcao/comandas/${tab.number}/receber`)
     await expect(page.getByTestId('receive-balance')).toHaveText('R$ 30,00')
     await page.getByTestId('hang-on-credit').click()

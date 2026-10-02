@@ -224,7 +224,7 @@ test('organização suspensa mostra a faixa com o motivo no painel do dono (RN-0
     const banner = page.getByTestId('organization-status-banner')
     await expect(banner).toContainText('Conta suspensa')
     await expect(banner).toContainText(reason)
-    await expect(banner).toContainText('Não é possível abrir turno')
+    await expect(banner).toContainText('Não é possível abrir caixa')
     await page.goto('/painel/cardapio')
     await expect(banner).toBeVisible()
   } finally {

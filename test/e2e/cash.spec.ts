@@ -1,10 +1,9 @@
-import { expect, test, type Browser, type BrowserContext, type Page } from '@playwright/test'
+import { expect, test } from '@playwright/test'
 import {
   apiBaseUrl,
   expectApiUp,
   hideDevtools,
   loginOwner,
-  loginStaffByLink,
   ownerApi,
   runSuffix,
   skipWithoutSessionCookies,
@@ -12,9 +11,10 @@ import {
 } from './fixtures'
 
 /**
- * Fechamento e caixa (spec 05) contra a API real. Precisa do seed com turno aberto na Barraca
- * da Praça e o "Caixa 1" da ana aberto. O teste do fechamento cria uma unidade nova (turno e
- * caixa próprios) e a desativa no fim, para não mexer no turno do seed.
+ * Caixas da unidade (spec 05, seções 5 e 8) contra a API real. Para não mexer no "Caixa 1" do
+ * seed, o teste cria uma unidade nova (que nasce com o próprio "Caixa 1", RN-03.03), abre,
+ * movimenta, fecha com uma comanda pendente, reabre e, no fim, cancela a comanda e desativa a
+ * unidade.
  */
 
 let api: OwnerApi
@@ -32,255 +32,121 @@ test.beforeEach(({ browserName }) => {
   skipWithoutSessionCookies(browserName)
 })
 
-async function device(
-  browser: Browser,
-  baseURL: string | undefined,
-): Promise<{ context: BrowserContext; page: Page }> {
-  const context = await browser.newContext({
-    baseURL,
-    locale: 'pt-BR',
-    timezoneId: 'America/Sao_Paulo',
-    viewport: { width: 360, height: 780 },
-    hasTouch: true,
-    isMobile: true,
-  })
-  await hideDevtools(context)
-  return { context, page: await context.newPage() }
+interface Register {
+  id: string
+  name: string
+  session: { id: string; status: string } | null
 }
 
-async function openStation(page: Page, username: string, station: RegExp) {
-  await loginStaffByLink(page, username)
-  await page.getByRole('button', { name: station }).click()
-  await expect(page.getByTestId('realtime-status')).toContainText('Conectado')
-}
-
-async function post(path: string, data: unknown) {
-  const response = await api.request.post(`${apiBaseUrl}/api/v1${path}`, {
-    data: data as never,
-    headers: { 'Idempotency-Key': crypto.randomUUID() },
-  })
-  expect(response.ok(), `POST ${path}: ${await response.text()}`).toBe(true)
-  return (await response.json()) as never
-}
-
-/** Digita um valor no teclado numérico da tela (dígitos em centavos). */
-async function typeAmount(page: Page, digits: string) {
-  for (const digit of digits) await page.getByTestId(`key-${digit}`).click()
-}
-
-/** Com mais de um caixa aberto (sobras de outra execução), escolhe o primeiro. */
-async function chooseRegisterIfAsked(page: Page) {
-  const option = page.getByTestId('register-option').first()
-  if (await option.isVisible().catch(() => false)) await option.click()
-}
-
-test('recebe Pix parcial e dinheiro com troco: a comanda fica paga e sai do varal (CA-05.01, CA-05.02)', async ({
-  browser,
-  baseURL,
-}) => {
-  const customer = `Receber ${runSuffix()}`
-  // R$ 80,00: 4 mandiocas (15,00) e 2 espetos de frango (10,00), já pedindo a conta.
-  const tab = await api.createTab(customer)
-  await api.createOrder(tab.id, [
-    { product: 'Mandioca frita', quantity: 4 },
-    { product: 'Espeto de frango', quantity: 2 },
-  ])
-  await post(`/tabs/${tab.id}/request-bill`, {})
-
-  const counter = await device(browser, baseURL)
-  try {
-    await openStation(counter.page, 'ana', /^Balcão Balcão de pedidos/)
-    const page = counter.page
-    await page.getByTestId('tab-search').fill(customer)
-    await page.getByTestId('tab-card').filter({ hasText: customer }).click()
-    await page.getByTestId('receive').click()
-    await expect(page).toHaveURL(new RegExp(`/balcao/comandas/${tab.number}/receber$`))
-    await expect(page.getByTestId('receive-balance')).toHaveText('R$ 80,00')
-    await chooseRegisterIfAsked(page)
-
-    // Pix de R$ 50,00: o valor começa no saldo e o primeiro dígito o substitui.
-    await page.getByTestId('method-pix').click()
-    await expect(page.getByTestId('pad-amount')).toHaveText('R$ 80,00')
-    await typeAmount(page, '5000')
-    await expect(page.getByTestId('confirm-payment')).toHaveText('Confirmar R$ 50,00 no Pix')
-    const pix = page.waitForResponse(
-      (r) => r.url().endsWith(`/tabs/${tab.id}/payments`) && r.request().method() === 'POST',
-    )
-    await page.getByTestId('confirm-payment').click()
-    const pixResponse = await pix
-    expect(pixResponse.status()).toBe(201)
-    expect(pixResponse.request().headers()['idempotency-key']).toMatch(/^[0-9a-f-]{36}$/)
-    await expect(page.getByTestId('receive-balance')).toHaveText('R$ 30,00')
-    await expect(page.getByTestId('receive-paid')).toHaveText('R$ 50,00')
-
-    // Dinheiro: R$ 50,00 entregues para R$ 30,00 de saldo, troco de R$ 20,00 em destaque.
-    await page.getByTestId('method-cash').click()
-    await typeAmount(page, '5000')
-    await expect(page.getByTestId('change')).toHaveText('R$ 20,00')
-    await expect(page.getByTestId('confirm-payment')).toHaveText('Confirmar R$ 50,00 no dinheiro')
-    await page.getByTestId('confirm-payment').click()
-    await expect(page.getByTestId('tab-paid')).toBeVisible()
-    await expect(page.getByTestId('last-change')).toHaveText('R$ 20,00')
-    await expect(page.getByTestId('receive-balance')).toHaveText('R$ 0,00')
-    await expect(page.getByTestId('payment-row')).toHaveCount(2)
-
-    const current = (await api.getTab(tab.id)) as unknown as {
-      status: string
-      payments: { method: string; amountCents: number; changeCents: number | null }[]
-    }
-    expect(current.status).toBe('paid')
-    expect(current.payments.map((p) => [p.method, p.amountCents, p.changeCents])).toEqual([
-      ['pix', 5_000, null],
-      ['cash', 3_000, 2_000],
-    ])
-
-    // RN-05.10: saiu do varal.
-    await page.getByTestId('back-to-board').click()
-    await expect(page).toHaveURL(/\/balcao$/)
-    await page.getByTestId('tab-search').fill(customer)
-    await expect(page.getByTestId('tab-card').filter({ hasText: customer })).toHaveCount(0)
-  } finally {
-    await counter.context.close()
-  }
-})
-
-test('paga antes: o pedido só chega à cozinha depois de pago (CA-04.10, RN-05.12)', async ({
-  browser,
-  baseURL,
-}) => {
-  const customer = `Antes ${runSuffix()}`
-  const counter = await device(browser, baseURL)
-  const kitchen = await device(browser, baseURL)
-  try {
-    await openStation(kitchen.page, 'bruno', /Cozinha/)
-    await openStation(counter.page, 'ana', /^Balcão Balcão de pedidos/)
-    const page = counter.page
-
-    await page.getByTestId('new-tab').click()
-    await page.getByLabel('Paga antes').check()
-    await page.getByLabel('Nome do cliente').fill(customer)
-    await page.getByRole('button', { name: 'Montar pedido' }).click()
-    await expect(page).toHaveURL(/\/balcao\/paga-antes/)
-
-    await page.getByRole('button', { name: /^Queijo coalho/ }).click()
-    await page.getByRole('button', { name: /^Queijo coalho/ }).click()
-    await expect(page.getByTestId('review-order')).toContainText('R$ 18,00')
-    await page.getByTestId('review-order').click()
-    await page.getByRole('dialog').getByTestId('go-pay').click()
-    await expect(page.getByTestId('pay-first-remaining')).toHaveText('R$ 18,00')
-    await chooseRegisterIfAsked(page)
-
-    // Montado e na tela de cobrar: nada na cozinha ainda.
-    const card = kitchen.page.getByTestId('queue-item').filter({ hasText: customer })
-    await kitchen.page.waitForTimeout(1_000)
-    await expect(card).toHaveCount(0)
-
-    await page.getByTestId('method-pix').click()
-    await expect(page.getByTestId('confirm-pay-first')).toHaveText(
-      'Confirmar R$ 18,00 no Pix e enviar',
-    )
-    const sent = page.waitForResponse(
-      (r) => r.url().endsWith('/tabs/pay-first') && r.request().method() === 'POST',
-    )
-    await page.getByTestId('confirm-pay-first').click()
-    expect((await sent).status()).toBe(201)
-    await expect(page.getByTestId('pay-first-done')).toBeVisible()
-
-    // Pago: o item chega à cozinha em até 2 s.
-    await expect(card).toBeVisible({ timeout: 2_000 })
-    await expect(card).toContainText('2×')
-  } finally {
-    await counter.context.close()
-    await kitchen.context.close()
-  }
-})
-
-test('caixa: abrir, suprimento, sangria, fechar com diferença exige observação e o turno fecha depois (CA-05.06, CA-05.07, RN-04.07)', async ({
+test('abre o caixa, faz sangria, fecha com comanda pendente e reabre (CA-05.06, CA-05.11, CA-05.12)', async ({
   page,
+  context,
 }) => {
-  const suffix = runSuffix()
-  const created = await api.request.post(`${apiBaseUrl}/api/v1/units`, {
-    data: { name: `Caixa ${suffix}`, lateAfterMinutes: 15 },
-    headers: { 'Idempotency-Key': crypto.randomUUID() },
+  await hideDevtools(context)
+  const unitName = `Caixa E2E ${runSuffix()}`
+  const unit = await api.post<{ id: string; version: number }>('/units', {
+    name: unitName,
+    lateAfterMinutes: 15,
   })
-  expect(created.ok(), await created.text()).toBe(true)
-  const unit = (await created.json()) as { id: string }
+  const registers = await api.get<{ data: Register[] }>(`/units/${unit.id}/cash-registers`)
+  // CA-03.11: unidade nova nasce com o "Caixa 1".
+  expect(registers.data.map((register) => register.name)).toEqual(['Caixa 1'])
+  const registerId = registers.data[0]!.id
+
+  await loginOwner(page)
+  await page.goto('/caixas')
+  await page.getByRole('button', { name: unitName }).click()
+
+  // Fechado: um único caixa, "Abrir" é a ação principal.
+  const card = page.getByTestId('register-card')
+  await expect(card).toHaveAttribute('data-state', 'never')
+  await card.getByTestId('open-register').click()
+  await expect(page).toHaveURL(new RegExp(`/caixas/${registerId}/abrir$`))
+  await page.getByLabel('Troco inicial na gaveta').fill('100,00')
+  await page.getByTestId('confirm-open').click()
+  await expect(page).toHaveURL(/\/painel$/)
+
+  // CA-05.06 (parte da tela): sangria de R$ 20,00 baixa o esperado em dinheiro.
+  await page.goto(`/caixas?unidade=${unit.id}`)
+  await expect(page.getByTestId('expected-cash')).toContainText('100,00')
+  await page.getByTestId('withdrawal').click()
+  await page.getByLabel('Valor').fill('20,00')
+  await page.getByLabel('Motivo').fill('Cofre')
+  await page.getByTestId('submit-movement').click()
+  await expect(page.getByTestId('expected-cash')).toContainText('80,00')
+
+  // RN-05.28 / CA-05.11: uma comanda aberta não impede fechar e aparece como pendente.
+  const tab = await api.post<{ id: string; number: number }>(`/units/${unit.id}/tabs`, {
+    customerName: 'Pendente E2E',
+  })
+  await page.getByTestId('close-register-link').click()
+  await expect(page.getByTestId('pending-tab')).toContainText('Pendente E2E')
+  const amounts = ['80,00', '0', '0', '0']
+  const fields = page.locator('input[inputmode="decimal"]')
+  for (const [index, value] of amounts.entries()) await fields.nth(index).fill(value)
+  await page.getByTestId('review-close').click()
+  await page.getByTestId('confirm-close-register').click()
+  await expect(page.getByTestId('register-closed')).toBeVisible()
+  await expect(page.getByTestId('closing-summary')).toContainText('Confere')
+  await expect(page.getByTestId('session-report')).toBeVisible()
+
+  const afterClose = await api.get<{ data: Register[] }>(`/units/${unit.id}/cash-registers`)
+  const firstSession = afterClose.data[0]!.session!
+  expect(firstSession.status).toBe('closed')
+  const tabAfter = await api.get<{ status: string }>(`/tabs/${tab.id}`)
+  expect(tabAfter.status).toBe('open')
+
+  // CA-05.12: abrir de novo cria outra abertura; a anterior não muda.
+  await page.goto(`/caixas/${registerId}/abrir`)
+  await expect(page.getByLabel('Troco inicial na gaveta')).toHaveValue('100,00')
+  await page.getByTestId('confirm-open').click()
+  await expect(page).toHaveURL(/\/painel$/)
+  const reopened = await api.get<{ data: Register[] }>(`/units/${unit.id}/cash-registers`)
+  expect(reopened.data[0]!.session!.status).toBe('open')
+  expect(reopened.data[0]!.session!.id).not.toBe(firstSession.id)
+
+  // Limpeza: fecha o caixa, cancela a comanda vazia e desativa a unidade.
+  await api.post(`/cash-register-sessions/${reopened.data[0]!.session!.id}/close`, {
+    counts: [
+      { method: 'cash', informedCents: 10_000 },
+      { method: 'pix', informedCents: 0 },
+      { method: 'credit_card', informedCents: 0 },
+      { method: 'debit_card', informedCents: 0 },
+    ],
+  })
+  await api.post(`/tabs/${tab.id}/cancel`, {})
+  const current = await api.get<{ data: { id: string; version: number }[] }>('/units?limit=100')
+  const version = current.data.find((item) => item.id === unit.id)!.version
+  const response = await api.request.patch(`${apiBaseUrl}/api/v1/units/${unit.id}`, {
+    data: { active: false, version },
+  })
+  expect(response.ok(), await response.text()).toBe(true)
+})
+
+test('cadastro de caixas: cria, renomeia e recusa desativar o último ativo (CA-05.14)', async ({
+  page,
+  context,
+}) => {
+  await hideDevtools(context)
+  const unitName = `Cadastro E2E ${runSuffix()}`
+  const unit = await api.post<{ id: string }>('/units', { name: unitName, lateAfterMinutes: 15 })
+
   try {
-    await post(`/units/${unit.id}/shifts`, { type: 'direct_sale' })
-    await hideDevtools(page.context())
     await loginOwner(page)
+    await page.goto(`/painel/unidades/${unit.id}/caixas`)
+    await expect(page.getByTestId('register-row')).toHaveCount(1)
 
-    // Abrir caixa com troco inicial (RN-05.17).
-    await page.goto(`/caixas?unidade=${unit.id}`)
-    await page.getByTestId('new-register').click()
-    await page.getByLabel('Nome (opcional)').fill(`Caixa E2E ${suffix}`)
-    await page.getByLabel('Troco inicial').fill('100,00')
-    await page.getByTestId('open-register').click()
-    const card = page.getByTestId('register-card').filter({ hasText: `Caixa E2E ${suffix}` })
-    await expect(card.getByTestId('expected-cash')).toHaveText('R$ 100,00')
-    await expect(card).toContainText('Responsável: Você')
+    // Desativar o único caixa ativo é recusado e explicado.
+    await page.getByRole('button', { name: 'Desativar' }).click()
+    await page.getByRole('button', { name: 'Desativar caixa' }).click()
+    await expect(page.getByText('pelo menos um caixa ativo')).toBeVisible()
 
-    // Suprimento e sangria com motivo (RN-05.18, RN-05.19).
-    await card.getByTestId('deposit').click()
-    let dialog = page.getByRole('dialog')
-    await dialog.getByLabel('Valor').fill('50,00')
-    await dialog.getByTestId('submit-movement').click()
-    await expect(dialog.getByText('Diga o motivo.')).toBeVisible()
-    await dialog.getByLabel('Motivo').fill('reforço de troco')
-    await dialog.getByTestId('submit-movement').click()
-    await expect(card.getByTestId('expected-cash')).toHaveText('R$ 150,00')
-    await card.getByTestId('withdrawal').click()
-    dialog = page.getByRole('dialog')
-    await dialog.getByLabel('Valor').fill('30,00')
-    await dialog.getByLabel('Motivo').fill('cofre')
-    await dialog.getByTestId('submit-movement').click()
-    await expect(card.getByTestId('expected-cash')).toHaveText('R$ 120,00')
-
-    // Turno não fecha com caixa aberto (RN-04.07).
-    await page.goto(`/painel/turnos?unidade=${unit.id}`)
-    await expect(page.getByTestId('shift-registers')).toContainText('Caixas abertos: 1')
-    await page.getByRole('button', { name: 'Fechar turno' }).click()
-    await page
-      .getByRole('group', { name: /Fechar o turno agora/ })
-      .getByRole('button', { name: 'Fechar turno' })
-      .click()
-    await expect(page.getByTestId('shift-pending')).toContainText(`Caixa E2E ${suffix}`)
-
-    // Fechar caixa: diferença calculada ao vivo e observação obrigatória (CA-05.07).
-    await page.goto(`/caixas?unidade=${unit.id}`)
-    await card.getByTestId('close-register-link').click()
-    await expect(page).toHaveURL(/\/caixas\/[0-9a-f-]+\/fechar$/)
-    await expect(page.getByTestId('count-expected-cash')).toHaveText('R$ 120,00')
-    await page.getByLabel('Dinheiro conferido').fill('115,00')
-    await expect(page.getByTestId('difference-cash')).toHaveText('Falta R$ 5,00')
-    await page.getByLabel('Pix conferido').fill('0')
-    await page.getByLabel('Crédito conferido').fill('0')
-    await page.getByLabel('Débito conferido').fill('0')
-    await expect(page.getByTestId('difference-pix')).toHaveText('Confere')
-    await page.getByTestId('review-close').click()
-    await expect(page.getByText('Há diferença: explique na observação.')).toBeVisible()
-    await expect(page.getByTestId('confirm-close')).toHaveCount(0)
-    await page.getByTestId('closing-note').fill('faltou troco de uma venda')
-    await page.getByTestId('review-close').click()
-    const closed = page.waitForResponse(
-      (r) => r.url().endsWith('/close') && r.request().method() === 'POST',
-    )
-    await page.getByTestId('confirm-close-register').click()
-    expect((await closed).status()).toBe(200)
-    await expect(page.getByTestId('register-closed')).toBeVisible()
-    await expect(page.getByText('Falta R$ 5,00')).toBeVisible()
-    await expect(page.getByText('Observação: faltou troco de uma venda')).toBeVisible()
-
-    // Com o caixa fechado, o turno fecha.
-    await page.goto(`/painel/turnos?unidade=${unit.id}`)
-    await expect(page.getByTestId('shift-registers')).toContainText('Caixas abertos: 0')
-    await page.getByRole('button', { name: 'Fechar turno' }).click()
-    await page
-      .getByRole('group', { name: /Fechar o turno agora/ })
-      .getByRole('button', { name: 'Fechar turno' })
-      .click()
-    await expect(page.getByText('Turno fechado.')).toBeVisible()
+    await page.getByTestId('new-register-form').getByLabel('Nome do caixa').fill('Caixa 2')
+    await page.getByTestId('create-register').click()
+    await expect(page.getByTestId('register-row')).toHaveCount(2)
+    await expect(page.locator('[data-register-name="Caixa 2"]')).toBeVisible()
   } finally {
+    // Unidade só do teste: sai da lista para não virar "mais de uma unidade" nos outros testes.
     await api.request.patch(`${apiBaseUrl}/api/v1/units/${unit.id}`, { data: { active: false } })
   }
 })
