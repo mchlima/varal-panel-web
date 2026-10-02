@@ -59,7 +59,7 @@ describe('montagem do pedido: modificadores (RN-03.13, CA-03.06)', () => {
   })
 })
 
-describe('montagem do pedido: preços e totais exibidos (RN-04.06, RN-04.14)', () => {
+describe('montagem do pedido: preços e totais exibidos (RN-04.32, RN-04.14)', () => {
   const selection: Selection = { 'g-point': ['m-medium'], 'g-sides': ['m-bread'] }
   const modifiers = chosenModifiers(groups, selection)
 
@@ -69,12 +69,12 @@ describe('montagem do pedido: preços e totais exibidos (RN-04.06, RN-04.14)', (
     expect(lineTotalCents(line)).toBe((1200 + 300) * 3)
   })
 
-  it('CA-04.07: usa o preço da tabela do turno quando o produto está nela', () => {
-    const shiftPrices = [{ productId: 'p1', priceCents: 1000 }]
-    expect(effectivePriceCents(product, shiftPrices)).toBe(1000)
-    expect(effectivePriceCents(product, [{ productId: 'outro', priceCents: 1 }])).toBe(1200)
-    const line = buildLine({ product, shiftPrices, modifiers, quantity: 2, note: '' })
-    // Acréscimos de modificadores não mudam com a tabela do turno.
+  it('CA-04.07: usa o preço da tabela efetiva que a API calculou no cardápio (RN-04.33)', () => {
+    const onEventList = { ...product, effectivePriceCents: 1000 }
+    expect(effectivePriceCents(onEventList)).toBe(1000)
+    expect(effectivePriceCents(product)).toBe(1200)
+    const line = buildLine({ product: onEventList, modifiers, quantity: 2, note: '' })
+    // Acréscimos de modificadores não mudam com a tabela (RN-03.21).
     expect(lineTotalCents(line)).toBe((1000 + 300) * 2)
   })
 

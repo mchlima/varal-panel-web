@@ -8,7 +8,15 @@ import type { TabMode } from '~/lib/operation'
  * "Paga antes" (monta o pedido, recebe e só então envia, RN-05.12) e o nome do cliente, de 1 a
  * 40 caracteres.
  */
-withDefaults(defineProps<{ busy?: boolean; error?: string }>(), { busy: false, error: '' })
+withDefaults(
+  defineProps<{
+    busy?: boolean
+    error?: string
+    /** Evento em andamento: a comanda nova fica ligada a ele (RN-04.36). */
+    eventName?: string | null
+  }>(),
+  { busy: false, error: '', eventName: null },
+)
 const emit = defineEmits<{ submit: [customerName: string, mode: TabMode] }>()
 
 const mode = ref<TabMode>('open_tab')
@@ -66,6 +74,14 @@ function submit() {
       :error="nameError"
       hint="Aparece junto do número: 12 · Dona Marta."
     />
+    <p
+      v-if="eventName"
+      class="flex items-center gap-2 rounded-card bg-primary-soft px-3 py-2 font-bold text-primary-deep"
+      data-testid="new-tab-event"
+    >
+      <AppIcon name="party" />
+      Esta comanda é do evento {{ eventName }}
+    </p>
     <AppAlert v-if="error" tone="error">{{ error }}</AppAlert>
     <AppButton type="submit" :loading="busy">{{
       mode === 'pay_first' ? 'Montar pedido' : 'Abrir comanda'

@@ -6,15 +6,20 @@ import {
   isReadyToDeliver,
   itemConflictMessage,
   itemTotalCents,
+  addDays,
+  clockLabel,
   nextStage,
-  pendingItemsOf,
   previousStage,
+  priceListName,
+  shortDay,
+  sinceLabel,
+  tabSinceLabel,
+  timeLevel,
   rejectionMessage,
   stageTone,
   stagesOfStation,
 } from '../../app/lib/operation'
 import { pendingLabel, pendingForItem } from '../../app/lib/operation-actions'
-import { buildOpenShift, emptyAgreement, parsePrices, summarizeTabs } from '../../app/lib/shift'
 import { DELIVERY, KITCHEN, item, stages, tabSummary } from '../support/operation-fixtures'
 
 describe('etapas e cores de status (spec 08, seção 4)', () => {
@@ -104,16 +109,6 @@ describe('mensagens', () => {
     )
     expect(itemConflictMessage('TAB_CLOSED', null)).toBeNull()
   })
-
-  it('lê as pendências do fechamento do turno (CA-04.09)', () => {
-    expect(
-      pendingItemsOf({
-        tabs: [{ id: 't1', number: 1, customerName: 'Dona Marta', status: 'open' }],
-        cashRegisters: [],
-      }).tabs[0]!.number,
-    ).toBe(1)
-    expect(pendingItemsOf({})).toEqual({ tabs: [], cashRegisters: [] })
-  })
 })
 
 describe('fila de escrita: estado pendente honesto (spec 01, seção 11)', () => {
@@ -146,52 +141,54 @@ describe('fila de escrita: estado pendente honesto (spec 01, seção 11)', () =>
   })
 })
 
-describe('turno (RN-04.04 a RN-04.06)', () => {
-  it('turno contratado exige o contratante; valor e quantidade são opcionais', () => {
-    const missing = buildOpenShift('contracted', emptyAgreement(), {})
-    expect(missing.body).toBeNull()
-    expect(missing.errors.contractorName).toBeDefined()
-
-    const ok = buildOpenShift(
-      'contracted',
-      {
-        ...emptyAgreement(),
-        contractorName: 'Festa da Escola',
-        agreedAmount: '1.500,00',
-        agreedQuantity: '500',
-      },
-      { p1: '10,00', p2: '' },
+describe('dia de operação e comandas que passam de dia (RN-04.10, RN-04.29)', () => {
+  it('CA-04.09: comanda de um dia anterior mostra "desde dd/mm"; a de hoje, nada', () => {
+    expect(tabSinceLabel(tabSummary({ businessDate: '2026-10-01' }), '2026-10-02')).toBe(
+      'desde 01/10',
     )
-    expect(ok.body).toEqual({
-      type: 'contracted',
-      prices: [{ productId: 'p1', priceCents: 1000 }],
-      agreement: {
-        contractorName: 'Festa da Escola',
-        modality: 'fixed_fee',
-        agreedAmountCents: 150_000,
-        agreedQuantity: 500,
-        limits: null,
-        notes: null,
-      },
-    })
+    expect(tabSinceLabel(tabSummary({ businessDate: '2026-10-02' }), '2026-10-02')).toBeNull()
+    expect(tabSinceLabel(tabSummary({ businessDate: '2026-10-01' }), null)).toBeNull()
   })
 
-  it('venda direta não leva acordo; preço inválido é apontado no produto', () => {
-    expect(buildOpenShift('direct_sale', emptyAgreement(), {}).body).toEqual({
-      type: 'direct_sale',
-      prices: [],
-      agreement: null,
-    })
-    expect(parsePrices({ p1: 'abc' }).errors).toEqual({ p1: 'Valor inválido.' })
+  it('datas de operação sem depender do fuso do aparelho', () => {
+    expect(shortDay('2026-10-05')).toBe('05/10')
+    expect(addDays('2026-10-01', -2)).toBe('2026-09-29')
+    expect(addDays('2026-12-31', 1)).toBe('2027-01-01')
   })
 
-  it('resumo do turno: contagens e valor sem as canceladas', () => {
-    const summary = summarizeTabs([
-      tabSummary(),
-      tabSummary({ id: 'b', status: 'closing', totalCents: 1000, itemCount: 1 }),
-      tabSummary({ id: 'c', status: 'canceled', totalCents: 0, itemCount: 2 }),
-      tabSummary({ id: 'd', status: 'paid', totalCents: 500, itemCount: 1 }),
-    ])
-    expect(summary).toEqual({ open: 1, closing: 1, closed: 1, totalCents: 5100, items: 5 })
+  it('RN-05.26: "desde ontem, 17:02" no horário de Brasília', () => {
+    const now = Date.parse('2026-10-02T15:00:00-03:00')
+    expect(sinceLabel('2026-10-01T17:02:00-03:00', now)).toBe('ontem, 17:02')
+    expect(sinceLabel('2026-10-02T09:15:00-03:00', now)).toBe('hoje, 09:15')
+    expect(sinceLabel('2026-09-28T18:00:00-03:00', now)).toBe('28/09, 18:00')
+  })
+
+  it('RN-04.06: sem tabela é o preço "Normal"', () => {
+    expect(priceListName(null)).toBe('Normal')
+    expect(priceListName({ name: 'Evento' })).toBe('Evento')
+  })
+})
+
+describe('tempo do cartão da estação (RN-04.46, CA-04.24)', () => {
+  const sentAt = '2026-10-01T20:00:00.000Z'
+  const at = (minutes: number) => Date.parse(sentAt) + minutes * 60_000
+
+  it('normal → atenção (7) → atrasado (15), pelo relógio do aparelho', () => {
+    const limits = { attentionAfterMinutes: 7, lateAfterMinutes: 15 }
+    expect(timeLevel(sentAt, limits, at(6))).toBe('normal')
+    expect(timeLevel(sentAt, limits, at(8))).toBe('attention')
+    expect(timeLevel(sentAt, limits, at(16))).toBe('late')
+  })
+
+  it('mudar a atenção para 10 volta o cartão de 8 minutos ao normal', () => {
+    expect(timeLevel(sentAt, { attentionAfterMinutes: 10, lateAfterMinutes: 15 }, at(8))).toBe(
+      'normal',
+    )
+  })
+
+  it('tempo decorrido em mm:ss e h:mm passada uma hora', () => {
+    expect(clockLabel(sentAt, at(0) + 5_000)).toBe('00:05')
+    expect(clockLabel(sentAt, at(12) + 34_000)).toBe('12:34')
+    expect(clockLabel(sentAt, at(65))).toBe('1:05')
   })
 })

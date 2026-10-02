@@ -1,6 +1,6 @@
 <script setup lang="ts">
 /** Cabeçalho das telas logadas: organização, pessoa, conexão e "Sair". */
-withDefaults(defineProps<{ wide?: boolean }>(), { wide: false })
+withDefaults(defineProps<{ wide?: boolean; full?: boolean }>(), { wide: false, full: false })
 const session = useSessionStore()
 const connection = useConnectionStore()
 const leaving = ref(false)
@@ -26,7 +26,7 @@ async function logout() {
   <header class="border-b border-border bg-surface">
     <div
       class="mx-auto flex w-full items-center gap-3 px-4 py-2"
-      :class="wide ? 'max-w-6xl' : 'max-w-3xl'"
+      :class="full ? 'max-w-none' : wide ? 'max-w-6xl' : 'max-w-3xl'"
     >
       <img src="/logo-symbol.svg" alt="" width="40" height="40" class="size-10" />
       <div class="min-w-0 flex-1">

@@ -1,7 +1,8 @@
 /**
  * Ações operacionais que passam pela fila local (spec 01, seção 11). Spec 04: abrir comanda,
  * enviar pedido, avançar, voltar, cancelar item, entregar, pedir a conta, reabrir e cancelar
- * comanda. Spec 05: desconto, pagamento, estorno, comanda paga antes e sangria/suprimento.
+ * comanda, avançar o pedido inteiro na estação (RN-04.39). Spec 05: desconto, pagamento,
+ * estorno, comanda paga antes e sangria/suprimento.
  * Spec 06: pendurar (a quitação é um `tab.payment` numa comanda `on_credit`). O
  * `meta` de cada ação diz à tela onde mostrar "Enviando…"/"Na fila" e sobrevive a um
  * recarregamento (fica no IndexedDB junto com a ação).
@@ -11,7 +12,7 @@ import type { CartLine } from './order-builder'
 import type { CashMovementType, DraftPayment, PaymentMethod } from './payment'
 
 export type OperationMeta =
-  | { kind: 'tab.create'; shiftId: string; customerName: string }
+  | { kind: 'tab.create'; unitId: string; customerName: string }
   | {
       kind: 'tab.order'
       tabId: string
@@ -57,7 +58,7 @@ export type OperationMeta =
     }
   | {
       kind: 'tab.pay_first'
-      shiftId: string
+      unitId: string
       customerName: string
       /** Rascunho de onde o pedido saiu (carrinho do paga antes), para devolver se for recusado. */
       draftKey: string
@@ -69,7 +70,7 @@ export type OperationMeta =
       kind: 'tab.put_on_credit'
       tabId: string
       tabNumber: number
-      /** `null` no turno contratado `consumption_billed` (RN-06.08): a API usa o contratante. */
+      /** `null` no evento `consumption_billed` (RN-06.08): a API usa o contratante. */
       customerId: string | null
       /** Nome mostrado em "Pendurar em Seu Zé: na fila". */
       customerName: string
@@ -78,9 +79,22 @@ export type OperationMeta =
     }
   | {
       kind: 'cash.movement'
+      /** Caixa cadastrado e abertura em andamento em que o movimento entra (RN-05.18). */
       cashRegisterId: string
+      sessionId: string
       type: CashMovementType
       amountCents: number
+    }
+  | {
+      /** Avança de uma vez as linhas do pedido na estação (RN-04.39, CA-04.17). */
+      kind: 'order.advance'
+      orderId: string
+      stationId: string
+      tabId: string
+      tabNumber: number
+      itemIds: string[]
+      /** Próxima etapa quando todas vão para a mesma ("Pronto: Enviando…"). */
+      toStageName?: string
     }
 
 export type OperationKind = OperationMeta['kind']
@@ -100,6 +114,7 @@ const KINDS: readonly OperationKind[] = [
   'tab.pay_first',
   'tab.put_on_credit',
   'cash.movement',
+  'order.advance',
 ]
 
 export function operationMeta(action: Pick<QueuedAction, 'meta'>): OperationMeta | null {

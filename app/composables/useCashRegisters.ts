@@ -1,7 +1,7 @@
 import { apiErrorMessage } from '~/lib/api-error'
 import { readLocal, writeLocal } from '~/lib/browser'
 import { createRegisterList, type LiveCollection } from '~/lib/live-collection'
-import type { CashRegister } from '~/lib/payment'
+import { openRegisters, type CashRegister } from '~/lib/payment'
 import type {
   EventCashRegisterClosed,
   EventCashRegisterOpened,
@@ -12,15 +12,16 @@ import type {
 const CHOICE_KEY = 'varal.cashRegisterId'
 
 /**
- * Caixas do turno (spec 05, seção 5) com o esperado por forma, em tempo real: busca
- * `GET /shifts/{id}/cash-registers` e aplica `cash_register.*` por `version` (eventos que chegam
- * durante a busca são aplicados depois; RN-01.05 na reconexão).
+ * Caixas cadastrados da unidade (spec 05, seção 5), cada um com a abertura em andamento (ou a
+ * última fechada) e o esperado por forma, em tempo real: busca `GET /units/{id}/cash-registers` e
+ * aplica `cash_register.*` por `version` (eventos que chegam durante a busca são aplicados
+ * depois; RN-01.05 na reconexão).
  *
  * Também resolve em qual caixa o balcão recebe (RN-05.05): com um único caixa aberto, ele; com
  * mais de um, o último escolhido neste aparelho, se ainda estiver aberto; senão, nenhum (a tela
- * pede a escolha antes de cobrar).
+ * pede a escolha antes de cobrar). O id é o do caixa cadastrado (`cashRegisterId`).
  */
-export function useCashRegisters(shiftId: Ref<string | null>, unitId: Ref<string | null>) {
+export function useCashRegisters(unitId: Ref<string | null>) {
   const { $api } = useNuxtApp()
   const collection = ref<LiveCollection<CashRegister> | null>(null)
   const loaded = ref(false)
@@ -33,22 +34,19 @@ export function useCashRegisters(shiftId: Ref<string | null>, unitId: Ref<string
     collection.value
       ? collection.value
           .list()
-          .sort(
-            (a, b) =>
-              Number(a.status === 'closed') - Number(b.status === 'closed') ||
-              a.openedAt.localeCompare(b.openedAt),
-          )
+          .filter((item) => item.active || item.session?.status === 'open')
+          .sort((a, b) => a.sortOrder - b.sortOrder)
       : [],
   )
-  const openRegisters = computed(() => registers.value.filter((item) => item.status === 'open'))
+  const openList = computed(() => openRegisters(registers.value))
 
   /** Caixa que recebe o próximo pagamento, ou `null` se a tela precisa perguntar. */
   const selectedId = computed<string | null>(() => {
-    const open = openRegisters.value
+    const open = openList.value
     if (open.length === 1) return open[0]!.id
     return open.some((item) => item.id === remembered.value) ? remembered.value : null
   })
-  const needsChoice = computed(() => openRegisters.value.length > 1 && selectedId.value === null)
+  const needsChoice = computed(() => openList.value.length > 1 && selectedId.value === null)
 
   function choose(id: string): void {
     remembered.value = id
@@ -56,17 +54,17 @@ export function useCashRegisters(shiftId: Ref<string | null>, unitId: Ref<string
   }
 
   async function load(): Promise<void> {
-    const shift = shiftId.value
-    if (!shift) return
+    const unit = unitId.value
+    if (!unit) return
     const current = ++generation
-    if (!collection.value) collection.value = createRegisterList(shift)
+    if (!collection.value) collection.value = createRegisterList(unit)
     const live = collection.value as LiveCollection<CashRegister>
     live.beginReload()
     loading.value = true
     error.value = ''
     try {
-      const { data, error: failure } = await $api.GET('/api/v1/shifts/{id}/cash-registers', {
-        params: { path: { id: shift } },
+      const { data, error: failure } = await $api.GET('/api/v1/units/{id}/cash-registers', {
+        params: { path: { id: unit } },
       })
       if (current !== generation) return
       if (!data) {
@@ -87,8 +85,9 @@ export function useCashRegisters(shiftId: Ref<string | null>, unitId: Ref<string
 
   /** Registro vindo de evento ou de resposta de ação. */
   function apply(register: CashRegister): void {
-    if (register.shiftId !== shiftId.value) return
+    if (register.unitId !== unitId.value) return
     ;(collection.value as LiveCollection<CashRegister> | null)?.apply(register)
+    useOperationStore().applyRegister(register)
   }
 
   function onEvent(
@@ -99,7 +98,7 @@ export function useCashRegisters(shiftId: Ref<string | null>, unitId: Ref<string
   }
 
   watch(
-    shiftId,
+    unitId,
     (id) => {
       generation += 1
       loaded.value = false
@@ -116,7 +115,7 @@ export function useCashRegisters(shiftId: Ref<string | null>, unitId: Ref<string
 
   return {
     registers,
-    openRegisters,
+    openRegisters: openList,
     selectedId,
     needsChoice,
     loaded,

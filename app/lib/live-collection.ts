@@ -112,36 +112,19 @@ export class LiveCollection<T extends Versioned> {
   }
 }
 
-/** Fila de uma estação (spec 04, seção 8.2): itens ativos com `stationId` igual ao dela. */
-export function createStationQueue(stationId: string): LiveCollection<OrderItem> {
-  return new LiveCollection<OrderItem>(
-    (item) => item.stationId === stationId && item.canceledAt === null,
-  )
-}
-
-/** Varal de comandas (spec 04, seção 8.1): comandas `open` e `closing` do turno. */
-export function createTabBoard(shiftId: string): LiveCollection<TabSummary> {
-  return new LiveCollection<TabSummary>(
-    (tab) => tab.shiftId === shiftId && (tab.status === 'open' || tab.status === 'closing'),
-  )
-}
-
-/** Caixas de um turno (spec 05, seção 5): abertos e fechados, por `version`. */
-export function createRegisterList(shiftId: string): LiveCollection<CashRegister> {
-  return new LiveCollection<CashRegister>((register) => register.shiftId === shiftId)
-}
-
 /**
- * Ordem da fila: pedido mais antigo primeiro, itens do mesmo pedido juntos (spec 04, seção
- * 8.2); dentro do pedido, a ordem de criação das linhas (ids UUID v7).
+ * Varal de comandas (spec 04, seção 8.1): comandas `open` e `closing` da unidade, de qualquer dia
+ * de operação (RN-04.07: elas passam de um dia para o outro).
  */
-export function compareQueueItems(a: OrderItem, b: OrderItem): number {
-  return (
-    Date.parse(a.sentAt) - Date.parse(b.sentAt) ||
-    a.orderId.localeCompare(b.orderId) ||
-    (a.splitFromId ?? a.id).localeCompare(b.splitFromId ?? b.id) ||
-    a.id.localeCompare(b.id)
+export function createTabBoard(unitId: string): LiveCollection<TabSummary> {
+  return new LiveCollection<TabSummary>(
+    (tab) => tab.unitId === unitId && (tab.status === 'open' || tab.status === 'closing'),
   )
+}
+
+/** Caixas cadastrados da unidade (spec 05, seção 5), com a abertura de cada um, por `version`. */
+export function createRegisterList(unitId: string): LiveCollection<CashRegister> {
+  return new LiveCollection<CashRegister>((register) => register.unitId === unitId)
 }
 
 /**

@@ -1,6 +1,6 @@
 /**
  * Montagem do pedido no balcão (spec 04, seção 8.1; RN-04.16, RN-04.17; RN-03.13; CA-03.06).
- * Regras puras: escolhas de modificadores com mínimo e máximo, preço do turno (RN-04.06),
+ * Regras puras: escolhas de modificadores com mínimo e máximo, preço da tabela efetiva (RN-04.32),
  * total do carrinho e o corpo do `POST /tabs/{id}/orders`.
  */
 import type { components } from '../api/schema'
@@ -9,7 +9,6 @@ import { NOTE_MAX, ORDER_ITEMS_MAX, QUANTITY_MAX, type OrderItemRejection } from
 type Schemas = components['schemas']
 export type MenuProduct = Schemas['MenuProduct']
 export type ModifierGroup = Schemas['ModifierGroup']
-export type ShiftPrice = Schemas['ShiftPrice']
 export type CreateOrderBody = Schemas['CreateOrderRequestInput']
 
 /** Escolhas de um produto: id do grupo → ids das opções, na ordem em que foram tocadas. */
@@ -28,7 +27,7 @@ export interface CartLine {
   key: string
   productId: string
   productName: string
-  /** Preço unitário mostrado: o do turno, se houver (RN-04.06); a API grava o vigente. */
+  /** Preço unitário mostrado: o da tabela efetiva (RN-04.33); a API grava o do envio. */
   unitPriceCents: number
   quantity: number
   modifiers: CartModifier[]
@@ -53,14 +52,14 @@ export function needsOptions(product: Pick<MenuProduct, 'modifierGroups'>): bool
   return visibleGroups(product).length > 0
 }
 
-/** RN-04.06: preço do turno quando o produto está na tabela; senão, o do cardápio. */
+/**
+ * RN-04.32, RN-04.33: o preço que um item novo usa agora, já calculado pela API no cardápio
+ * (tabela efetiva da unidade, ou o preço normal quando o produto não tem preço nela).
+ */
 export function effectivePriceCents(
-  product: Pick<MenuProduct, 'id' | 'priceCents'>,
-  shiftPrices: readonly ShiftPrice[] = [],
+  product: Pick<MenuProduct, 'priceCents'> & { effectivePriceCents?: number },
 ): number {
-  return (
-    shiftPrices.find((price) => price.productId === product.id)?.priceCents ?? product.priceCents
-  )
+  return product.effectivePriceCents ?? product.priceCents
 }
 
 /**
@@ -161,8 +160,7 @@ export function clampQuantity(quantity: number): number {
 }
 
 export function buildLine(input: {
-  product: Pick<MenuProduct, 'id' | 'name' | 'priceCents'>
-  shiftPrices?: readonly ShiftPrice[]
+  product: Pick<MenuProduct, 'id' | 'name' | 'priceCents'> & { effectivePriceCents?: number }
   modifiers: CartModifier[]
   quantity: number
   note: string
@@ -172,7 +170,7 @@ export function buildLine(input: {
     key: lineKey(input.product.id, input.modifiers, note),
     productId: input.product.id,
     productName: input.product.name,
-    unitPriceCents: effectivePriceCents(input.product, input.shiftPrices),
+    unitPriceCents: effectivePriceCents(input.product),
     quantity: clampQuantity(input.quantity),
     modifiers: input.modifiers,
     note,

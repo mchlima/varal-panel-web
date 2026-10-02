@@ -6,12 +6,11 @@ import {
   needsOptions,
   type CartLine,
   type MenuProduct,
-  type ShiftPrice,
 } from '~/lib/order-builder'
 
 /**
  * Produtos para montar pedido (spec 04, seção 8.1): categorias em abas, busca, produtos em
- * botões grandes com o preço do turno quando houver (RN-04.06), esgotados visíveis e bloqueados
+ * botões grandes com o preço da tabela efetiva (RN-04.33), esgotados visíveis e bloqueados
  * (RN-03.10, CA-03.05) e a folha de opções (RN-03.13). O que é escolhido entra no carrinho
  * `cartKey` deste aparelho (comanda aberta ou rascunho do paga antes).
  */
@@ -19,11 +18,12 @@ const props = withDefaults(
   defineProps<{
     categories: { id: string; name: string; products: MenuProduct[] }[]
     cartKey: string
-    shiftPrices: readonly ShiftPrice[]
+    /** Nome da tabela efetiva quando não é "Normal" (RN-04.33), para marcar os preços dela. */
+    priceListName?: string | null
     loading?: boolean
     disabled?: boolean
   }>(),
-  { loading: false, disabled: false },
+  { priceListName: null, loading: false, disabled: false },
 )
 
 const cart = useCartStore()
@@ -80,7 +80,6 @@ function choose(product: MenuProduct) {
     props.cartKey,
     buildLine({
       product,
-      shiftPrices: [...props.shiftPrices],
       modifiers: [],
       quantity: 1,
       note: '',
@@ -155,14 +154,14 @@ function addLine(line: CartLine) {
                 : 'border-border-strong bg-surface hover:border-primary'
           "
           :disabled="product.soldOut || disabled"
-          :aria-label="`${product.name}, ${formatCents(effectivePriceCents(product, [...shiftPrices]))}${product.soldOut ? ', esgotado' : ''}${inCart[product.id] ? `, ${inCart[product.id]} no pedido` : ''}`"
+          :aria-label="`${product.name}, ${formatCents(effectivePriceCents(product))}${product.soldOut ? ', esgotado' : ''}${inCart[product.id] ? `, ${inCart[product.id]} no pedido` : ''}`"
           data-testid="product-button"
           @click="choose(product)"
         >
           <span class="text-base leading-tight font-bold">{{ product.name }}</span>
           <span class="flex w-full flex-wrap items-center gap-1.5">
             <span class="font-display text-lg font-semibold tabular-nums">{{
-              formatCents(effectivePriceCents(product, [...shiftPrices]))
+              formatCents(effectivePriceCents(product))
             }}</span>
             <StageChip v-if="product.soldOut" status="late" label="Esgotado" />
             <StageChip
@@ -172,9 +171,9 @@ function addLine(line: CartLine) {
             />
           </span>
           <span
-            v-if="effectivePriceCents(product, [...shiftPrices]) !== product.priceCents"
+            v-if="priceListName && effectivePriceCents(product) !== product.priceCents"
             class="text-xs text-text-muted"
-            >preço do turno</span
+            >preço {{ priceListName }}</span
           >
         </button>
       </li>
@@ -182,13 +181,7 @@ function addLine(line: CartLine) {
     <p class="sr-only" aria-live="polite">{{ lastAdded }}</p>
 
     <AppDialog v-model:open="optionsOpen" :title="optionsFor?.name ?? 'Produto'">
-      <ProductOptions
-        v-if="optionsFor"
-        :key="optionsFor.id"
-        :product="optionsFor"
-        :shift-prices="[...shiftPrices]"
-        @add="addLine"
-      />
+      <ProductOptions v-if="optionsFor" :key="optionsFor.id" :product="optionsFor" @add="addLine" />
     </AppDialog>
   </div>
 </template>

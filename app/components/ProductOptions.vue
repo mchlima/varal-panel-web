@@ -12,7 +12,6 @@ import {
   type CartLine,
   type MenuProduct,
   type Selection,
-  type ShiftPrice,
 } from '~/lib/order-builder'
 
 /**
@@ -20,10 +19,7 @@ import {
  * (RN-03.13; obrigatório não deixa adicionar sem escolha, CA-03.06), quantidade e observação
  * de até 140 caracteres (RN-04.16).
  */
-const props = withDefaults(
-  defineProps<{ product: MenuProduct; shiftPrices?: readonly ShiftPrice[] }>(),
-  { shiftPrices: () => [] },
-)
+const props = defineProps<{ product: MenuProduct }>()
 const emit = defineEmits<{ add: [line: CartLine] }>()
 
 const groups = computed(() => visibleGroups(props.product))
@@ -36,7 +32,6 @@ const unitPrice = computed(
   () =>
     buildLine({
       product: props.product,
-      shiftPrices: props.shiftPrices,
       modifiers: [],
       quantity: 1,
       note: '',
@@ -69,7 +64,6 @@ function add() {
     'add',
     buildLine({
       product: props.product,
-      shiftPrices: props.shiftPrices,
       modifiers: modifiers.value,
       quantity: quantity.value,
       note: note.value,

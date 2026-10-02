@@ -30,9 +30,9 @@ function readCarts(): Record<string, Cart> {
   }
 }
 
-/** Rascunho da comanda paga antes do turno (RN-05.12): a comanda só existe depois de paga. */
-export function payFirstCartKey(shiftId: string): string {
-  return `pay-first:${shiftId}`
+/** Rascunho da comanda paga antes da unidade (RN-05.12): a comanda só existe depois de paga. */
+export function payFirstCartKey(unitId: string): string {
+  return `pay-first:${unitId}`
 }
 
 /**

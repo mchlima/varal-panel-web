@@ -26,31 +26,31 @@ import { payFirstCartKey } from '~/stores/cart'
 
 /**
  * Comanda paga antes (`/balcao/paga-antes`, RN-04.11, RN-05.12): o balcão monta o pedido,
- * recebe e só então envia, numa única operação (`POST /shifts/{id}/tabs/pay-first`). Nenhum
+ * recebe e só então envia, numa única operação (`POST /units/{id}/tabs/pay-first`). Nenhum
  * item chega à cozinha antes de o pagamento ser registrado (CA-04.10); se a soma não cobre o
  * total, nada é gravado (`PAYMENT_INSUFFICIENT`, CA-05.09). A comanda ainda não existe: o
- * rascunho fica no aparelho (carrinho `pay-first:{turno}`). Sem rede, a operação vai pela fila
+ * rascunho fica no aparelho (carrinho `pay-first:{unidade}`). Sem rede, a operação vai pela fila
  * e aparece no varal como "pagamento ainda não confirmado" até a API responder.
  */
 useHead({ title: 'Paga antes · Varal' })
 
 const route = useRoute()
-const { place, counter } = useCounterLive()
+const { place, operation } = useCounterLive()
+/** RN-04.02: sem caixa aberto não se abre comanda (enquanto carrega, deixa). */
+const selling = computed(() => operation.value?.inOperation !== false)
 const cart = useCartStore()
 const operations = useOperations()
 const connection = useConnectionStore()
 const session = useSessionStore()
 const unitId = computed(() => place.value?.unit.id ?? null)
-const shiftId = computed(() => counter.shift?.id ?? null)
 const { menu, categories, availableProduct } = useCounterMenu(unitId)
-const cash = useCashRegisters(shiftId, unitId)
+const cash = useCashRegisters(unitId)
 const canOpenRegister = computed(() => session.isOwner || place.value?.unit.canOperateCash === true)
 
-const draftKey = computed(() => (shiftId.value ? payFirstCartKey(shiftId.value) : ''))
+const draftKey = computed(() => (unitId.value ? payFirstCartKey(unitId.value) : ''))
 const draft = computed(() =>
   draftKey.value ? cart.cartOf(draftKey.value) : { lines: [], rejections: {} },
 )
-const shiftPrices = computed(() => counter.shift?.prices ?? [])
 const total = computed(() => cartTotalCents(draft.value.lines))
 const units = computed(() => cartUnits(draft.value.lines))
 const unavailable = computed(() => new Set(unavailableLines(draft.value.lines, availableProduct)))
@@ -152,10 +152,10 @@ function primaryAction() {
 }
 
 async function send(list: DraftPayment[]) {
-  const shift = counter.shift
+  const unit = unitId.value
   const key = draftKey.value
   const name = customerName.value
-  if (!shift || !key || !name || sending.value || blocking.value) return
+  if (!unit || !key || !name || sending.value || blocking.value) return
   if (cash.needsChoice.value) {
     sendError.value = 'Escolha o caixa antes de receber.'
     payments.value = list
@@ -168,7 +168,7 @@ async function send(list: DraftPayment[]) {
   let outcome: QueueOutcome | null = null
   try {
     const { idempotencyKey, settled } = await operations.submit({
-      path: `/api/v1/shifts/${shift.id}/tabs/pay-first`,
+      path: `/api/v1/units/${unit}/tabs/pay-first`,
       body: toPayFirstBody({
         customerName: name,
         items: toOrderBody(lines).items,
@@ -178,7 +178,7 @@ async function send(list: DraftPayment[]) {
       label: `Paga antes de ${name} (${itemsLabel(lines.length)}, ${formatCents(total.value)})`,
       meta: {
         kind: 'tab.pay_first',
-        shiftId: shift.id,
+        unitId: unit,
         customerName: name,
         draftKey: key,
         lines,
@@ -266,10 +266,7 @@ function startAnother() {
       <AppAlert v-if="!place">
         Escolha uma estação de balcão liberada para você em "Trocar de estação".
       </AppAlert>
-      <template v-else-if="counter.shiftLoaded && !counter.shift">
-        <NoShiftNotice :unit-id="place.unit.id" />
-      </template>
-      <p v-else-if="!counter.shift" class="text-text-muted">Carregando…</p>
+      <NoCashNotice v-else-if="!selling && !done" :unit-id="place.unit.id" />
 
       <!-- Pronto: comanda paga e pedido enviado -->
       <template v-else-if="done">
@@ -325,7 +322,7 @@ function startAnother() {
           <ProductPicker
             :categories="categories"
             :cart-key="draftKey"
-            :shift-prices="shiftPrices"
+            :price-list-name="operation?.effectivePriceList?.name ?? null"
             :loading="menu.loading"
           />
         </template>
@@ -422,7 +419,10 @@ function startAnother() {
         </div>
       </template>
 
-      <template v-if="counter.shift && customerName && !done" #footer>
+      <template v-if="place" #top>
+        <OperationStrip :unit-id="place.unit.id" :operation="operation" />
+      </template>
+      <template v-if="place && selling && customerName && !done" #footer>
         <AppButton
           v-if="step === 'order'"
           :disabled="units === 0"

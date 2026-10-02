@@ -18,7 +18,7 @@ export type ActionResult<T> = { ok: true; data: T | undefined } | { ok: false }
 
 /**
  * Executa uma escrita na API com estado de "enviando" e erro explicado (mensagem da API
- * mais uma dica para `SHIFT_OPEN`, `LAST_ACTIVE_UNIT`, `STATION_IN_USE`…).
+ * mais uma dica para `CASH_REGISTER_OPEN`, `LAST_ACTIVE_UNIT`, `STATION_IN_USE`…).
  */
 export function useApiAction() {
   const connection = useConnectionStore()

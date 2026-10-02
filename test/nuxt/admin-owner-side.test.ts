@@ -120,13 +120,13 @@ describe('faixa do "entrar como" (spec 02, RN-02.19)', () => {
 })
 
 describe('faixa da situação da organização (spec 02, RN-02.12; CA-02.05)', () => {
-  it('suspensa: motivo e aviso de que não é possível abrir turno', async () => {
+  it('suspensa: motivo e aviso de que não é possível abrir caixa', async () => {
     signIn(me({}, { subscriptionStatus: 'suspended', suspendedReason: 'Pagamento atrasado' }))
     const wrapper = await mountSuspended(OrganizationStatusBanner)
     const banner = wrapper.get('[data-testid="organization-status-banner"]')
     expect(banner.text()).toContain('Conta suspensa')
     expect(banner.text()).toContain('Motivo: Pagamento atrasado')
-    expect(banner.text()).toContain('Não é possível abrir turno.')
+    expect(banner.text()).toContain('Não é possível abrir caixa.')
   })
 
   it('cancelada: mesma faixa com o título da situação', async () => {
