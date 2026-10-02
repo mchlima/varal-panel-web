@@ -12,7 +12,7 @@ import {
 
 /**
  * Montar pedido (`/balcao/comandas/{numero}/pedido`, spec 04, seção 8.1): categorias em abas,
- * busca, produtos em botões grandes com o preço do turno quando houver (RN-04.06), esgotados
+ * busca, produtos em botões grandes com o preço da tabela efetiva (RN-04.33), esgotados
  * visíveis e bloqueados (RN-03.10, CA-03.05), folha de opções (RN-03.13), carrinho com
  * quantidades e total, revisão e envio. O envio vai pela fila local (spec 01, seção 11): com
  * rede, a tela espera a resposta e trata `ORDER_REJECTED` apontando os itens (RN-04.17,
@@ -20,7 +20,10 @@ import {
  */
 const route = useRoute()
 const number = computed(() => Number(route.params.numero))
-const { place, counter } = useCounterLive()
+const { place, counter, operation } = useCounterLive()
+/** RN-04.02: lançar pedido exige caixa aberto (enquanto carrega, deixa). */
+const selling = computed(() => operation.value?.inOperation !== false)
+const priceListName = computed(() => operation.value?.effectivePriceList?.name ?? null)
 const cart = useCartStore()
 const operations = useOperations()
 const connection = useConnectionStore()
@@ -35,7 +38,6 @@ const { notice: failureNotice } = useOrderFailures(tabId)
 const current = computed(() =>
   tab.value ? cart.cartOf(tab.value.id) : { lines: [], rejections: {} },
 )
-const shiftPrices = computed(() => counter.shift?.prices ?? [])
 const unavailable = computed(() => new Set(unavailableLines(current.value.lines, availableProduct)))
 const total = computed(() => cartTotalCents(current.value.lines))
 const units = computed(() => cartUnits(current.value.lines))
@@ -103,12 +105,11 @@ async function send() {
       <AppAlert v-if="!place">
         Escolha uma estação de balcão liberada para você em "Trocar de estação".
       </AppAlert>
-      <template v-else-if="counter.shiftLoaded && !counter.shift">
-        <NoShiftNotice :unit-id="place.unit.id" />
-      </template>
-      <p v-else-if="!tab && counter.loading" class="text-text-muted">Carregando…</p>
+      <p v-else-if="!tab && (counter.loading || !counter.loaded)" class="text-text-muted">
+        Carregando…
+      </p>
       <AppAlert v-else-if="!tab" tone="error">
-        A comanda {{ number }} não está aberta neste turno.
+        A comanda {{ number }} não está aberta nesta unidade.
         <NuxtLink to="/balcao" class="font-bold underline">Voltar ao varal</NuxtLink>
       </AppAlert>
       <template v-else>
@@ -118,20 +119,28 @@ async function send() {
             Ver comanda
           </NuxtLink>
         </AppAlert>
+        <NoCashNotice v-if="!selling" :unit-id="place.unit.id" :primary="false" />
         <AppAlert v-if="failureNotice" tone="error">{{ failureNotice }}</AppAlert>
         <AppAlert v-if="menu.loadError" tone="error">{{ menu.loadError }}</AppAlert>
 
         <ProductPicker
           :categories="categories"
           :cart-key="tab.id"
-          :shift-prices="shiftPrices"
+          :price-list-name="priceListName"
           :loading="menu.loading"
-          :disabled="tab.status !== 'open'"
+          :disabled="tab.status !== 'open' || !selling"
         />
       </template>
 
+      <template v-if="place" #top>
+        <OperationStrip :unit-id="place.unit.id" :operation="operation" />
+      </template>
       <template v-if="tab && tab.status === 'open'" #footer>
-        <AppButton :disabled="units === 0" data-testid="review-order" @click="reviewOpen = true">
+        <AppButton
+          :disabled="units === 0 || !selling"
+          data-testid="review-order"
+          @click="reviewOpen = true"
+        >
           <template v-if="units === 0">Toque nos produtos para montar o pedido</template>
           <template v-else
             >Revisar pedido · {{ itemsLabel(units) }} · {{ formatCents(total) }}</template

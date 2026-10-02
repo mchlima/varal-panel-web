@@ -1,14 +1,22 @@
 /**
- * Operação da barraca (spec 04): tipos da API, etapas, atraso e textos das telas de balcão,
- * estação e turno. Tudo puro (sem Vue), para ser testado sozinho.
+ * Operação da barraca (spec 04): tipos da API, etapas, tempo dos itens, dia de operação,
+ * eventos e textos das telas de balcão e estação. Tudo puro (sem Vue), para ser testado sozinho.
  */
 import type { components } from '../api/schema'
 
 type Schemas = components['schemas']
-export type Shift = Schemas['Shift']
-export type ShiftType = Schemas['ShiftType']
 export type AgreementModality = Schemas['AgreementModality']
-export type ShiftPendingItems = Schemas['ShiftPendingItems']
+export type UnitOperation = Schemas['UnitOperation']
+export type StaleTab = Schemas['StaleTab']
+export type PendingTab = Schemas['PendingTab']
+export type ContractedEvent = Schemas['ContractedEvent']
+export type ContractedEventStatus = Schemas['ContractedEventStatus']
+export type PriceList = Schemas['PriceList']
+export type PriceListRef = Schemas['PriceListRef']
+export type StationOrder = Schemas['StationOrder']
+export type StationLine = Schemas['StationLine']
+export type StationLineState = Schemas['StationLineState']
+export type AdvanceOrderResult = Schemas['AdvanceOrderResult']
 export type Tab = Schemas['Tab']
 export type TabSummary = Schemas['TabSummary']
 export type TabStatus = Schemas['TabStatus']
@@ -41,9 +49,18 @@ export const TAB_STATUS_LABELS: Record<TabStatus, string> = {
   canceled: 'Cancelada',
 }
 
-export const SHIFT_TYPE_LABELS: Record<ShiftType, string> = {
-  direct_sale: 'Venda direta',
-  contracted: 'Turno contratado',
+export const EVENT_STATUS_LABELS: Record<ContractedEventStatus, string> = {
+  scheduled: 'Agendado',
+  in_progress: 'Em andamento',
+  finished: 'Encerrado',
+  canceled: 'Cancelado',
+}
+
+/** Nome da tabela de preço para a tela: `null` é o preço normal do cardápio (RN-04.06). */
+export const NORMAL_PRICE_LIST_NAME = 'Normal'
+
+export function priceListName(list: { name: string } | null | undefined): string {
+  return list?.name ?? NORMAL_PRICE_LIST_NAME
 }
 
 export const MODALITY_LABELS: Record<AgreementModality, string> = {
@@ -193,15 +210,6 @@ export function rejectionMessage(reason: OrderItemRejectionReason, groupName?: s
   }
 }
 
-/** `details` de `SHIFT_HAS_PENDING_ITEMS` (RN-04.07, CA-04.09), lido com cuidado. */
-export function pendingItemsOf(details: Record<string, unknown>): ShiftPendingItems {
-  const tabs = Array.isArray(details.tabs) ? (details.tabs as ShiftPendingItems['tabs']) : []
-  const cashRegisters = Array.isArray(details.cashRegisters)
-    ? (details.cashRegisters as ShiftPendingItems['cashRegisters'])
-    : []
-  return { tabs, cashRegisters }
-}
-
 /** `details.items` de `ORDER_REJECTED`. */
 export function rejectionsOf(details: Record<string, unknown> | undefined): OrderItemRejection[] {
   return Array.isArray(details?.items) ? (details.items as OrderItemRejection[]) : []
@@ -242,4 +250,93 @@ export function itemConflictMessage(code: string, current: OrderItem | null): st
     default:
       return null
   }
+}
+
+/**
+ * Dia de operação (`AAAA-MM-DD`, RN-04.29) em texto curto: "01/10". Não passa por `Date`, para
+ * não depender do fuso do aparelho.
+ */
+export function shortDay(businessDate: string): string {
+  const [, month, day] = businessDate.split('-')
+  return `${day}/${month}`
+}
+
+/** "01/10/2026". */
+export function longDay(businessDate: string): string {
+  const [year, month, day] = businessDate.split('-')
+  return `${day}/${month}/${year}`
+}
+
+/**
+ * RN-04.10: comanda aberta num dia de operação anterior mostra a data ("12 · Dona Marta · desde
+ * 01/10"). `null` quando é do dia atual (ou o dia atual ainda não é conhecido).
+ */
+export function tabSinceLabel(
+  tab: { businessDate: string },
+  currentBusinessDate: string | null | undefined,
+): string | null {
+  if (!currentBusinessDate || tab.businessDate >= currentBusinessDate) return null
+  return `desde ${shortDay(tab.businessDate)}`
+}
+
+/** Hoje (`AAAA-MM-DD`) no fuso de São Paulo. */
+export function todayInSaoPaulo(now: number = Date.now()): string {
+  return new Intl.DateTimeFormat('en-CA', {
+    timeZone: 'America/Sao_Paulo',
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+  }).format(new Date(now))
+}
+
+/** Soma `days` dias a uma data `AAAA-MM-DD` (calendário, sem fuso). */
+export function addDays(businessDate: string, days: number): string {
+  const [year, month, day] = businessDate.split('-').map(Number)
+  const date = new Date(Date.UTC(year!, month! - 1, day! + days))
+  return date.toISOString().slice(0, 10)
+}
+
+/**
+ * "hoje, 17:02", "ontem, 17:02" ou "01/10, 17:02" (RN-05.26: "Caixa 1 aberto desde ontem,
+ * 17:02"), no horário de Brasília.
+ */
+export function sinceLabel(iso: string, now: number = Date.now()): string {
+  const day = todayInSaoPaulo(Date.parse(iso))
+  const today = todayInSaoPaulo(now)
+  const time = new Intl.DateTimeFormat('pt-BR', {
+    timeZone: 'America/Sao_Paulo',
+    hour: '2-digit',
+    minute: '2-digit',
+  }).format(new Date(iso))
+  if (day === today) return `hoje, ${time}`
+  if (day === addDays(today, -1)) return `ontem, ${time}`
+  return `${shortDay(day)}, ${time}`
+}
+
+/**
+ * Nível de tempo do cartão da estação (RN-04.46, CA-04.24): normal até o limite de atenção,
+ * atenção até o de atraso, atrasado depois. Contado desde o envio do pedido, com os limites da
+ * estação (RN-03.25) e o relógio do aparelho.
+ */
+export type TimeLevel = 'normal' | 'attention' | 'late'
+
+export function timeLevel(
+  sentAt: string,
+  limits: { attentionAfterMinutes: number; lateAfterMinutes: number },
+  now: number,
+): TimeLevel {
+  const elapsed = now - Date.parse(sentAt)
+  if (elapsed >= limits.lateAfterMinutes * 60_000) return 'late'
+  if (elapsed >= limits.attentionAfterMinutes * 60_000) return 'attention'
+  return 'normal'
+}
+
+/** Tempo decorrido do cartão: `mm:ss`, ou `h:mm` passada uma hora (spec 04, seção 8.2). */
+export function clockLabel(sentAt: string, now: number): string {
+  const seconds = Math.max(0, Math.floor((now - Date.parse(sentAt)) / 1000))
+  if (seconds >= 3600) {
+    const hours = Math.floor(seconds / 3600)
+    return `${hours}:${String(Math.floor((seconds % 3600) / 60)).padStart(2, '0')}`
+  }
+  return `${String(Math.floor(seconds / 60)).padStart(2, '0')}:${String(seconds % 60).padStart(2, '0')}`
 }

@@ -1,12 +1,14 @@
 <script setup lang="ts">
 import { TabsList, TabsRoot, TabsTrigger } from 'reka-ui'
 import { formatCents } from '~/lib/money'
+import { productCountLabel } from '~/lib/price-lists'
 import type { MenuCategory, MenuProduct } from '~/stores/menu'
 
 /**
  * Cardápio (spec 03, seção 5 e tela "Cardápio" da seção 9): categorias em abas, produtos com
  * preço, estação e esgotado, ordenação por arrasto (com ↑/↓ como alternativa acessível) e
- * editor de produto com modificadores. Esgotado vai pela fila offline (RN-03.11).
+ * editor de produto com modificadores e preços por tabela (RN-03.22). Esgotado vai pela fila
+ * offline (RN-03.11). O atalho "Tabelas de preço" leva à tela das tabelas (spec 03, seção 5.3).
  */
 useHead({ title: 'Cardápio · Varal' })
 
@@ -86,6 +88,14 @@ function openProduct(product: MenuProduct | null) {
   productDialog.value = true
 }
 
+/** Tabelas ativas da unidade (o dono recebe todas no cardápio). */
+const activePriceLists = computed(() => (menu.menu?.priceLists ?? []).filter((list) => list.active))
+const priceListsSummary = computed(() => {
+  const lists = activePriceLists.value
+  if (lists.length === 0) return 'Preços diferentes para eventos, festas ou delivery.'
+  return lists.map((list) => `${list.name} (${productCountLabel(list.productCount)})`).join(' · ')
+})
+
 function stationLabel(product: MenuProduct): string {
   const name = menu.stationName(product.prepStationId)
   return product.stationId ? name : `${name} (da categoria)`
@@ -101,6 +111,19 @@ function stationLabel(product: MenuProduct): string {
       </p>
     </div>
     <UnitPicker />
+
+    <NuxtLink
+      to="/painel/cardapio/tabelas"
+      class="flex min-h-16 items-center gap-3 rounded-card border-2 border-border bg-surface px-4 py-3 hover:border-primary"
+      data-testid="price-lists-link"
+    >
+      <AppIcon name="tag" :size="24" class="text-primary-deep" />
+      <span class="flex min-w-0 flex-1 flex-col">
+        <span class="font-display text-lg font-semibold">Tabelas de preço</span>
+        <span class="text-sm text-text-muted">{{ priceListsSummary }}</span>
+      </span>
+      <AppIcon name="chevron-right" />
+    </NuxtLink>
 
     <AppAlert v-if="menu.loadError" tone="error">{{ menu.loadError }}</AppAlert>
     <p v-else-if="menu.loading && !menu.menu" class="text-text-muted">Carregando cardápio…</p>

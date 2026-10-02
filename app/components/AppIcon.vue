@@ -153,6 +153,28 @@ const paths = {
   backspace: ['M8 5h12v14H8l-6-7 6-7Z', 'M12 9l5 6', 'M17 9l-5 6'],
   /** Relatórios: barras. */
   chart: ['M4 20h16', 'M7 16v-4', 'M12 16V6', 'M17 16v-7'],
+  /** "Mais" do menu do painel: quatro quadrados. */
+  grid: ['M4 4h6v6H4Z', 'M14 4h6v6h-6Z', 'M4 14h6v6H4Z', 'M14 14h6v6h-6Z'],
+  /** Atenção (spec 08, seção 4): ampulheta. */
+  hourglass: [
+    'M6 3h12',
+    'M6 21h12',
+    'M7 3c0 5 10 5 10 9s-10 4-10 9',
+    'M17 3c0 5-10 5-10 9s10 4 10 9',
+  ],
+  /** Aviso (comandas abertas há mais de 2 dias, caixa esquecido aberto). */
+  'alert-triangle': ['M12 3l10 18H2L12 3Z', 'M12 10v4', 'M12 17.5v.01'],
+  /** Tabela de preço. */
+  tag: ['M3 12V4h8l10 10-8 8L3 12Z', 'M7.5 7.5h.01'],
+  /** Evento contratado. */
+  party: ['M4 20l4-12 8 8-12 4Z', 'M14 4v2', 'M18 8h2', 'M16.5 5.5l1.5-1.5', 'M10 6l.5 1'],
+  /** Tela cheia e sair dela. */
+  maximize: ['M4 9V4h5', 'M20 9V4h-5', 'M4 15v5h5', 'M20 15v5h-5'],
+  minimize: ['M9 4v5H4', 'M15 4v5h5', 'M9 20v-5H4', 'M15 20v-5h5'],
+  /** Recentes: relógio com seta de voltar. */
+  history: ['M3 12a9 9 0 1 0 3-6.7L3 8', 'M3 3v5h5', 'M12 7v5l3 2'],
+  /** Tamanho do cartão. */
+  columns: ['M4 4h7v16H4Z', 'M13 4h7v16h-7Z'],
 } as const
 
 export type IconName = keyof typeof paths

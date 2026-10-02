@@ -8,7 +8,16 @@ import type { TabSummary } from '~/lib/operation'
  * número ou nome e os cartões. Comandas abertas sem conexão aparecem como "Na fila" até a API
  * dar o número (spec 01, seção 11: nada é previsto).
  */
-withDefaults(defineProps<{ selectedNumber?: number | null }>(), { selectedNumber: null })
+withDefaults(
+  defineProps<{
+    selectedNumber?: number | null
+    /** Dia de operação atual, para "desde 01/10" nas comandas de dias anteriores (RN-04.10). */
+    businessDate?: string | null
+    /** Sem caixa aberto não se abre comanda (RN-04.02): o texto do vazio muda. */
+    canCreate?: boolean
+  }>(),
+  { selectedNumber: null, businessDate: null, canCreate: true },
+)
 
 const counter = useCounterStore()
 const connection = useConnectionStore()
@@ -131,15 +140,20 @@ const pendingByTab = computed(() => {
           :tab="tab"
           :selected="tab.number === selectedNumber"
           :pending="pendingByTab[tab.id]"
+          :business-date="businessDate"
         />
       </li>
     </ul>
     <p v-if="visible.length === 0 && queuedTabs.length === 0" class="text-text-muted">
       <template v-if="search">Nenhuma comanda com "{{ search }}".</template>
-      <template v-else-if="view === 'open'"
-        >Nenhuma comanda aberta. Toque em "Nova comanda".</template
+      <template v-else-if="view === 'open' && canCreate"
+        >Nenhuma comanda aberta. Toque em "Nova comanda" para começar.</template
       >
-      <template v-else>Nenhuma comanda pedindo a conta.</template>
+      <template v-else-if="view === 'open'">Nenhuma comanda aberta.</template>
+      <template v-else
+        >Nenhuma comanda pedindo a conta. Quando o cliente pedir, toque na comanda e em "Pedir
+        conta".</template
+      >
     </p>
   </section>
 </template>

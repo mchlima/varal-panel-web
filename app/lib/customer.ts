@@ -17,8 +17,8 @@ export const CUSTOMER_NAME_MAX = 60
 export const CUSTOMER_REFERENCE_MAX = 60
 export const CUSTOMER_NOTE_MAX = 140
 
-/** Referência que a API dá ao cliente criado para o contratante do turno (RN-06.08). */
-export const CONTRACTOR_REFERENCE = 'Contratante de turno'
+/** Referência que a API dá ao cliente criado para o contratante do evento (RN-06.08). */
+export const CONTRACTOR_REFERENCE = 'Contratante de evento'
 
 export function onlyDigits(value: string): string {
   return value.replace(/\D/g, '')
@@ -215,8 +215,8 @@ export function customerErrorMessage(code: string | undefined, fallback: string)
       return 'Este cliente não é desta unidade ou foi removido. Escolha outro.'
     case 'CUSTOMER_REQUIRED':
       return 'Escolha o cliente para pendurar.'
-    case 'NO_SHIFT_OPEN':
-      return 'Quitar fiado exige um turno aberto na unidade: abra o turno e um caixa para receber.'
+    case 'NO_CASH_REGISTER_OPEN':
+      return 'Para receber o fiado, abra um caixa nesta unidade.'
     default:
       return fallback
   }

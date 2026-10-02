@@ -86,11 +86,19 @@ export async function loginOwner(page: Page): Promise<void> {
   await submitLogin(page, /\/painel$/)
 }
 
-export async function loginStaffByLink(page: Page, username = seed.staffUsername): Promise<void> {
+/**
+ * Login do colaborador pelo link. Depois do login (RN-01.26): quem opera caixa vai ao painel
+ * (`ana` no seed); quem tem uma única estação entra direto nela (`bruno`, Cozinha).
+ */
+export async function loginStaffByLink(
+  page: Page,
+  username = seed.staffUsername,
+  done: RegExp = /\/(painel|estacoes|balcao|estacao\/[\w-]+)$/,
+): Promise<void> {
   await page.goto(`/e/${seed.accessCode}`)
   await page.getByLabel('Usuário').fill(username)
   await page.getByLabel('Senha', { exact: true }).fill(seed.password)
-  await submitLogin(page, /\/estacoes$/)
+  await submitLogin(page, done)
 }
 
 /**
@@ -156,7 +164,12 @@ export async function seedOrganization(
 export interface OwnerApi {
   request: APIRequestContext
   unitId: string
-  shiftId: string
+  /** Primeiro caixa cadastrado da unidade ("Caixa 1" do seed). */
+  cashRegisterId: string
+  /** Garante o "Caixa 1" aberto (o seed já o deixa aberto); devolve a abertura em andamento. */
+  ensureRegisterOpen: () => Promise<{ sessionId: string }>
+  get: <T = unknown>(path: string) => Promise<T>
+  post: <T = unknown>(path: string, data: unknown) => Promise<T>
   productId: (name: string) => string
   modifierId: (product: string, modifier: string) => string
   createTab: (customerName: string) => Promise<{ id: string; number: number }>
@@ -204,10 +217,12 @@ export async function ownerApi(): Promise<OwnerApi> {
     units: { id: string }[]
   }
   const unitId = me.units[0]!.id
-  const current = (await (
-    await request.get(`${apiBaseUrl}/api/v1/units/${unitId}/shifts/current`)
-  ).json()) as { shift: { id: string } | null }
-  expect(current.shift, 'o seed precisa de um turno aberto na unidade').not.toBeNull()
+  const registers = (await (
+    await request.get(`${apiBaseUrl}/api/v1/units/${unitId}/cash-registers`)
+  ).json()) as {
+    data: { id: string; active: boolean; session: { id: string; status: string } | null }[]
+  }
+  const cashRegisterId = registers.data.find((register) => register.active)!.id
   const menu = (await (
     await request.get(`${apiBaseUrl}/api/v1/units/${unitId}/menu`)
   ).json()) as MenuForTests
@@ -231,13 +246,37 @@ export async function ownerApi(): Promise<OwnerApi> {
     return (await response.json()) as T
   }
 
+  async function get<T>(path: string): Promise<T> {
+    const response = await request.get(`${apiBaseUrl}/api/v1${path}`)
+    expect(response.ok(), `GET ${path}: ${await response.text()}`).toBe(true)
+    return (await response.json()) as T
+  }
+
+  async function ensureRegisterOpen(): Promise<{ sessionId: string }> {
+    const list = await get<{
+      data: { id: string; session: { id: string; status: string } | null }[]
+    }>(`/units/${unitId}/cash-registers`)
+    const register = list.data.find((item) => item.id === cashRegisterId)!
+    if (register.session?.status === 'open') return { sessionId: register.session.id }
+    const opened = await post<{ session: { id: string } }>(
+      `/cash-registers/${cashRegisterId}/open`,
+      {
+        openingFloatCents: 10000,
+      },
+    )
+    return { sessionId: opened.session.id }
+  }
+
   return {
     request,
     unitId,
-    shiftId: current.shift!.id,
+    cashRegisterId,
+    ensureRegisterOpen,
+    get,
+    post,
     productId: (name) => product(name).id,
     modifierId,
-    createTab: (customerName) => post(`/shifts/${current.shift!.id}/tabs`, { customerName }),
+    createTab: (customerName) => post(`/units/${unitId}/tabs`, { customerName }),
     createOrder: (tabId, items) =>
       post(`/tabs/${tabId}/orders`, {
         items: items.map((item) => ({

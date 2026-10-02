@@ -51,12 +51,15 @@ test.describe('com sessão', () => {
     )
     await expect(page.getByText(`Código da barraca: ${seed.accessCode}`)).toBeVisible()
 
-    await loginStaffByLink(page)
-    await expect(page.getByRole('heading', { level: 1 })).toHaveText(/Escolha a (estação|unidade)/)
+    // A ana opera caixa: entra no início do painel (RN-01.23, RN-01.24).
+    await loginStaffByLink(page, seed.staffUsername, /\/painel$/)
+    await expect(page.getByTestId('home-action')).toBeVisible()
 
-    // Colaborador não abre o painel do dono.
-    await page.goto('/painel')
-    await expect(page).toHaveURL(/\/estacoes$/)
+    // Mas não abre os cadastros nem os relatórios do dono (RN-01.23, RN-07.07).
+    await page.goto('/painel/cardapio')
+    await expect(page).toHaveURL(/\/painel$/)
+    await page.goto('/painel/relatorios')
+    await expect(page).toHaveURL(/\/painel$/)
   })
 
   test('renova a sessão quando o token de acesso some (401 → refresh)', async ({

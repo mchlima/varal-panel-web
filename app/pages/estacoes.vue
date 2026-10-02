@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import type { components } from '~/api/schema'
+import { stationPath } from '~/lib/routes'
 import { STATION_KIND_LABELS } from '~/lib/setup'
 
 type StationSummary = components['schemas']['StationSummary']
@@ -8,7 +9,8 @@ type StationSummary = components['schemas']['StationSummary']
  * Escolha de unidade e estação (spec 01, seção 14). Se houver mais de uma unidade,
  * escolhe a unidade antes. As estações vêm do `/auth/me` (ativas, em ordem, com nome e tipo):
  * todas para o dono, as liberadas para o colaborador (RN-03.16). Balcão de pedidos leva ao
- * `/balcao`; fila, ao `/estacao/{id}` (spec 01, seção 14.1).
+ * `/balcao`; fila, ao `/estacao/{id}` (spec 01, seção 14.1). Quem tem painel vê sempre o botão
+ * "Painel" no topo (RN-01.25); a navegação usa rotas normais (RN-01.27).
  */
 useHead({ title: 'Estações · Varal' })
 
@@ -25,13 +27,25 @@ const stations = computed(() => unit.value?.stations ?? [])
 async function open(station: StationSummary) {
   if (unit.value) workplace.selectUnit(unit.value.id)
   workplace.selectStation(station.id)
-  await navigateTo(station.kind === 'counter' ? '/balcao' : `/estacao/${station.id}`)
+  await navigateTo(stationPath(station))
 }
 </script>
 
 <template>
   <div class="min-h-dvh bg-bg">
     <AppHeader />
+    <div v-if="session.hasPanel" class="border-b border-border bg-surface">
+      <div class="mx-auto flex w-full max-w-3xl items-center gap-2 px-4 py-2">
+        <NuxtLink
+          to="/painel"
+          class="flex min-h-12 min-w-12 items-center justify-center gap-1.5 rounded-button border-2 border-border-strong bg-surface px-3 font-bold text-text hover:border-primary"
+          data-testid="go-panel"
+        >
+          <AppIcon name="home" />
+          Painel
+        </NuxtLink>
+      </div>
+    </div>
     <main class="mx-auto flex w-full max-w-3xl flex-col gap-6 px-4 py-6">
       <template v-if="units.length === 0">
         <h1 class="text-2xl">Estações</h1>
@@ -41,7 +55,6 @@ async function open(station: StationSummary) {
             Você ainda não tem acesso a nenhuma unidade. Fale com o responsável pela barraca.
           </template>
         </AppAlert>
-        <AppButton v-if="session.isOwner" to="/painel">Ir para o painel</AppButton>
       </template>
 
       <template v-else-if="!unit">
@@ -64,7 +77,11 @@ async function open(station: StationSummary) {
       <template v-else>
         <div class="flex flex-col gap-1">
           <p class="text-text-muted">{{ unit.name }}</p>
-          <h1 class="text-2xl">Escolha a estação</h1>
+          <h1 class="text-2xl">Onde você vai trabalhar agora?</h1>
+          <p class="text-text-muted">
+            O balcão abre comandas e recebe; a cozinha e o balcão de entrega veem os pedidos
+            chegando.
+          </p>
         </div>
 
         <template v-if="stations.length === 0">
@@ -76,7 +93,6 @@ async function open(station: StationSummary) {
             </p>
             <p v-else>Fale com o responsável pela barraca para liberar uma estação para você.</p>
           </AppAlert>
-          <AppButton v-if="session.isOwner" to="/painel">Ir para o painel</AppButton>
         </template>
 
         <ul v-else class="grid grid-cols-1 gap-3 sm:grid-cols-2">

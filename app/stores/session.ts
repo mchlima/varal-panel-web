@@ -3,7 +3,7 @@ import type { components } from '~/api/schema'
 import { apiErrorCode, apiErrorMessage } from '~/lib/api-error'
 import { readLocal, requestPersistentStorage, writeLocal } from '~/lib/browser'
 import { impersonationErrorMessage } from '~/lib/impersonation'
-import { homePathFor, isPublicRoute } from '~/lib/routes'
+import { hasPanelAccess, homePathFor, isPublicRoute } from '~/lib/routes'
 
 export type PanelMe = components['schemas']['PanelMe']
 export type PanelUnit = components['schemas']['PanelUnit']
@@ -38,7 +38,9 @@ export const useSessionStore = defineStore('session', () => {
 
   const isAuthenticated = computed(() => status.value === 'authenticated' && me.value !== null)
   const isOwner = computed(() => me.value?.subject.type === 'owner')
-  const homePath = computed(() => homePathFor(me.value?.subject.type ?? 'staff'))
+  const homePath = computed(() => homePathFor(me.value))
+  /** RN-01.23: dono ou quem opera caixa em alguma unidade. */
+  const hasPanel = computed(() => hasPanelAccess(me.value))
   /** Sessão de "entrar como" da equipe do Varal (spec 02, RN-02.19), ou `null`. */
   const impersonation = computed<PanelImpersonation | null>(() => me.value?.impersonation ?? null)
   /** O último "entrar como" deste aparelho terminou (encerrado ou vencido): aviso no login. */
@@ -58,6 +60,7 @@ export const useSessionStore = defineStore('session', () => {
     writeLocal(ME_CACHE_KEY, null)
     useWorkplaceStore().clear()
     useAnnouncementsStore().clear()
+    useOperationStore().clear()
   }
 
   /** Carrega a sessão ao abrir o app. Um 401 passa pela renovação do middleware. */
@@ -188,6 +191,7 @@ export const useSessionStore = defineStore('session', () => {
     isAuthenticated,
     isOwner,
     homePath,
+    hasPanel,
     impersonation,
     impersonationEnded,
     restore,

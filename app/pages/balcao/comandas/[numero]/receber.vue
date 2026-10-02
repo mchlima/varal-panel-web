@@ -34,17 +34,18 @@ import {
  * mexe no saldo nem na situação da comanda: só a resposta, o evento ou o REST mudam isso.
  *
  * Fiado (spec 06): "Pendurar" na comanda em `closing` escolhe ou cadastra o cliente e confirma
- * o valor pendurado, o saldo (RN-06.04 a RN-06.06); no turno contratado `consumption_billed`,
+ * o valor pendurado, o saldo (RN-06.04 a RN-06.06); numa comanda de evento `consumption_billed`,
  * pendura no contratante sem escolher cliente (RN-06.08). Pendurar vai pela fila. Numa comanda
- * `on_credit` esta tela quita (parcial ou total, RN-06.09 a RN-06.11) no caixa do turno aberto,
- * mesmo que a comanda seja de outro turno: nesse caso ela chega por `?comanda={id}`.
+ * `on_credit` esta tela quita (parcial ou total, RN-06.09 a RN-06.11) num caixa aberto da
+ * unidade, mesmo que a comanda seja de outro dia: nesse caso ela chega por `?comanda={id}`.
  */
 const route = useRoute()
 const number = computed(() => Number(route.params.numero))
 const tabIdParam = computed(() =>
   typeof route.query.comanda === 'string' && route.query.comanda ? route.query.comanda : null,
 )
-const { place, counter } = useCounterLive()
+const { place, counter, operation } = useCounterLive()
+const events = useContractedEventsStore()
 const { tab, notFound, error, reloadSoon } = useTabDetail(number, tabIdParam)
 const connection = useConnectionStore()
 const operations = useOperations()
@@ -52,9 +53,8 @@ const session = useSessionStore()
 
 useHead({ title: () => `Receber · comanda ${number.value} · Varal` })
 
-const shiftId = computed(() => counter.shift?.id ?? null)
 const unitId = computed(() => place.value?.unit.id ?? null)
-const cash = useCashRegisters(shiftId, unitId)
+const cash = useCashRegisters(unitId)
 const canOpenRegister = computed(() => session.isOwner || place.value?.unit.canOperateCash === true)
 
 const tabId = computed(() => tab.value?.id ?? null)
@@ -136,8 +136,9 @@ const padBalance = computed(() => {
 })
 const pendingSum = computed(() => (tab.value?.balanceCents ?? 0) - padBalance.value)
 
-/** Quitação de fiado: comanda pendurada, com turno aberto na unidade (RN-06.09). */
-const settling = computed(() => tab.value?.status === 'on_credit' && !!counter.shift)
+/** Quitação de fiado: comanda pendurada, com caixa aberto na unidade (RN-06.09). */
+const hasOpenCash = computed(() => !(cash.loaded.value && cash.openRegisters.value.length === 0))
+const settling = computed(() => tab.value?.status === 'on_credit' && hasOpenCash.value)
 const canReceive = computed(
   () =>
     (tab.value?.status === 'closing' || settling.value) &&
@@ -209,10 +210,6 @@ function paymentFailureText(code: string, message: string): string {
     return 'Abra um caixa para receber.'
   }
   if (code === 'PAYMENT_EXCEEDS_BALANCE' || code === 'TAB_NOTHING_TO_PAY') reloadSoon()
-  if (code === 'NO_SHIFT_OPEN') {
-    void counter.load()
-    return customerErrorMessage(code, message)
-  }
   return message
 }
 
@@ -366,15 +363,17 @@ const paid = computed(() => tab.value?.status === 'paid')
 const creditOpen = ref(false)
 const creditBusy = ref(false)
 const creditError = ref('')
-/** Cliente escolhido; `id` nulo é o contratante do turno (RN-06.08). */
+/** Cliente escolhido; `id` nulo é o contratante do evento (RN-06.08). */
 const creditTarget = ref<{ id: string | null; name: string; detail: string } | null>(null)
-/** Turno contratado em que o contratante paga o consumo no final (RN-06.08). */
+/** Comanda de evento em que o contratante paga o consumo no final (RN-04.15, RN-06.08). */
 const contractorName = computed(() => {
-  const shift = counter.shift
-  if (!shift || shift.id !== tab.value?.shiftId) return null
-  return shift.type === 'contracted' && shift.agreement?.modality === 'consumption_billed'
-    ? shift.agreement.contractorName
-    : null
+  const eventId = tab.value?.eventId
+  if (!eventId) return null
+  const event =
+    operation.value?.eventInProgress?.id === eventId
+      ? operation.value.eventInProgress
+      : events.eventsOf(unitId.value).find((item) => item.id === eventId)
+  return event?.modality === 'consumption_billed' ? event.contractorName : null
 })
 const pendingCredit = computed(() => {
   const op = pendingOperations(
@@ -457,13 +456,11 @@ function canReverse(payment: Payment): boolean {
       <AppAlert v-if="!place">
         Escolha uma estação de balcão liberada para você em "Trocar de estação".
       </AppAlert>
-      <template v-else-if="counter.shiftLoaded && !counter.shift && !tabIdParam">
-        <NoShiftNotice :unit-id="place.unit.id" />
-      </template>
       <template v-else>
         <AppAlert v-if="error && !(tab && !connection.online)" tone="error">{{ error }}</AppAlert>
         <AppAlert v-if="notFound" tone="error">
-          A comanda {{ number }} não existe {{ tabIdParam ? 'nesta unidade' : 'neste turno' }}.
+          A comanda {{ number }}
+          {{ tabIdParam ? 'não existe nesta unidade' : 'não está aberta nesta unidade' }}.
           <NuxtLink to="/balcao" class="font-bold underline">Voltar ao varal</NuxtLink>
         </AppAlert>
         <p v-else-if="!tab" class="text-text-muted">Carregando comanda…</p>
@@ -560,7 +557,7 @@ function canReverse(payment: Payment): boolean {
               <p class="font-bold" data-testid="tab-on-credit">
                 No fiado: falta receber {{ formatCents(tab.balanceCents) }}.
               </p>
-              <p>A quitação pode ser em partes e entra no caixa do turno aberto.</p>
+              <p>A quitação pode ser em partes e entra no caixa aberto.</p>
             </AppAlert>
             <StageChip
               v-if="pendingCredit"
@@ -719,11 +716,11 @@ function canReverse(payment: Payment): boolean {
               </p>
             </template>
             <template v-else-if="tab.status === 'on_credit'">
-              <template v-if="!counter.shift">
-                <AppAlert tone="error" data-testid="settle-no-shift">
-                  {{ customerErrorMessage('NO_SHIFT_OPEN', '') }}
+              <template v-if="!hasOpenCash">
+                <AppAlert tone="error" data-testid="settle-no-cash">
+                  {{ customerErrorMessage('NO_CASH_REGISTER_OPEN', '') }}
                 </AppAlert>
-                <NoShiftNotice v-if="counter.shiftLoaded" :unit-id="place.unit.id" />
+                <NoCashNotice :unit-id="place.unit.id" />
               </template>
               <template v-else>
                 <RegisterPicker

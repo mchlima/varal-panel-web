@@ -3,6 +3,11 @@ import {
   actorLabel,
   addPaymentLabel,
   applyDraftPayments,
+  cashRegisterHint,
+  openRegisters,
+  openSessionOf,
+  registerState,
+  toCloseBody,
   cashChange,
   closingRows,
   confirmPaymentLabel,
@@ -19,6 +24,7 @@ import {
   toPayFirstBody,
   toPaymentBody,
 } from '../../app/lib/payment'
+import { cashRegister, closedRegister } from '../support/operation-fixtures'
 
 const register = {
   expected: [
@@ -212,5 +218,65 @@ describe('detalhes dos erros da spec 05', () => {
     expect(actorLabel({ type: 'owner', id: 'o' }, me)).toBe('Dono')
     expect(actorLabel({ type: 'staff', id: 's2' }, me, { s2: 'Ana' })).toBe('Ana')
     expect(actorLabel({ type: 'staff', id: 's3' }, me)).toBe('Colaborador')
+  })
+})
+
+describe('caixas da unidade (spec 05, seção 5)', () => {
+  const open = cashRegister({ id: 'a', sortOrder: 2 })
+  const closed = closedRegister({ id: 'b', sortOrder: 1 })
+
+  it('situação do caixa cadastrado (RN-05.17, RN-05.27)', () => {
+    expect(registerState(open)).toBe('open')
+    expect(registerState(closed)).toBe('closed')
+    expect(registerState({ ...closed, session: null })).toBe('never')
+    expect(registerState({ ...closed, active: false })).toBe('inactive')
+  })
+
+  it('RN-05.05: abertos na ordem do cadastro', () => {
+    const second = cashRegister({ id: 'c', sortOrder: 1 })
+    expect(openRegisters([open, closed, second])).toEqual([second, open])
+    expect(openSessionOf(closed)).toBeNull()
+    expect(openSessionOf(open)?.status).toBe('open')
+  })
+
+  it('CA-05.14: explica as recusas do cadastro e da abertura', () => {
+    expect(cashRegisterHint('LAST_ACTIVE_CASH_REGISTER')).toContain('Cadastre ou ative outro caixa')
+    expect(cashRegisterHint('CASH_REGISTER_OPEN')).toContain('Feche o caixa')
+    expect(cashRegisterHint('CASH_REGISTER_ALREADY_OPEN')).toContain('outro aparelho')
+    expect(cashRegisterHint('OUTRO')).toBeUndefined()
+  })
+
+  it('RN-05.20 e RN-05.29: corpo do fechamento com as opções só no último caixa', () => {
+    const informed = { cash: 10_000, pix: 0, credit_card: 0, debit_card: 500 }
+    expect(
+      toCloseBody({
+        informed,
+        note: '  faltou troco ',
+        lastOpenRegister: true,
+        finishPendingItems: true,
+        finishEvent: false,
+        version: 3,
+      }),
+    ).toEqual({
+      counts: [
+        { method: 'cash', informedCents: 10_000 },
+        { method: 'pix', informedCents: 0 },
+        { method: 'credit_card', informedCents: 0 },
+        { method: 'debit_card', informedCents: 500 },
+      ],
+      note: 'faltou troco',
+      finishPendingItems: true,
+      finishEvent: false,
+      version: 3,
+    })
+    const other = toCloseBody({
+      informed,
+      note: '',
+      lastOpenRegister: false,
+      finishPendingItems: true,
+      finishEvent: true,
+    })
+    expect(other).toMatchObject({ finishPendingItems: false, finishEvent: false })
+    expect(other).not.toHaveProperty('note')
   })
 })

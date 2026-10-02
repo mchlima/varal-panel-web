@@ -25,8 +25,8 @@ test.beforeEach(({ browserName }) => skipWithoutSessionCookies(browserName))
 test('dono cria estação e edita o fluxo da unidade (RN-03.05, RN-03.06)', async ({ page }) => {
   const station = `Fritadeira ${suffix}`
   const stage = `Fritando ${suffix}`
-  // A Barraca da Praça do seed tem turno aberto (spec 04), e com turno aberto o fluxo trava
-  // (RN-03.07). O teste usa uma unidade nova, sem turno, desativada no fim.
+  // A Barraca da Praça do seed tem caixa aberto (spec 05), e com caixa aberto o fluxo trava
+  // (RN-03.07). O teste usa uma unidade nova, sem caixa aberto, desativada no fim.
   const api = await ownerApi()
   const created = await api.request.post(`${apiBaseUrl}/api/v1/units`, {
     data: { name: `Unidade ${suffix}`, lateAfterMinutes: 15 },
@@ -130,9 +130,8 @@ test('dono cria produto com modificador e marca esgotado; o colaborador da cozin
   const staffContext = await browser.newContext({ baseURL, locale: 'pt-BR' })
   const staff = await staffContext.newPage()
   try {
-    await loginStaffByLink(staff, 'bruno')
-    await staff.getByRole('button', { name: /Cozinha/ }).click()
-    await expect(staff).toHaveURL(/\/estacao\/[0-9a-f-]{36}$/)
+    // O bruno só tem a Cozinha: entra direto nela (RN-01.26).
+    await loginStaffByLink(staff, 'bruno', /\/estacao\/[0-9a-f-]{36}$/)
     await expect(staff.getByTestId('realtime-status')).toContainText('Conectado')
     // Atalho de esgotado da estação (spec 03, seção 9), aberto pelo cabeçalho da fila.
     await staff.getByRole('button', { name: 'Esgotados' }).click()
@@ -168,14 +167,16 @@ test('dono cria produto com modificador e marca esgotado; o colaborador da cozin
 })
 
 test('colaborador vê só as estações liberadas, com nome e tipo (RN-03.16)', async ({ page }) => {
-  await loginStaffByLink(page, 'bruno')
-  const choices = page.locator('button[aria-pressed]')
-  await expect(choices).toHaveCount(1)
-  await expect(choices.first()).toContainText('Cozinha')
-  await expect(choices.first()).toContainText('Fila')
-  await expect(page.getByText('Estação 1')).toHaveCount(0)
+  // Só a Cozinha liberada: entra direto nela, sem "Painel" nem "Trocar de estação" (CA-01.17).
+  await loginStaffByLink(page, 'bruno', /\/estacao\/[0-9a-f-]{36}$/)
+  await expect(page.getByRole('heading', { level: 1 })).toHaveText('Cozinha')
+  await expect(page.getByTestId('go-panel')).toHaveCount(0)
+  await expect(page.getByTestId('switch-station')).toHaveCount(0)
 
   await loginStaffByLinkAfterLogout(page)
+  // A ana opera caixa e entra no painel; em "Balcão e estações" vê as duas liberadas.
+  await expect(page).toHaveURL(/\/painel$/)
+  await page.goto('/estacoes')
   const ana = page.locator('button[aria-pressed]')
   await expect(ana).toHaveCount(2)
   await expect(ana.nth(0)).toContainText('Balcão')

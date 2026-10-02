@@ -1,39 +1,38 @@
 <script setup lang="ts">
-import { apiErrorMessage } from '~/lib/api-error'
-import { compareQueueItems, createStationQueue } from '~/lib/live-collection'
+import { readLocal, writeLocal } from '~/lib/browser'
+import { itemsLabel, stagesOfStation, type StationLine } from '~/lib/operation'
+import { pendingForItem, pendingLabel, pendingOperations } from '~/lib/operation-actions'
 import {
-  changedItemOf,
-  itemConflictMessage,
-  nextStage,
-  previousStage,
-  stagesOfStation,
-  type ItemChange,
-  type OrderItem,
-  type WorkflowStage,
-} from '~/lib/operation'
-import { pendingForItem, pendingLabel } from '~/lib/operation-actions'
+  CARD_SIZE_LABELS,
+  CARD_WIDTHS,
+  counters,
+  matchesFilter,
+  sortCards,
+  type CardFilter,
+  type CardSize,
+  type RecentOrder,
+  type StationCard,
+} from '~/lib/station'
 
 /**
- * Fila de uma estação (`/estacao/{id}`, spec 04, seção 8.2): itens em tempo real, pedido mais
- * antigo primeiro e itens do mesmo pedido juntos; avançar com um toque, avançar parte
- * (RN-04.24), voltar (RN-04.22) e cancelar com motivo (RN-04.25). Toda mudança vai pela fila
- * local com a `version` conhecida; se outro aparelho mexeu antes (`ITEM_CHANGED`, CA-04.05), o
- * cartão mostra o estado atual e avisa. Tela sempre ligada, som e vibração em item novo.
- *
- * Tempo real (RN-01.05, CA-04.12): a cada (re)conexão a fila vem do REST; eventos que chegam
- * durante a busca são aplicados depois, e os de `version` menor ou igual são ignorados.
+ * Tela da estação (`/estacao/{id}`, spec 04, seção 8.2), no formato dos KDS de mercado: um pedido,
+ * um cartão (RN-04.40), grade que ocupa toda a largura em telas grandes com o mais antigo no
+ * canto superior esquerdo e uma coluna no celular (CA-04.18), contadores que filtram, tela
+ * cheia, "Desfazer" e "Recentes". Tela sempre ligada, som e vibração em pedido novo e em
+ * cancelamento. A barra do topo traz "Painel" e "Trocar de estação" (RN-01.25, RN-01.26).
  */
 definePageMeta({ key: (route) => route.fullPath })
+
+const SIZE_KEY = 'varal.kdsCardSize'
 
 const route = useRoute()
 const session = useSessionStore()
 const workplace = useWorkplaceStore()
 const connection = useConnectionStore()
-const operations = useOperations()
-const itemActions = useItemActions()
 const alerts = useStationAlerts()
 const awake = useScreenAwake()
-const now = useClock(15_000)
+const fullscreen = useStationFullscreen()
+const now = useClock(1_000)
 const stationId = computed(() => String(route.params.id))
 
 /** Só estações liberadas no `/auth/me` (RN-03.16); a API confere de novo em cada ação. */
@@ -57,180 +56,192 @@ watch(
 
 useHead({ title: () => `${place.value?.station.name ?? 'Estação'} · Varal` })
 
-const queue = reactive(createStationQueue(stationId.value))
-const stages = ref<WorkflowStage[]>([])
-const loaded = ref(false)
-const loadError = ref('')
-const fresh = ref<Record<string, true>>({})
-const notices = ref<Record<string, string>>({})
-/** Avisos de itens que já saíram desta fila (outro aparelho os levou). */
-const looseNotices = ref<{ id: string; text: string }[]>([])
-const stageFilter = ref<string | null>(null)
+const queue = useStationQueue({
+  stationId,
+  unitId: computed(() => place.value?.unit.id ?? null),
+  enabled: computed(() => place.value?.station.kind === 'queue'),
+  notify: () => alerts.notify(),
+})
+
+const filter = ref<CardFilter>({ kind: 'all' })
 const soldOutOpen = ref(false)
-let generation = 0
+const recentsOpen = ref(false)
+const installHintOpen = ref(false)
+const recentNotice = ref('')
 
-async function load(): Promise<void> {
-  if (!place.value || place.value.station.kind !== 'queue') return
-  const { $api } = useNuxtApp()
-  const current = ++generation
-  queue.beginReload()
-  try {
-    const { data, error } = await $api.GET('/api/v1/stations/{id}/queue', {
-      params: { path: { id: stationId.value } },
-    })
-    if (current !== generation) return
-    if (!data) {
-      loadError.value = apiErrorMessage(error)
-      queue.abortReload()
-      return
+const storedSize = readLocal(SIZE_KEY)
+const size = ref<CardSize>(storedSize === 'small' || storedSize === 'large' ? storedSize : 'medium')
+const SIZES: CardSize[] = ['small', 'medium', 'large']
+function nextSize() {
+  size.value = SIZES[(SIZES.indexOf(size.value) + 1) % SIZES.length]!
+  writeLocal(SIZE_KEY, size.value)
+}
+
+const context = computed(() => ({
+  limits: queue.limits.value,
+  now: now.value,
+  isNew: queue.isNew,
+}))
+const stationStages = computed(() => stagesOfStation(queue.stages.value, stationId.value))
+const allCards = computed(() => sortCards(Object.values(queue.cards.value)))
+const counterEntries = computed(() => counters(allCards.value, stationStages.value, context.value))
+const visibleCards = computed(() =>
+  allCards.value.filter(
+    (card) => card.ackRequired || matchesFilter(card, filter.value, context.value),
+  ),
+)
+const stageFilter = computed(() => (filter.value.kind === 'stage' ? filter.value.stageId : null))
+
+function sameFilter(a: CardFilter, b: CardFilter): boolean {
+  return JSON.stringify(a) === JSON.stringify(b)
+}
+
+/** Pendências da fila local, por linha e por pedido (spec 01, seção 11). */
+const linePending = computed(() => {
+  const result: Record<string, string> = {}
+  for (const card of allCards.value) {
+    for (const line of card.lines) {
+      const op = pendingForItem(connection.pending, line.id)
+      if (op && 'quantity' in op.meta) {
+        result[line.id] = itemPendingText(op.meta, pendingLabel(op.action, connection.online))
+      }
     }
-    loadError.value = ''
-    stages.value = data.stages
-    queue.finishReload(data.items)
-    loaded.value = true
-  } catch (error) {
-    if (current !== generation) return
-    loadError.value = apiErrorMessage(error)
-    queue.abortReload()
   }
-}
-
-watch(
-  () => place.value?.station.id,
-  (id) => {
-    if (id) void load()
-  },
-  { immediate: true },
-)
-useRealtimeResync(load)
-
-/** Item que acabou de entrar nesta fila: destaque até ser tocado, som e vibração. */
-function arrived(item: OrderItem) {
-  fresh.value = { ...fresh.value, [item.id]: true }
-  alerts.notify()
-}
-
-function receive(item: OrderItem | null | undefined, fromStationId?: string | null) {
-  if (!item) return
-  const isHere = item.stationId === stationId.value && item.canceledAt === null
-  const wasHere = item.id in queue.items
-  const changed = queue.apply(item)
-  if (changed && isHere && !wasHere && fromStationId !== stationId.value) arrived(item)
-}
-
-useRealtimeEvent('order.created', (event) => {
-  // CA-04.03: a sala da estação recebe só os itens dela; a da unidade, o pedido inteiro.
-  for (const item of event.data.items) {
-    if (item.stationId === stationId.value) receive(item, null)
+  return result
+})
+const cardPending = computed(() => {
+  const result: Record<string, string> = {}
+  for (const op of pendingOperations(
+    connection.pending,
+    (meta) => meta.kind === 'order.advance' && meta.stationId === stationId.value,
+  )) {
+    if (op.meta.kind !== 'order.advance') continue
+    const target = op.meta.toStageName ?? 'Avançar'
+    result[op.meta.orderId] = `${target}: ${pendingLabel(op.action, connection.online)}`
   }
-})
-useRealtimeEvent('order_item.stage_changed', (event) => {
-  receive(event.data.item, event.data.previousStationId)
-  receive(event.data.remaining, event.data.remaining?.stationId)
-})
-useRealtimeEvent('order_item.canceled', (event) => {
-  receive(event.data.item, event.data.previousStationId)
-  receive(event.data.remaining, event.data.remaining?.stationId)
-})
-useRealtimeEvent('shift.closed', (event) => {
-  // RN-04.08: itens não finais vão à etapa final no fechamento; a fila esvazia.
-  if (event.unitId === place.value?.unit.id) void load()
-})
-useRealtimeEvent('unit.config_updated', (event) => {
-  if (event.unitId === place.value?.unit.id) void load()
+  return result
 })
 
-// Resposta de uma ação deste aparelho: aplica na hora (o evento confirma depois).
-operations.onSettled((meta, outcome) => {
-  if (!meta.kind.startsWith('item.') || !outcome.ok) return
-  const change = outcome.body as ItemChange | undefined
-  receive(change?.changed, stationId.value)
-  receive(change?.remaining, stationId.value)
-})
-
-// CA-04.05: outro aparelho mexeu no item antes. O cartão mostra o estado atual e o aviso.
-useOperationFailures((meta, failure) => {
-  if (!meta.kind.startsWith('item.') || !('itemId' in meta)) return false
-  if (!(meta.itemId in queue.versions)) return false
-  const message = itemConflictMessage(failure.code, changedItemOf(failure.details))
-  if (!message) return false
-  const current = changedItemOf(failure.details)
-  if (current) receive(current, stationId.value)
-  else void load()
-  const id = current?.id ?? meta.itemId
-  if (id in queue.items) notices.value = { ...notices.value, [id]: message }
-  else looseNotices.value = [...looseNotices.value, { id: `${id}:${Date.now()}`, text: message }]
-  return true
-})
-
-const items = computed(() => queue.list().sort(compareQueueItems))
-const filterStages = computed(() => stagesOfStation(stages.value, stationId.value))
-const visibleItems = computed(() =>
-  stageFilter.value
-    ? items.value.filter((item) => item.stageId === stageFilter.value)
-    : items.value,
-)
-
-function seen(id: string) {
-  if (!(id in fresh.value)) return
-  const { [id]: _done, ...rest } = fresh.value
-  fresh.value = rest
+async function toggleFullscreen() {
+  if (fullscreen.active.value) return fullscreen.exit()
+  if (!(await fullscreen.enter())) installHintOpen.value = true
 }
 
-function dismissNotice(id: string) {
-  const { [id]: _done, ...rest } = notices.value
-  notices.value = rest
+function revert(entry: RecentOrder) {
+  recentNotice.value = queue.revertRecent(entry) ?? ''
+  if (!recentNotice.value) recentsOpen.value = false
 }
 
-function itemPending(item: OrderItem): string | undefined {
-  const op = pendingForItem(connection.pending, item.id)
-  if (!op || !('quantity' in op.meta)) return undefined
-  return itemPendingText(op.meta, pendingLabel(op.action, connection.online))
+function linesSummary(lines: readonly StationLine[]): string {
+  return lines.map((line) => `${line.quantity}× ${line.productName}`).join(', ')
 }
 
-function advance(item: OrderItem, quantity: number) {
-  const next = nextStage(stages.value, item.stageId)
-  void itemActions.advance(item, { quantity, toStageName: next?.name })
+function minutesAgo(at: number): string {
+  const minutes = Math.max(0, Math.floor((now.value - at) / 60_000))
+  return minutes < 1 ? 'agora' : `há ${minutes} min`
 }
 
-function back(item: OrderItem) {
-  void itemActions.back(item, previousStage(stages.value, item.stageId)?.name)
+function cancelLine(line: StationLine, value: { quantity: number; reason: string }) {
+  queue.cancelLine(line, value.quantity, value.reason)
 }
 
-function cancel(item: OrderItem, value: { quantity: number; reason: string }) {
-  void itemActions.cancel(item, value.quantity, value.reason)
+function cardKey(card: StationCard) {
+  return card.orderId
 }
 </script>
 
 <template>
   <div>
-    <OperationShell :title="place?.station.name ?? 'Estação'" :unit-name="place?.unit.name" wide>
-      <template v-if="place" #actions>
-        <button
-          type="button"
-          class="flex min-h-12 items-center gap-1.5 rounded-button px-2 text-sm font-bold"
-          :class="alerts.enabled.value ? 'text-primary-deep' : 'text-text-muted'"
-          :aria-pressed="alerts.enabled.value"
-          data-testid="alerts-toggle"
-          @click="alerts.setEnabled(!alerts.enabled.value)"
-        >
-          <AppIcon :name="alerts.enabled.value ? 'bell' : 'bell-off'" />
-          <span class="hidden sm:inline">{{
-            alerts.enabled.value ? 'Alertas ligados' : 'Alertas desligados'
-          }}</span>
-          <span class="sr-only sm:hidden">{{
-            alerts.enabled.value ? 'Alertas ligados' : 'Alertas desligados'
-          }}</span>
-        </button>
-        <button
-          type="button"
-          class="flex min-h-12 items-center gap-1.5 rounded-button px-2 text-sm font-bold text-primary-deep"
-          @click="soldOutOpen = true"
-        >
-          <AppIcon name="ban" />
-          <span class="hidden sm:inline">Esgotados</span>
-          <span class="sr-only sm:hidden">Esgotados</span>
-        </button>
+    <OperationShell
+      :title="place?.station.name ?? 'Estação'"
+      :unit-name="place?.unit.name"
+      width="full"
+      :bare="fullscreen.active.value"
+    >
+      <template v-if="place?.station.kind === 'queue'" #top>
+        <div class="border-b border-border bg-surface">
+          <div class="flex flex-col gap-2 px-4 py-2">
+            <div
+              role="group"
+              aria-label="Filtrar pedidos"
+              class="-mx-4 flex gap-2 overflow-x-auto px-4"
+              data-testid="counters"
+            >
+              <button
+                v-for="entry in counterEntries"
+                :key="entry.key"
+                type="button"
+                :aria-pressed="sameFilter(filter, entry.filter)"
+                class="flex min-h-12 shrink-0 items-center gap-2 rounded-button border-2 px-3 font-bold whitespace-nowrap"
+                :class="
+                  sameFilter(filter, entry.filter)
+                    ? 'border-primary bg-primary-soft text-primary-deep'
+                    : entry.key === 'late'
+                      ? 'border-status-late-text bg-status-late-bg text-status-late-text'
+                      : entry.key === 'attention'
+                        ? 'border-status-attention-ink bg-status-attention-bg text-status-attention-ink'
+                        : 'border-border-strong bg-surface text-text'
+                "
+                :data-testid="`counter-${entry.key.split(':')[0]}`"
+                @click="filter = entry.filter"
+              >
+                <AppIcon v-if="entry.key === 'attention'" name="hourglass" :size="16" />
+                <AppIcon v-else-if="entry.key === 'late'" name="alert-circle" :size="16" />
+                <AppIcon v-else-if="entry.key === 'new'" name="dot" :size="16" />
+                {{ entry.label }}
+                <span class="tabular-nums">{{ entry.count }}</span>
+              </button>
+            </div>
+            <div class="flex flex-wrap gap-2">
+              <button
+                type="button"
+                class="flex min-h-12 items-center gap-1.5 rounded-button px-2 font-bold text-primary-deep hover:bg-primary-soft"
+                data-testid="recents"
+                @click="((recentNotice = ''), (recentsOpen = true))"
+              >
+                <AppIcon name="history" />
+                Recentes
+              </button>
+              <button
+                type="button"
+                class="flex min-h-12 items-center gap-1.5 rounded-button px-2 font-bold text-primary-deep hover:bg-primary-soft"
+                @click="soldOutOpen = true"
+              >
+                <AppIcon name="ban" />
+                Esgotados
+              </button>
+              <button
+                type="button"
+                class="hidden min-h-12 items-center gap-1.5 rounded-button px-2 font-bold text-primary-deep hover:bg-primary-soft sm:flex"
+                data-testid="card-size"
+                @click="nextSize"
+              >
+                <AppIcon name="columns" />
+                Tamanho: {{ CARD_SIZE_LABELS[size] }}
+              </button>
+              <button
+                type="button"
+                class="flex min-h-12 items-center gap-1.5 rounded-button px-2 font-bold"
+                :class="alerts.enabled.value ? 'text-primary-deep' : 'text-text-muted'"
+                :aria-pressed="alerts.enabled.value"
+                data-testid="alerts-toggle"
+                @click="alerts.setEnabled(!alerts.enabled.value)"
+              >
+                <AppIcon :name="alerts.enabled.value ? 'bell' : 'bell-off'" />
+                {{ alerts.enabled.value ? 'Som ligado' : 'Som desligado' }}
+              </button>
+              <button
+                type="button"
+                class="flex min-h-12 items-center gap-1.5 rounded-button px-2 font-bold text-primary-deep hover:bg-primary-soft"
+                data-testid="fullscreen"
+                @click="toggleFullscreen"
+              >
+                <AppIcon :name="fullscreen.active.value ? 'minimize' : 'maximize'" />
+                {{ fullscreen.active.value ? 'Sair da tela cheia' : 'Tela cheia' }}
+              </button>
+            </div>
+          </div>
+        </div>
       </template>
 
       <AppAlert v-if="!place" tone="error">
@@ -259,77 +270,145 @@ function cancel(item: OrderItem, value: { quantity: number; reason: string }) {
             (Configurações → Tela → Tempo limite) para não perder pedidos.
           </p>
         </AppAlert>
-        <AppAlert v-if="loadError" tone="error">{{ loadError }}</AppAlert>
-        <AppAlert v-for="notice in looseNotices" :key="notice.id" tone="error">
+        <AppAlert v-if="queue.loadError.value" tone="error">{{ queue.loadError.value }}</AppAlert>
+        <AppAlert v-for="notice in queue.looseNotices.value" :key="notice.id" tone="error">
           <p>{{ notice.text }}</p>
           <button
             type="button"
             class="mt-1 min-h-12 font-bold underline"
-            @click="looseNotices = looseNotices.filter((item) => item.id !== notice.id)"
+            @click="
+              queue.looseNotices.value = queue.looseNotices.value.filter(
+                (item) => item.id !== notice.id,
+              )
+            "
           >
             Entendi
           </button>
         </AppAlert>
 
+        <p v-if="!queue.loaded.value && !queue.loadError.value" class="text-text-muted">
+          Carregando pedidos…
+        </p>
         <div
-          v-if="filterStages.length > 1"
-          role="group"
-          aria-label="Filtrar por etapa"
-          class="-mx-4 flex gap-2 overflow-x-auto px-4"
-        >
-          <button
-            v-for="option in [{ id: null, name: 'Todas' }, ...filterStages]"
-            :key="option.id ?? 'all'"
-            type="button"
-            :aria-pressed="stageFilter === option.id"
-            class="min-h-12 shrink-0 rounded-button border-2 px-4 font-bold whitespace-nowrap"
-            :class="
-              stageFilter === option.id
-                ? 'border-primary bg-primary-soft text-primary-deep'
-                : 'border-border-strong bg-surface text-text'
-            "
-            @click="stageFilter = option.id"
-          >
-            {{ option.name }}
-            <span class="tabular-nums">
-              ({{
-                option.id
-                  ? items.filter((item) => item.stageId === option.id).length
-                  : items.length
-              }})
-            </span>
-          </button>
-        </div>
-
-        <p v-if="!loaded && !loadError" class="text-text-muted">Carregando fila…</p>
-        <div
-          v-else-if="loaded && visibleItems.length === 0"
+          v-else-if="queue.loaded.value && visibleCards.length === 0"
           class="flex flex-col items-center gap-2 rounded-card border-2 border-dashed border-border-strong p-8 text-center text-text-muted"
           data-testid="queue-empty"
         >
           <AppIcon name="check-circle" :size="32" />
-          <p class="text-lg font-bold">Nada na fila agora.</p>
-          <p>Os itens novos aparecem aqui sozinhos.</p>
+          <template v-if="filter.kind === 'all'">
+            <p class="text-lg font-bold">Nenhum pedido agora.</p>
+            <p>Os pedidos novos aparecem aqui sozinhos, com som.</p>
+          </template>
+          <template v-else>
+            <p class="text-lg font-bold">Nenhum pedido neste filtro.</p>
+            <button
+              type="button"
+              class="min-h-12 font-bold text-primary-deep underline"
+              @click="filter = { kind: 'all' }"
+            >
+              Ver todos
+            </button>
+          </template>
         </div>
-        <ul class="grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-3" aria-live="polite">
-          <li v-for="item in visibleItems" :key="item.id">
-            <QueueItemCard
-              :item="item"
-              :stages="stages"
+        <ul
+          class="grid grid-cols-1 items-start gap-3 sm:grid-cols-[repeat(auto-fill,minmax(var(--kds-card),1fr))]"
+          :style="{ '--kds-card': `${CARD_WIDTHS[size]}px` }"
+          aria-live="polite"
+          data-testid="kds-grid"
+        >
+          <li v-for="card in visibleCards" :key="cardKey(card)">
+            <StationOrderCard
+              :card="card"
+              :stages="queue.stages.value"
+              :limits="queue.limits.value"
               :now="now"
-              :fresh="item.id in fresh"
-              :pending="itemPending(item)"
-              :notice="notices[item.id]"
-              @seen="seen(item.id)"
-              @advance="advance(item, $event)"
-              @back="back(item)"
-              @cancel="cancel(item, $event)"
-              @dismiss-notice="dismissNotice(item.id)"
+              :is-new="queue.isNew(card)"
+              :stage-filter="stageFilter"
+              :line-pending="linePending"
+              :pending="cardPending[card.orderId]"
+              :notice="queue.notices.value[card.orderId]"
+              @touch="queue.touch(card)"
+              @advance-line="(line, quantity) => queue.advanceLine(line, quantity)"
+              @back-line="queue.backLine"
+              @cancel-line="cancelLine"
+              @advance-card="queue.advanceCard(card, stageFilter)"
+              @back-card="queue.backCard(card)"
+              @cancel-card="(reason) => queue.cancelCard(card, reason)"
+              @acknowledge="queue.acknowledge(card)"
+              @dismiss-notice="queue.dismissNotice(card.orderId)"
             />
           </li>
         </ul>
       </template>
     </OperationShell>
+
+    <div
+      v-if="queue.undo.value"
+      class="fixed inset-x-0 bottom-4 z-40 flex justify-center px-4 pb-[env(safe-area-inset-bottom)]"
+    >
+      <div
+        role="status"
+        class="flex w-full max-w-md items-center gap-3 rounded-card bg-text px-4 py-2 text-surface"
+        data-testid="undo"
+      >
+        <AppIcon name="check-circle" />
+        <span class="flex-1 font-bold">{{ queue.undo.value.text }}</span>
+        <button
+          type="button"
+          class="min-h-12 rounded-button px-3 font-bold underline"
+          @click="queue.undoLast()"
+        >
+          Desfazer
+        </button>
+      </div>
+    </div>
+
+    <AppDialog v-model:open="recentsOpen" title="Recentes">
+      <div class="flex flex-col gap-3">
+        <p class="text-text-muted">
+          Os últimos pedidos que saíram desta estação. Se algum saiu por engano, volte com ele.
+        </p>
+        <AppAlert v-if="recentNotice">{{ recentNotice }}</AppAlert>
+        <p v-if="queue.recents.value.length === 0" class="font-bold">
+          Nenhum pedido saiu desta estação desde que a tela abriu.
+        </p>
+        <ul class="flex flex-col gap-2">
+          <li
+            v-for="entry in queue.recents.value"
+            :key="entry.orderId"
+            class="flex flex-col gap-2 rounded-card border-2 border-border bg-surface p-3"
+            data-testid="recent"
+          >
+            <p class="flex items-baseline gap-2">
+              <span class="font-display text-xl font-extrabold tabular-nums">{{
+                entry.tabNumber
+              }}</span>
+              <span class="flex-1 truncate font-bold">{{ entry.customerName }}</span>
+              <span class="text-sm text-text-muted">{{ minutesAgo(entry.leftAt) }}</span>
+            </p>
+            <p class="text-sm">
+              {{ itemsLabel(entry.lines.reduce((sum, line) => sum + line.quantity, 0)) }}:
+              {{ linesSummary(entry.lines) }}
+            </p>
+            <AppButton variant="secondary" @click="revert(entry)">
+              <AppIcon name="undo" />
+              Voltar para esta estação
+            </AppButton>
+          </li>
+        </ul>
+      </div>
+    </AppDialog>
+
+    <AppDialog v-model:open="installHintOpen" title="Tela cheia">
+      <div class="flex flex-col gap-3">
+        <p>Este navegador não deixa abrir em tela cheia.</p>
+        <p>
+          Instale o Varal na tela de início (no iPhone: Compartilhar → Adicionar à Tela de Início).
+          Aberto pelo ícone, ele já ocupa a tela inteira, sem as barras do navegador.
+        </p>
+        <AppButton variant="secondary" @click="installHintOpen = false">Entendi</AppButton>
+      </div>
+    </AppDialog>
 
     <AppDialog v-if="place" v-model:open="soldOutOpen" title="Esgotados">
       <MenuSoldOutList :unit-id="place.unit.id" />

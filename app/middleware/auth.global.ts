@@ -1,8 +1,9 @@
 import { isLoginRoute, isPublicRoute } from '~/lib/routes'
 
 /**
- * Acesso às páginas (spec 01, seção 14.1): sem sessão, as páginas protegidas levam ao
- * `/entrar`; com sessão, o login leva ao início (painel do dono ou estações).
+ * Acesso às páginas (spec 01, seções 14.1 e 14.2): sem sessão, as páginas protegidas levam ao
+ * `/entrar`; com sessão, o login leva ao início (painel, estação única ou escolha de estação).
+ * A API continua sendo a barreira: aqui só se evita abrir uma tela que vai responder 403.
  */
 export default defineNuxtRouteMiddleware(async (to) => {
   const session = useSessionStore()
@@ -18,20 +19,37 @@ export default defineNuxtRouteMiddleware(async (to) => {
 
   if (isLoginRoute(to.path)) return navigateTo(session.homePath, { replace: true })
 
-  // O painel é só do dono; o turno também é de quem opera caixa (RN-04.02).
-  const canOperateCash = session.me?.units.some((unit) => unit.canOperateCash) === true
-  if (to.path === '/painel/turnos' && canOperateCash) return
-  // Fiado: o dono e quem tem balcão veem (spec 06); editar e remover cliente é só do dono.
+  // Rotas do turno, que saiu em 2026-10-02 (spec 01, seção 14.1).
+  if (to.path === '/painel/turnos' || to.path === '/painel/turnos/') {
+    return navigateTo('/painel', { replace: true })
+  }
+  // O relatório do turno virou relatório do dia (spec 07); sem o dia do turno, vai ao histórico.
+  if (to.path.startsWith('/painel/relatorios/turnos/')) {
+    return navigateTo('/painel/relatorios', { replace: true })
+  }
+
+  if (session.isOwner) return
+  const home = session.homePath
+  const away = () => (to.path === home ? undefined : navigateTo(home, { replace: true }))
+
+  // Caixas: dono e quem opera caixa (RN-05.16).
+  if (to.path.startsWith('/caixas')) return session.hasPanel ? undefined : away()
+  // Fiado: quem tem painel e quem tem balcão (spec 06); editar e remover cliente é só do dono.
   const hasCounter =
     session.me?.units.some((unit) =>
       unit.stations.some((station) => station.kind === 'counter'),
     ) === true
-  if (to.path.startsWith('/painel/fiado') && hasCounter) return
-  // Caixas: dono e quem opera caixa (RN-05.16).
-  if (to.path.startsWith('/caixas') && !session.isOwner && !canOperateCash) {
-    return navigateTo('/estacoes', { replace: true })
+  if (to.path.startsWith('/painel/fiado')) {
+    return session.hasPanel || hasCounter ? undefined : away()
   }
-  if (to.path.startsWith('/painel') && !session.isOwner) {
-    return navigateTo('/estacoes', { replace: true })
+  // Início e eventos (iniciar e encerrar) também para quem opera caixa (RN-01.23, RN-04.34).
+  if (to.path === '/painel' || to.path === '/painel/') return session.hasPanel ? undefined : away()
+  if (to.path === '/painel/eventos' || /^\/painel\/eventos\/(?!novo)[^/]+$/.test(to.path)) {
+    return session.hasPanel ? undefined : away()
   }
+  // Cadastros, relatórios e o resto do painel: só o dono (RN-07.07).
+  if (to.path.startsWith('/painel'))
+    return navigateTo(session.hasPanel ? '/painel' : home, {
+      replace: true,
+    })
 })

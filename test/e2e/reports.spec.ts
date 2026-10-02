@@ -1,6 +1,5 @@
 import { expect, test } from '@playwright/test'
 import {
-  apiBaseUrl,
   expectApiUp,
   hideDevtools,
   loginOwner,
@@ -12,8 +11,8 @@ import {
 } from './fixtures'
 
 /**
- * Relatórios (spec 07) contra a API real, com o seed (turno aberto na Barraca da Praça e um
- * caixa aberto): o histórico mostra o turno em andamento e o relatório dele, parcial.
+ * Relatórios (spec 07) contra a API real, com o seed ("Caixa 1" aberto na Barraca da Praça):
+ * o histórico mostra o dia em andamento, o relatório do dia (parcial) e o do caixa.
  */
 
 let api: OwnerApi
@@ -32,56 +31,33 @@ test.beforeEach(async ({ browserName, context }) => {
   await hideDevtools(context)
 })
 
-async function call<T = never>(method: 'GET' | 'POST', path: string, data?: unknown) {
-  const response = await api.request.fetch(`${apiBaseUrl}/api/v1${path}`, {
-    method,
-    data: data as never,
-    headers: method === 'GET' ? {} : { 'Idempotency-Key': crypto.randomUUID() },
-  })
-  expect(response.ok(), `${method} ${path}: ${await response.text()}`).toBe(true)
-  return (await response.json()) as T
-}
-
-test('o dono abre o histórico e o relatório parcial do turno aberto (RN-07.06, RN-07.07)', async ({
+test('o dono vê o dia em andamento, o relatório do dia e o do caixa (RN-07.06, RN-07.07)', async ({
   page,
 }) => {
-  // Uma comanda paga no turno do seed, para o relatório ter venda e recebido.
+  // Uma comanda paga no caixa aberto, para o relatório ter venda e recebido.
+  await api.ensureRegisterOpen()
   const tab = await api.createTab(`Relatório ${runSuffix()}`)
   await api.createOrder(tab.id, [{ product: 'Mandioca frita', quantity: 2 }])
-  await call('POST', `/tabs/${tab.id}/request-bill`, {})
-  const registers = await call<{ data: { id: string; status: string }[] }>(
-    'GET',
-    `/shifts/${api.shiftId}/cash-registers`,
-  )
-  const register = registers.data.find((item) => item.status === 'open')
-  expect(register, 'o turno precisa de um caixa aberto').toBeDefined()
-  await call('POST', `/tabs/${tab.id}/payments`, {
+  await api.post(`/tabs/${tab.id}/request-bill`, {})
+  const detail = await api.get<{ balanceCents: number }>(`/tabs/${tab.id}`)
+  await api.post(`/tabs/${tab.id}/payments`, {
     method: 'pix',
-    amountCents: 3_000,
-    cashRegisterId: register!.id,
+    amountCents: detail.balanceCents,
+    cashRegisterId: api.cashRegisterId,
   })
 
   await loginOwner(page)
-  await page
-    .getByRole('link', { name: /Relatórios/ })
-    .first()
-    .click()
-  await expect(page).toHaveURL(/\/painel\/relatorios$/)
-  await expect(page.getByRole('button', { name: '30 dias' })).toHaveAttribute(
-    'aria-pressed',
-    'true',
-  )
+  await page.goto('/painel/relatorios')
+  await expect(page.getByTestId('period-30d')).toHaveAttribute('aria-pressed', 'true')
   await expect(page.getByTestId('period-totals')).toContainText('Venda')
 
-  const row = page.getByTestId('history-row').filter({ hasText: 'Em andamento' }).first()
-  await expect(row).toBeVisible()
-  await row.click()
-  await expect(page).toHaveURL(new RegExp(`/painel/relatorios/turnos/${api.shiftId}$`))
-  await expect(page.getByTestId('report-partial')).toContainText(
-    'Turno em andamento — valores parciais',
-  )
+  // Dias: o dia de hoje, em andamento, abre o relatório do dia.
+  const day = page.getByTestId('history-row').filter({ hasText: 'Em andamento' }).first()
+  await expect(day).toBeVisible()
+  await day.click()
+  await expect(page).toHaveURL(/\/painel\/relatorios\/periodo\?unidade=.+&de=.+&ate=.+/)
+  await expect(page.getByTestId('report-partial')).toContainText('Em andamento — valores parciais')
   await expect(page.getByTestId('report-summary')).toContainText('Venda')
-
   const products = page.getByTestId('report-products')
   await products.getByText('Por produto').click()
   await expect(products).toContainText('Mandioca frita')
@@ -89,12 +65,22 @@ test('o dono abre o histórico e o relatório parcial do turno aberto (RN-07.06,
   await payments.getByText('Por forma de pagamento').click()
   await expect(payments.getByRole('row', { name: /^Pix/ })).toBeVisible()
 
+  // Caixas: o "Caixa 1" aberto abre o relatório da abertura, sem venda (RN-07.09).
   await page.getByRole('link', { name: 'Histórico' }).click()
-  await expect(page).toHaveURL(/\/painel\/relatorios/)
+  await page.getByTestId('tab-caixas').click()
+  const register = page.getByTestId('history-row').filter({ hasText: 'Caixa 1' }).first()
+  await register.click()
+  await expect(page).toHaveURL(/\/painel\/relatorios\/caixas\/[\w-]+$/)
+  await expect(page.getByTestId('report-summary')).toContainText('Recebido')
+  await expect(page.getByTestId('report-summary')).not.toContainText('Venda')
+  const sessionPayments = page.getByTestId('report-payments')
+  await sessionPayments.getByText('Pagamentos').first().click()
+  await expect(sessionPayments).toContainText(`Comanda ${tab.number}`)
 })
 
 test('colaborador não entra nos relatórios (RN-07.07)', async ({ page }) => {
+  // `ana` opera caixa: tem painel, mas não relatórios; volta ao início do painel.
   await loginStaffByLink(page)
   await page.goto('/painel/relatorios')
-  await expect(page).toHaveURL(/\/estacoes$/)
+  await expect(page).toHaveURL(/\/painel$/)
 })

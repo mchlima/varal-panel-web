@@ -68,7 +68,7 @@ async function create() {
     <div class="flex flex-col gap-1">
       <h1 class="text-2xl">Unidades</h1>
       <p class="text-text-muted">
-        Cada barraca é uma unidade, com estações, fluxo de etapas e cardápio próprios.
+        Cada barraca é uma unidade, com caixas, estações, etapas do pedido e cardápio próprios.
       </p>
     </div>
 
@@ -85,8 +85,8 @@ async function create() {
     >
       <h2 id="new-unit-title" class="text-xl">Nova unidade</h2>
       <p class="text-sm text-text-muted">
-        Ela já nasce com as estações Balcão, Cozinha e Balcão de entrega e o fluxo Recebido →
-        Preparando → Pronto → Entregue (dá para mudar depois). O cardápio começa vazio.
+        Ela já nasce com o "Caixa 1", as estações Balcão, Cozinha e Balcão de entrega e o fluxo
+        Recebido → Preparando → Pronto → Entregue (dá para mudar depois). O cardápio começa vazio.
       </p>
       <AppTextField
         v-model="form.name"
@@ -96,9 +96,9 @@ async function create() {
       />
       <AppTextField
         v-model="form.late"
-        label="Tempo de atraso (minutos)"
+        label="Atraso padrão das estações (minutos)"
         inputmode="numeric"
-        :hint="`Depois desse tempo, o item aparece como atrasado na estação (${LATE_AFTER_MIN} a ${LATE_AFTER_MAX}).`"
+        :hint="`Depois desse tempo, o pedido aparece como atrasado nas estações (${LATE_AFTER_MIN} a ${LATE_AFTER_MAX}).`"
         :error="errors.late"
       />
       <ErrorAlert :error="action.error.value" />

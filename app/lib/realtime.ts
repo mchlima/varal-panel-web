@@ -10,9 +10,8 @@ export type EventSessionAccessChanged = Schemas['EventSessionAccessChanged']
 export type EventProductSoldOutChanged = Schemas['EventProductSoldOutChanged']
 export type EventMenuUpdated = Schemas['EventMenuUpdated']
 export type EventUnitConfigUpdated = Schemas['EventUnitConfigUpdated']
-export type EventShiftOpened = Schemas['EventShiftOpened']
-export type EventShiftUpdated = Schemas['EventShiftUpdated']
-export type EventShiftClosed = Schemas['EventShiftClosed']
+export type EventUnitOperationUpdated = Schemas['EventUnitOperationUpdated']
+export type EventContractedEventUpdated = Schemas['EventContractedEventUpdated']
 export type EventTabCreated = Schemas['EventTabCreated']
 export type EventTabUpdated = Schemas['EventTabUpdated']
 export type EventOrderCreated = Schemas['EventOrderCreated']
@@ -31,9 +30,8 @@ export interface UnitEvents {
   'product.sold_out_changed': EventProductSoldOutChanged
   'menu.updated': EventMenuUpdated
   'unit.config_updated': EventUnitConfigUpdated
-  'shift.opened': EventShiftOpened
-  'shift.updated': EventShiftUpdated
-  'shift.closed': EventShiftClosed
+  'unit.operation_updated': EventUnitOperationUpdated
+  'event.updated': EventContractedEventUpdated
   'tab.created': EventTabCreated
   'tab.updated': EventTabUpdated
   'order.created': EventOrderCreated

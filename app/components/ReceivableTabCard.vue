@@ -6,7 +6,7 @@ import type { TabSummary } from '~/lib/operation'
 
 /**
  * Comanda pendurada (spec 06, seção 8): número, cliente, data em que foi pendurada e o saldo a
- * receber. Tocar abre a tela de receber pela id, porque a comanda pode ser de outro turno.
+ * receber. Tocar abre a tela de receber pela id, porque a comanda pode ser de outro dia.
  */
 defineProps<{ tab: TabSummary; pending?: string }>()
 </script>

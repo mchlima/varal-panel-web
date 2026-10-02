@@ -49,6 +49,8 @@ const pairs: [text: string, background: string][] = [
   ['color-status-new-text', 'color-status-new-bg'],
   ['color-status-preparing-text', 'color-status-preparing-bg'],
   ['color-status-ready-text', 'color-status-ready-bg'],
+  // CA-08.06: "Atenção" laranja do cartão da estação (RN-04.46).
+  ['color-status-attention-ink', 'color-status-attention-bg'],
   ['color-status-late-text', 'color-status-late-bg'],
   ['color-status-canceled-text', 'color-status-canceled-bg'],
   // Faixa do "entrar como" (spec 02, RN-02.19): fundo escuro, texto claro.

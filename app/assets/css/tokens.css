@@ -34,6 +34,9 @@
   --color-status-preparing-text: #713f12;
   --color-status-ready-bg: #bbf7d0;
   --color-status-ready-text: #14532d;
+  /* Atenção (RN-04.46): entre o limite de atenção e o de atraso do cartão da estação */
+  --color-status-attention-bg: #fdba74;
+  --color-status-attention-ink: #7c2d12;
   --color-status-late-bg: #fecaca;
   --color-status-late-text: #7f1d1d;
   --color-status-canceled-bg: #e2e8f0;

@@ -51,8 +51,35 @@ export function isNewer(eventVersion: number, knownVersion: number | null | unde
  * `message` da API (que já é em pt-BR).
  */
 const HINTS: Partial<Record<string, string>> = {
-  SHIFT_OPEN:
-    'Enquanto o turno estiver aberto, as estações e o fluxo ficam travados. Feche o turno e tente de novo.',
+  // RN-03.07 e RN-03.02 (ajustadas em 2026-10-02): o caixa aberto trava fluxo, estações e unidade.
+  CASH_REGISTER_OPEN:
+    'Enquanto houver caixa aberto nesta unidade, isso fica travado. Feche o caixa (em Caixa) e tente de novo.',
+  ITEMS_IN_PROGRESS:
+    'Ainda há itens sendo preparados em comandas abertas. Conclua ou cancele esses itens nas estações e tente de novo.',
+  UNIT_HAS_OPEN_TABS:
+    'Esta unidade ainda tem comandas abertas. Receba, pendure ou cancele essas comandas no balcão antes.',
+  INVALID_TIME_LIMITS:
+    'O tempo de atenção precisa ser menor que o de atraso (ex.: atenção em 7 e atraso em 15 minutos).',
+  // Tabelas de preço (spec 03, seção 5.3)
+  PRICE_LIST_NAME_TAKEN: 'Já existe uma tabela com esse nome nesta unidade. Use outro nome.',
+  PRICE_LIST_NAME_RESERVED:
+    '"Normal" é o nome do preço de sempre do cardápio e não pode ser usado numa tabela. Escolha outro nome, como "Evento".',
+  PRICE_LIST_IN_USE:
+    'Esta tabela está em uso: é a tabela vigente ou a de um evento agendado ou em andamento. Troque a tabela vigente ou a do evento antes de desativar.',
+  // Caixas da unidade (spec 05, seção 5.1)
+  LAST_ACTIVE_CASH_REGISTER:
+    'A unidade precisa de pelo menos um caixa ativo. Crie ou ative outro caixa antes de desativar este.',
+  CASH_REGISTER_NAME_TAKEN: 'Já existe um caixa com esse nome nesta unidade. Use outro nome.',
+  // Eventos contratados (spec 04, seção 3.3)
+  EVENT_ALREADY_IN_PROGRESS:
+    'Já há um evento em andamento nesta unidade. Encerre aquele evento antes de iniciar outro.',
+  EVENT_IN_PROGRESS:
+    'Durante um evento, os preços são os da tabela do evento. Para trocar, edite o evento ou encerre-o.',
+  EVENT_NOT_SCHEDULED: 'Este evento não está mais agendado: atualize a tela para ver a situação.',
+  EVENT_NOT_IN_PROGRESS: 'Este evento não está em andamento: atualize a tela para ver a situação.',
+  EVENT_CLOSED: 'Evento encerrado ou cancelado não pode mais ser alterado.',
+  INVALID_PRICE_LIST:
+    'A tabela de preço escolhida não está ativa nesta unidade. Escolha outra ou "Normal".',
   LAST_ACTIVE_UNIT:
     'Ative ou crie outra unidade antes de desativar esta: a organização sempre tem uma unidade em funcionamento.',
   STATION_KIND_REQUIRED:

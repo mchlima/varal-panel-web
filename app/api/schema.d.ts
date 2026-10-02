@@ -767,15 +767,15 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v1/cash-registers/{id}": {
+    "/api/v1/cash-register-sessions/{id}": {
         parameters: {
             query?: never;
             header?: never;
             path?: never;
             cookie?: never;
         };
-        /** Caixa com movimentos, pagamentos e esperado por forma */
-        get: operations["CashController_getRegister"];
+        /** Abertura de caixa com movimentos, pagamentos e esperado por forma */
+        get: operations["CashController_getSession"];
         put?: never;
         post?: never;
         delete?: never;
@@ -784,7 +784,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v1/cash-registers/{id}/close": {
+    "/api/v1/cash-register-sessions/{id}/close": {
         parameters: {
             query?: never;
             header?: never;
@@ -793,7 +793,7 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** Fecha o caixa com o valor conferido de cada forma; diferença exige observação (RN-05.20, RN-05.21, CA-05.07) */
+        /** Fecha a abertura com o valor conferido de cada forma; diferença exige observação; comandas abertas não impedem e ficam como pendentes; no último caixa, encerra o preparo pendente e, se pedido, o evento (RN-05.20, RN-05.21, RN-05.28, RN-05.29) */
         post: operations["CashController_closeRegister"];
         delete?: never;
         options?: never;
@@ -801,7 +801,24 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v1/cash-registers/{id}/movements": {
+    "/api/v1/cash-register-sessions/{id}/close-preview": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Prévia do fechamento: esperado por forma, comandas que seguem abertas e, no último caixa aberto, itens em preparo e evento em andamento (RN-05.28, RN-05.29) */
+        get: operations["CashController_closePreview"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/cash-register-sessions/{id}/movements": {
         parameters: {
             query?: never;
             header?: never;
@@ -812,6 +829,57 @@ export interface paths {
         put?: never;
         /** Sangria (`withdrawal`, até o dinheiro esperado) ou suprimento (`deposit`), com motivo (RN-05.18) */
         post: operations["CashController_move"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/cash-register-sessions/{id}/report": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Relatório do caixa: fundo, pagamentos por forma (vendas e quitações), estornos, movimentos, esperado, informado, diferença e pendentes (spec 07, seção 5; RN-07.09) */
+        get: operations["ReportsController_sessionReport"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/cash-registers/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /** Renomeia, ordena, ativa ou desativa um caixa (dono; RN-05.27) */
+        patch: operations["CashController_updateRegister"];
+        trace?: never;
+    };
+    "/api/v1/cash-registers/{id}/open": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Abre o caixa com fundo de troco: cria uma abertura; o primeiro caixa de um dia novo muda o dia de operação e reinicia a numeração (RN-05.23 a RN-05.25, RN-04.29) */
+        post: operations["CashController_openRegister"];
         delete?: never;
         options?: never;
         head?: never;
@@ -886,6 +954,92 @@ export interface paths {
         head?: never;
         /** Edita cliente (dono); `null` apaga um dado opcional */
         patch: operations["CreditController_update"];
+        trace?: never;
+    };
+    "/api/v1/events/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Detalhe do evento contratado */
+        get: operations["OperationController_getEvent"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /** Edita o evento: acordo e tabela de preço até ele ser encerrado (dono; RN-04.37) */
+        patch: operations["OperationController_updateEvent"];
+        trace?: never;
+    };
+    "/api/v1/events/{id}/cancel": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Cancela um evento agendado (dono; RN-04.34) */
+        post: operations["OperationController_cancelEvent"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/events/{id}/finish": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Encerra o evento em andamento (RN-04.34) */
+        post: operations["OperationController_finishEvent"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/events/{id}/report": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Relatório do evento: comandas ligadas a ele de qualquer dia, venda, recebido, pendurado, por produto, perdas e o acordo (spec 07, seção 6; RN-07.10) */
+        get: operations["ReportsController_eventReport"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/events/{id}/start": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Inicia o evento: comandas novas ficam ligadas a ele e usam a tabela dele (RN-04.34 a RN-04.36) */
+        post: operations["OperationController_startEvent"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
         trace?: never;
     };
     "/api/v1/health": {
@@ -1024,6 +1178,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/orders/{id}/advance": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Avança o pedido inteiro na estação: todas as linhas dele na estação (e etapa) vão à próxima etapa, tudo ou nada (RN-04.39, CA-04.17) */
+        post: operations["OperationController_advanceOrder"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/organization/access": {
         parameters: {
             query?: never;
@@ -1050,8 +1221,43 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** Estorna um pagamento, com motivo, com turno e caixa abertos; comanda paga volta a `closing` (RN-05.13 a RN-05.15) e quitada volta a `on_credit` (RN-06.12) */
+        /** Estorna um pagamento, com motivo, enquanto a abertura de caixa dele estiver em andamento; comanda paga volta a `closing` (RN-05.13 a RN-05.15) e quitada volta a `on_credit` (RN-06.12) */
         post: operations["CashController_reverse"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/price-lists/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Tabela de preço com os preços que ela tem (tela da tabela, RN-03.22) */
+        get: operations["MenuController_getPriceList"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /** Renomeia, ordena, ativa ou desativa a tabela (RN-03.20, RN-03.23) */
+        patch: operations["MenuController_updatePriceList"];
+        trace?: never;
+    };
+    "/api/v1/price-lists/{id}/prices": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /** Preços de vários produtos numa tabela; `null` remove o preço (RN-03.22). Vale para itens novos (RN-03.24) */
+        put: operations["MenuController_putPriceListPrices"];
+        post?: never;
         delete?: never;
         options?: never;
         head?: never;
@@ -1092,6 +1298,23 @@ export interface paths {
         patch: operations["MenuController_updateProduct"];
         trace?: never;
     };
+    "/api/v1/products/{id}/prices": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /** Preços de um produto em várias tabelas; `null` remove o preço (RN-03.22) */
+        put: operations["MenuController_putProductPrices"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/products/{id}/sold-out": {
         parameters: {
             query?: never;
@@ -1110,15 +1333,15 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v1/reports/shifts": {
+    "/api/v1/reports/cash-sessions": {
         parameters: {
             query?: never;
             header?: never;
             path?: never;
             cookie?: never;
         };
-        /** Histórico de turnos por unidade (ou todas), período e tipo, mais recentes primeiro, com os totais do período (spec 07, seção 5; CA-07.04) */
-        get: operations["ReportsController_history"];
+        /** Histórico de aberturas de caixa, mais recentes primeiro, com os totais do período (spec 07, seção 7) */
+        get: operations["ReportsController_cashSessions"];
         put?: never;
         post?: never;
         delete?: never;
@@ -1127,67 +1350,15 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v1/shifts/{id}/cash-registers": {
+    "/api/v1/reports/days": {
         parameters: {
             query?: never;
             header?: never;
             path?: never;
             cookie?: never;
         };
-        /** Caixas do turno com o esperado por forma de pagamento */
-        get: operations["CashController_listRegisters"];
-        put?: never;
-        /** Abre um caixa no turno com fundo de troco; vários podem ficar abertos (RN-05.16, RN-05.17) */
-        post: operations["CashController_openRegister"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v1/shifts/{id}/close": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /** Fecha o turno (RN-04.07): recusa com a lista de pendências; itens ainda em preparo vão à etapa final (RN-04.08) */
-        post: operations["OperationController_closeShift"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v1/shifts/{id}/prices": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        /** Substitui a tabela de preços do turno aberto (RN-04.06) */
-        put: operations["OperationController_updatePrices"];
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v1/shifts/{id}/report": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** Relatório do turno: resumo, por produto, por forma de pagamento, por colaborador, caixas, fiado, cancelamentos e perdas, acordo; parcial com o turno aberto (spec 07, seção 4; CA-07.01 a CA-07.05) */
-        get: operations["ReportsController_shiftReport"];
+        /** Histórico por dia de operação e unidade, mais recentes primeiro, com os totais do período (spec 07, seção 7) */
+        get: operations["ReportsController_days"];
         put?: never;
         post?: never;
         delete?: never;
@@ -1196,35 +1367,34 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v1/shifts/{id}/tabs": {
+    "/api/v1/reports/events": {
         parameters: {
             query?: never;
             header?: never;
             path?: never;
             cookie?: never;
         };
-        /** Varal: comandas do turno com totais e resumo dos itens, por número */
-        get: operations["OperationController_listTabs"];
+        /** Histórico de eventos com consumo contra o combinado (spec 07, seção 7) */
+        get: operations["ReportsController_events"];
         put?: never;
-        /** Abre uma comanda aberta com o próximo número do turno (RN-04.09) */
-        post: operations["OperationController_createTab"];
+        post?: never;
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v1/shifts/{id}/tabs/pay-first": {
+    "/api/v1/reports/summary": {
         parameters: {
             query?: never;
             header?: never;
             path?: never;
             cookie?: never;
         };
-        get?: never;
+        /** Relatório do dia ou do período (sem `unitId`, todas as unidades): resumo, por produto (e por tabela), por forma, por colaborador, caixas, fiado, cancelamentos e perdas, eventos (spec 07, seção 4) */
+        get: operations["ReportsController_summary"];
         put?: never;
-        /** Comanda paga antes: comanda, pedido e pagamentos numa operação; nasce `paid` e só então o pedido vai às estações (RN-05.12, CA-04.10) */
-        post: operations["CashController_payFirst"];
+        post?: never;
         delete?: never;
         options?: never;
         head?: never;
@@ -1330,7 +1500,7 @@ export interface paths {
         delete?: never;
         options?: never;
         head?: never;
-        /** Altera uma estação (nome, tipo, ordem, ativa) */
+        /** Altera uma estação (nome, tipo, ordem, ativa, limites de atenção e atraso) */
         patch: operations["UnitsController_updateStation"];
         trace?: never;
     };
@@ -1341,7 +1511,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** Fila da estação: itens nela, do pedido mais antigo para o mais novo */
+        /** Fila da estação (KDS): um cartão por pedido, do mais antigo para o mais novo, com as linhas da estação (RN-04.40 a RN-04.45) */
         get: operations["OperationController_queue"];
         put?: never;
         post?: never;
@@ -1446,7 +1616,7 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** Registra um pagamento da comanda em `closing`: Pix e cartões até o saldo, dinheiro com troco; com saldo zero a comanda fica `paid` (RN-05.04 a RN-05.10). Em `on_credit` é quitação de fiado, em qualquer turno aberto da unidade, parcial ou total; com saldo zero fica `settled` (RN-06.09 a RN-06.11) */
+        /** Registra um pagamento da comanda em `closing` na abertura de um caixa aberto da unidade: Pix e cartões até o saldo, dinheiro com troco; com saldo zero a comanda fica `paid` (RN-05.04 a RN-05.10). Em `on_credit` é quitação de fiado, em qualquer caixa aberto da unidade, parcial ou total; com saldo zero fica `settled` (RN-06.09 a RN-06.11) */
         post: operations["CashController_pay"];
         delete?: never;
         options?: never;
@@ -1536,8 +1706,26 @@ export interface paths {
         delete?: never;
         options?: never;
         head?: never;
-        /** Renomeia, ativa ou desativa a unidade e ajusta o tempo de atraso */
+        /** Renomeia, ativa ou desativa a unidade e ajusta o atraso padrão das estações novas (RN-03.25) */
         patch: operations["UnitsController_updateUnit"];
+        trace?: never;
+    };
+    "/api/v1/units/{id}/cash-registers": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Caixas da unidade, cada um com a abertura em andamento (responsável, desde quando, esperado por forma) ou a última fechada */
+        get: operations["CashController_listRegisters"];
+        put?: never;
+        /** Cadastra um caixa na unidade (dono; RN-05.17, RN-05.27) */
+        post: operations["CashController_createRegister"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
         trace?: never;
     };
     "/api/v1/units/{id}/categories/order": {
@@ -1550,6 +1738,23 @@ export interface paths {
         get?: never;
         /** Reordena as categorias da unidade */
         put: operations["MenuController_reorderCategories"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/units/{id}/current-price-list": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /** Troca a tabela vigente (`priceListId` ou `null` para "Normal"), com ou sem caixa aberto (RN-04.31); vale para itens novos */
+        put: operations["OperationController_setCurrentPriceList"];
         post?: never;
         delete?: never;
         options?: never;
@@ -1575,6 +1780,24 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/units/{id}/events": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Eventos contratados da unidade: em andamento, agendados (mais próximos primeiro) e encerrados */
+        get: operations["OperationController_listEvents"];
+        put?: never;
+        /** Cadastra um evento contratado (dono; RN-04.05) */
+        post: operations["OperationController_createEvent"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/units/{id}/menu": {
         parameters: {
             query?: never;
@@ -1586,6 +1809,41 @@ export interface paths {
         get: operations["MenuController_readMenu"];
         put?: never;
         post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/units/{id}/operation": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Situação da operação: dia de operação, caixas e aberturas, tabela vigente e efetiva, evento em andamento e de hoje, comandas em aberto, `staleTabs` (RN-01.28) e itens em preparo */
+        get: operations["OperationController_getOperation"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/units/{id}/price-lists": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Tabelas de preço da unidade, com quantos produtos têm preço e qual é a vigente (dono: todas; colaborador: as ativas) */
+        get: operations["MenuController_listPriceLists"];
+        put?: never;
+        /** Cria uma tabela de preço na unidade (RN-03.20) */
+        post: operations["MenuController_createPriceList"];
         delete?: never;
         options?: never;
         head?: never;
@@ -1609,40 +1867,6 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v1/units/{id}/shifts": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /** Abre o turno da unidade, com tipo, acordo e preços (dono ou quem opera caixa, RN-04.02) */
-        post: operations["OperationController_openShift"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v1/units/{id}/shifts/current": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** Turno aberto da unidade, com acordo e preços */
-        get: operations["OperationController_currentShift"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
     "/api/v1/units/{id}/stations": {
         parameters: {
             query?: never;
@@ -1653,8 +1877,43 @@ export interface paths {
         /** Estações da unidade */
         get: operations["UnitsController_listStations"];
         put?: never;
-        /** Cria uma estação na unidade */
+        /** Cria uma estação na unidade; as de fila com limites de atenção e atraso (RN-03.25) */
         post: operations["UnitsController_createStation"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/units/{id}/tabs": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Varal: comandas em aberto da unidade, de qualquer dia, com totais e resumo dos itens (as fechadas só do dia de operação atual) */
+        get: operations["OperationController_listTabs"];
+        put?: never;
+        /** Abre uma comanda aberta com o próximo número do dia, ligada ao evento em andamento (RN-04.02, RN-04.09, RN-04.36) */
+        post: operations["OperationController_createTab"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/units/{id}/tabs/pay-first": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Comanda paga antes: comanda, pedido e pagamentos numa operação, com caixa aberto; nasce `paid` e só então o pedido vai às estações (RN-05.12, CA-04.10) */
+        post: operations["CashController_payFirst"];
         delete?: never;
         options?: never;
         head?: never;
@@ -1785,6 +2044,31 @@ export interface components {
             quantity?: number;
             /** @description Versão do item que o aparelho tem. Se outro aparelho mudou o item antes, a API responde 409 `ITEM_CHANGED` com o estado atual em `details.item` (CA-04.05). */
             version: number;
+        };
+        AdvanceOrderRequestInput: {
+            /** @description Todas as linhas do pedido que estão na estação (e na etapa), com a versão que o aparelho tem. Se alguma mudou ou faltou, nada é aplicado (RN-04.39). */
+            items: {
+                /** Format: uuid */
+                id: string;
+                /** @description Versão do item que o aparelho tem. Se outro aparelho mudou o item antes, a API responde 409 `ITEM_CHANGED` com o estado atual em `details.item` (CA-04.05). */
+                version: number;
+            }[];
+            /**
+             * Format: uuid
+             * @description Com o filtro por etapa: só as linhas nesta etapa. Sem ele, todas as linhas do pedido na estação.
+             */
+            stageId?: string;
+            /**
+             * Format: uuid
+             * @description Estação do cartão.
+             */
+            stationId: string;
+        };
+        AdvanceOrderResult: {
+            /** @description As linhas na etapa nova. */
+            items: components["schemas"]["OrderItem"][];
+            /** Format: uuid */
+            orderId: string;
         };
         /**
          * @description `fixed_fee`: valor fixo; `per_quantity`: por quantidade; `consumption_billed`: o contratante paga o consumo no final; `other` (RN-04.05).
@@ -1940,7 +2224,7 @@ export interface components {
         CashMovement: {
             amountCents: number;
             /** Format: uuid */
-            cashRegisterId: string;
+            cashRegisterSessionId: string;
             /** Format: date-time */
             createdAt: string;
             createdBy: components["schemas"]["ActorRef"];
@@ -1962,35 +2246,40 @@ export interface components {
          * @enum {string}
          */
         CashMovementType: "withdrawal" | "deposit";
-        /** @description Caixa do turno com o esperado por forma. */
+        /** @description Caixa cadastrado da unidade (RN-05.17) com a abertura atual ou a última. */
         CashRegister: {
-            cash: components["schemas"]["CashBreakdown"];
-            closedAt: string | null;
-            closedBy: components["schemas"]["ActorRef"] | null;
-            closingNote: string | null;
-            /** @description Conferência gravada no fechamento (vazia enquanto aberto). */
-            counts: components["schemas"]["CashRegisterCount"][];
-            /** @description Total de quitações de fiado recebidas neste caixa, em todas as formas (RN-05.22). */
-            creditSettlementsCents: number;
-            /** @description Esperado por forma, na ordem `cash`, `pix`, `credit_card`, `debit_card` (tabela da seção 5). */
-            expected: components["schemas"]["CashRegisterExpected"][];
+            active: boolean;
             /** Format: uuid */
             id: string;
             name: string;
-            /** Format: date-time */
-            openedAt: string;
-            /** @description Responsável: quem abriu (RN-05.17). */
-            openedBy: components["schemas"]["ActorRef"];
-            openingFloatCents: number;
-            /** Format: uuid */
-            shiftId: string;
-            status: components["schemas"]["CashRegisterStatus"];
+            /** @description A abertura em andamento ou, com o caixa fechado, a última fechada (`null` se nunca foi aberto). */
+            session: components["schemas"]["CashRegisterSession"] | null;
+            sortOrder: number;
+            /** @description Fundo de troco sugerido: o da abertura anterior deste caixa (RN-05.23); 0 sem ela. */
+            suggestedOpeningFloatCents: number;
             /** Format: uuid */
             unitId: string;
+            /** @description Versão do caixa, incrementada a cada mudança dele ou das aberturas. */
             version: number;
         };
+        CashRegisterClosePreview: {
+            /** @description Evento em andamento, só no último caixa ("Encerrar também o evento", RN-05.29). */
+            eventInProgress: {
+                contractorName: string;
+                /** Format: uuid */
+                id: string;
+            } | null;
+            /** @description Unidades em etapas não finais na unidade; só no último caixa ("Encerrar o preparo pendente", RN-04.08). 0 nos outros. */
+            itemsInProgress: number;
+            /** @description É o último caixa aberto da unidade: a confirmação mostra o resto (RN-05.29). */
+            lastOpenRegister: boolean;
+            /** @description Comandas `open`/`closing` da unidade: não impedem fechar e seguem abertas para o próximo dia ou outro caixa (RN-05.28). */
+            pendingTabs: components["schemas"]["PendingTab"][];
+            pendingTabsTotalCents: number;
+            session: components["schemas"]["CashRegisterSession"];
+        };
         CashRegisterCount: {
-            /** @description Quitações de fiado recebidas neste caixa (não estornadas), separadas do recebido das comandas do turno (RN-05.22). Já estão somadas no esperado. */
+            /** @description Quitações de fiado recebidas nesta abertura (não estornadas), separadas das vendas (RN-05.22). Já estão somadas no esperado. */
             creditSettlementsCents: number;
             /** @description Informado − esperado (RN-05.20). */
             differenceCents: number;
@@ -1998,51 +2287,195 @@ export interface components {
             informedCents: number;
             method: components["schemas"]["PaymentMethod"];
         };
-        CashRegisterDetail: {
-            cash: components["schemas"]["CashBreakdown"];
-            closedAt: string | null;
-            closedBy: components["schemas"]["ActorRef"] | null;
-            closingNote: string | null;
-            /** @description Conferência gravada no fechamento (vazia enquanto aberto). */
-            counts: components["schemas"]["CashRegisterCount"][];
-            /** @description Total de quitações de fiado recebidas neste caixa, em todas as formas (RN-05.22). */
-            creditSettlementsCents: number;
-            /** @description Esperado por forma, na ordem `cash`, `pix`, `credit_card`, `debit_card` (tabela da seção 5). */
-            expected: components["schemas"]["CashRegisterExpected"][];
-            /** Format: uuid */
-            id: string;
-            movements: components["schemas"]["CashMovement"][];
-            name: string;
-            /** Format: date-time */
-            openedAt: string;
-            /** @description Responsável: quem abriu (RN-05.17). */
-            openedBy: components["schemas"]["ActorRef"];
-            openingFloatCents: number;
-            /** @description Pagamentos recebidos neste caixa, inclusive os estornados. */
-            payments: components["schemas"]["Payment"][];
-            /** Format: uuid */
-            shiftId: string;
-            status: components["schemas"]["CashRegisterStatus"];
-            /** Format: uuid */
-            unitId: string;
-            version: number;
-        };
         CashRegisterExpected: {
-            /** @description Quitações de fiado recebidas neste caixa (não estornadas), separadas do recebido das comandas do turno (RN-05.22). Já estão somadas no esperado. */
+            /** @description Quitações de fiado recebidas nesta abertura (não estornadas), separadas das vendas (RN-05.22). Já estão somadas no esperado. */
             creditSettlementsCents: number;
             expectedCents: number;
             method: components["schemas"]["PaymentMethod"];
-            /** @description Pagamentos das comandas do turno nesta forma (sem quitações de fiado, sem fundo e movimentos). */
+            /** @description Pagamentos de comandas nesta forma (sem quitações de fiado, sem fundo e movimentos). */
             salesCents: number;
         };
         CashRegisterList: {
             data: components["schemas"]["CashRegister"][];
         };
+        /** @description `details` do 409 `CASH_REGISTER_REQUIRED`: os caixas abertos (RN-05.05). */
+        CashRegisterRequiredDetails: {
+            cashRegisters: {
+                /** Format: uuid */
+                id: string;
+                name: string;
+            }[];
+        };
+        /** @description Abertura de caixa: de abrir (fundo de troco) até fechar (conferência). */
+        CashRegisterSession: {
+            /**
+             * Format: date
+             * @description Dia de operação da abertura (RN-05.25).
+             */
+            businessDate: string;
+            cash: components["schemas"]["CashBreakdown"];
+            /** Format: uuid */
+            cashRegisterId: string;
+            closedAt: string | null;
+            closedBy: components["schemas"]["ActorRef"] | null;
+            closingNote: string | null;
+            /** @description Conferência gravada no fechamento (vazia enquanto aberta). */
+            counts: components["schemas"]["CashRegisterCount"][];
+            /** @description Total de quitações de fiado recebidas nesta abertura, em todas as formas (RN-05.22). */
+            creditSettlementsCents: number;
+            /** @description Soma das diferenças por forma; 0 enquanto aberta (RN-05.20). */
+            differenceCents: number;
+            /** @description Esperado por forma, na ordem `cash`, `pix`, `credit_card`, `debit_card` (tabela da seção 5). */
+            expected: components["schemas"]["CashRegisterExpected"][];
+            /** Format: uuid */
+            id: string;
+            /** @description Nome do caixa cadastrado. */
+            name: string;
+            /** @description Aberta e de um dia anterior a hoje: "Caixa 1 aberto desde ontem, 17:02" (RN-05.26). */
+            openSinceEarlierDay: boolean;
+            /** Format: date-time */
+            openedAt: string;
+            /** @description Responsável: quem abriu (RN-05.23). */
+            openedBy: components["schemas"]["ActorRef"];
+            /** @description Nome do responsável. */
+            openedByName: string | null;
+            openingFloatCents: number;
+            /** @description Comandas `open`/`closing` da unidade no fechamento (RN-05.28); `null` enquanto aberta. */
+            pendingTabsCount: number | null;
+            /** @description Valor total dessas comandas no fechamento (RN-05.28). */
+            pendingTabsTotalCents: number | null;
+            /** @description Pagamentos não estornados desta abertura, vendas e quitações. */
+            receivedCents: number;
+            status: components["schemas"]["CashRegisterSessionStatus"];
+            /** Format: uuid */
+            unitId: string;
+            version: number;
+        };
+        CashRegisterSessionDetail: {
+            /**
+             * Format: date
+             * @description Dia de operação da abertura (RN-05.25).
+             */
+            businessDate: string;
+            cash: components["schemas"]["CashBreakdown"];
+            /** Format: uuid */
+            cashRegisterId: string;
+            closedAt: string | null;
+            closedBy: components["schemas"]["ActorRef"] | null;
+            closingNote: string | null;
+            /** @description Conferência gravada no fechamento (vazia enquanto aberta). */
+            counts: components["schemas"]["CashRegisterCount"][];
+            /** @description Total de quitações de fiado recebidas nesta abertura, em todas as formas (RN-05.22). */
+            creditSettlementsCents: number;
+            /** @description Soma das diferenças por forma; 0 enquanto aberta (RN-05.20). */
+            differenceCents: number;
+            /** @description Esperado por forma, na ordem `cash`, `pix`, `credit_card`, `debit_card` (tabela da seção 5). */
+            expected: components["schemas"]["CashRegisterExpected"][];
+            /** Format: uuid */
+            id: string;
+            movements: components["schemas"]["CashMovement"][];
+            /** @description Nome do caixa cadastrado. */
+            name: string;
+            /** @description Aberta e de um dia anterior a hoje: "Caixa 1 aberto desde ontem, 17:02" (RN-05.26). */
+            openSinceEarlierDay: boolean;
+            /** Format: date-time */
+            openedAt: string;
+            /** @description Responsável: quem abriu (RN-05.23). */
+            openedBy: components["schemas"]["ActorRef"];
+            /** @description Nome do responsável. */
+            openedByName: string | null;
+            openingFloatCents: number;
+            /** @description Pagamentos recebidos nesta abertura, inclusive os estornados. */
+            payments: components["schemas"]["Payment"][];
+            /** @description Comandas `open`/`closing` da unidade no fechamento (RN-05.28); `null` enquanto aberta. */
+            pendingTabsCount: number | null;
+            /** @description Valor total dessas comandas no fechamento (RN-05.28). */
+            pendingTabsTotalCents: number | null;
+            /** @description Pagamentos não estornados desta abertura, vendas e quitações. */
+            receivedCents: number;
+            status: components["schemas"]["CashRegisterSessionStatus"];
+            /** Format: uuid */
+            unitId: string;
+            version: number;
+        };
         /**
-         * @description `open` recebe pagamentos e movimentos; `closed` não volta a abrir (RN-05.21).
+         * @description Situação da abertura de caixa: `open` recebe pagamentos e movimentos; `closed` não volta a abrir (RN-05.21): abre-se o caixa de novo, numa abertura nova.
          * @enum {string}
          */
-        CashRegisterStatus: "open" | "closed";
+        CashRegisterSessionStatus: "open" | "closed";
+        /** @description Aberturas de caixa do período, mais recentes primeiro, com os totais do período inteiro. */
+        CashSessionHistory: {
+            data: components["schemas"]["ReportCashSessionLine"][];
+            /** @description Cursor da próxima página; `null` na última. */
+            nextCursor: string | null;
+            period: {
+                /** Format: date */
+                from: string;
+                /** @enum {string} */
+                timeZone: "America/Sao_Paulo";
+                /**
+                 * Format: date
+                 * @description Inclusive.
+                 */
+                to: string;
+            };
+            totals: components["schemas"]["ReportTotals"];
+        };
+        /** @description Relatório do caixa (spec 07, seção 5). */
+        CashSessionReport: {
+            /** @description Esperado, informado e diferença de cada forma; vendas e quitações. */
+            byMethod: {
+                differenceCents: number | null;
+                expectedCents: number;
+                informedCents: number | null;
+                method: components["schemas"]["PaymentMethod"];
+                salesCents: number;
+                settlementsCents: number;
+            }[];
+            closedByActor: components["schemas"]["ReportActor"] | null;
+            movements: {
+                amountCents: number;
+                /** Format: date-time */
+                createdAt: string;
+                createdBy: components["schemas"]["ReportActor"];
+                /** Format: uuid */
+                id: string;
+                reason: string;
+                type: components["schemas"]["CashMovementType"];
+            }[];
+            /** @description Abertura em andamento (RN-07.06). */
+            partial: boolean;
+            /** @description Pagamentos da abertura, com os estornos marcados. */
+            payments: {
+                amountCents: number;
+                changeCents: number | null;
+                customerName: string;
+                isCreditSettlement: boolean;
+                method: components["schemas"]["PaymentMethod"];
+                /** Format: uuid */
+                paymentId: string;
+                /** Format: date-time */
+                receivedAt: string;
+                receivedBy: components["schemas"]["ReportActor"];
+                reversalReason: string | null;
+                reversedAt: string | null;
+                /** Format: uuid */
+                tabId: string;
+                tabNumber: number;
+            }[];
+            /** @description Comandas que seguiram abertas no fechamento (RN-05.28). */
+            pending: {
+                count: number;
+                totalCents: number;
+            } | null;
+            responsible: components["schemas"]["ReportActor"];
+            session: components["schemas"]["CashRegisterSession"];
+            /** @enum {string} */
+            timeZone: "America/Sao_Paulo";
+            /** @description Recebido (vendas e quitações) e diferença desta abertura; sem venda, porque uma comanda pode ser paga em mais de um caixa (RN-07.09). */
+            totals: components["schemas"]["ReportTotals"];
+            unitName: string;
+        };
         Category: {
             active: boolean;
             /**
@@ -2075,11 +2508,67 @@ export interface components {
                 informedCents: number;
                 method: components["schemas"]["PaymentMethod"];
             }[];
+            /**
+             * @description Só no último caixa aberto: encerra o evento em andamento (padrão `false`).
+             * @default false
+             */
+            finishEvent: boolean;
+            /**
+             * @description Só no último caixa aberto: leva os itens em preparo à etapa final (padrão `true`, RN-04.08).
+             * @default true
+             */
+            finishPendingItems: boolean;
             /** @description Observação; obrigatória quando alguma diferença não é zero. */
             note?: string;
             /** @description Versão que o app tem do registro. Se outro aparelho alterou antes, a API responde 409 `VERSION_CONFLICT` com `details.currentVersion`. Opcional. */
             version?: number;
         };
+        /** @description Evento contratado (spec 04, seção 3.3): contratante, datas, acordo informativo (RN-04.05) e tabela de preço. */
+        ContractedEvent: {
+            agreedAmountCents: number | null;
+            /** @description Quantidade combinada, comparada com o consumo no relatório (spec 07). */
+            agreedQuantity: number | null;
+            canceledAt: string | null;
+            contractorName: string;
+            /** @description Data final (eventos de mais de um dia). */
+            endsOn: string | null;
+            finishedAt: string | null;
+            finishedBy: components["schemas"]["ActorRef"] | null;
+            /** Format: uuid */
+            id: string;
+            limits: string | null;
+            modality: components["schemas"]["AgreementModality"];
+            notes: string | null;
+            /** @description Tabela de preço do evento; `null` = "Normal" (RN-04.32). */
+            priceList: {
+                /** Format: uuid */
+                id: string;
+                name: string;
+            } | null;
+            startedAt: string | null;
+            startedBy: components["schemas"]["ActorRef"] | null;
+            /**
+             * Format: date
+             * @description Dia de operação (AAAA-MM-DD, America/Sao_Paulo; RN-04.29).
+             */
+            startsOn: string;
+            status: components["schemas"]["ContractedEventStatus"];
+            /** Format: uuid */
+            unitId: string;
+            version: number;
+        };
+        ContractedEventActionRequestInput: {
+            /** @description Versão que o app tem do registro. Se outro aparelho alterou antes, a API responde 409 `VERSION_CONFLICT` com `details.currentVersion`. Opcional. */
+            version?: number;
+        };
+        ContractedEventList: {
+            data: components["schemas"]["ContractedEvent"][];
+        };
+        /**
+         * @description Situação do evento contratado (RN-04.34): `scheduled` (agendado) → `in_progress` (em andamento) → `finished` (encerrado); `scheduled` → `canceled`.
+         * @enum {string}
+         */
+        ContractedEventStatus: "scheduled" | "in_progress" | "finished" | "canceled";
         CreateAdminUserRequestInput: {
             email: string;
             name: string;
@@ -2099,6 +2588,12 @@ export interface components {
             organizationIds: string[];
             title: string;
         };
+        CreateCashRegisterRequestInput: {
+            /** @description De 1 a 40 caracteres, único na unidade (RN-05.17). */
+            name: string;
+            /** @description Posição na lista (1 é o primeiro). */
+            sortOrder?: number;
+        };
         CreateCategoryRequestInput: {
             active?: boolean;
             /**
@@ -2111,6 +2606,21 @@ export interface components {
             sortOrder?: number;
             /** Format: uuid */
             unitId: string;
+        };
+        /** @description Cadastro do evento (RN-04.05). */
+        CreateContractedEventRequestInput: {
+            agreedAmountCents?: number | null;
+            agreedQuantity?: number | null;
+            contractorName: string;
+            endsOn?: string | null;
+            /** @description Limites em texto livre (ex.: "500 espetos", "das 18h às 23h"). */
+            limits?: string | null;
+            modality: components["schemas"]["AgreementModality"];
+            notes?: string | null;
+            /** @description Tabela de preço ativa da unidade; sem ela, "Normal". */
+            priceListId?: string | null;
+            /** Format: date */
+            startsOn: string;
         };
         /** @description Cadastro (também o rápido, no pendurar): só o nome é obrigatório (CA-06.06). */
         CreateCustomerRequestInput: {
@@ -2197,7 +2707,7 @@ export interface components {
             amountCents?: number;
             /**
              * Format: uuid
-             * @description Caixa que recebe (RN-05.05). Opcional com um único caixa aberto no turno; obrigatório com mais de um (`CASH_REGISTER_REQUIRED`).
+             * @description Caixa cadastrado que recebe; o pagamento entra na abertura em andamento dele (RN-05.05). Opcional com um único caixa aberto na unidade; obrigatório com mais de um (`CASH_REGISTER_REQUIRED`).
              */
             cashRegisterId?: string;
             method: components["schemas"]["PaymentMethod"];
@@ -2205,6 +2715,13 @@ export interface components {
             tenderedCents?: number;
             /** @description Versão da comanda que o aparelho tem (opcional). Diferente da atual: 409 `TAB_CHANGED` com `details.currentVersion`. */
             version?: number;
+        };
+        CreatePriceListRequestInput: {
+            active?: boolean;
+            /** @description De 1 a 30 caracteres, único na unidade; "Normal" é reservado (RN-03.20). */
+            name: string;
+            /** @description Posição na lista (1 é o primeiro). */
+            sortOrder?: number;
         };
         CreateProductRequestInput: {
             active?: boolean;
@@ -2235,7 +2752,11 @@ export interface components {
             username: string;
         };
         CreateStationRequestInput: {
+            /** @description Minutos desde o envio do pedido a partir dos quais o cartão fica em atenção (RN-03.25); de 1 até o atraso − 1. */
+            attentionAfterMinutes?: number;
             kind: components["schemas"]["StationKind"];
+            /** @description Só em `queue`. Sem os limites, a estação recebe o atraso padrão da unidade e a atenção na metade (RN-03.25). */
+            lateAfterMinutes?: number;
             name: string;
             /** @description Posição na lista (1 é o primeiro). */
             sortOrder?: number;
@@ -2246,15 +2767,11 @@ export interface components {
         };
         CreateUnitRequestInput: {
             /**
-             * @description Minutos a partir dos quais um item na estação aparece como atrasado (1 a 240).
+             * @description Padrão do atraso das estações novas da unidade, em minutos (1 a 240); a atenção nasce na metade (RN-03.25).
              * @default 15
              */
             lateAfterMinutes: number;
             name: string;
-        };
-        CurrentShift: {
-            /** @description `null` sem turno aberto. */
-            shift: components["schemas"]["Shift"] | null;
         };
         /** @description Cliente do fiado, por unidade (RN-06.01). Na busca, aparece com os dados de identificação que tiver, para não confundir homônimos (RN-06.02). */
         Customer: {
@@ -2316,6 +2833,53 @@ export interface components {
             /** Format: date-time */
             oldestCreditAt: string;
             tabCount: number;
+        };
+        /** @description Dias de operação do período, um por unidade, mais recentes primeiro, com os totais do período inteiro (spec 07, seção 7). */
+        DayHistory: {
+            data: components["schemas"]["DayHistoryRow"][];
+            /** @description Cursor da próxima página; `null` na última. */
+            nextCursor: string | null;
+            period: {
+                /** Format: date */
+                from: string;
+                /** @enum {string} */
+                timeZone: "America/Sao_Paulo";
+                /**
+                 * Format: date
+                 * @description Inclusive.
+                 */
+                to: string;
+            };
+            totals: components["schemas"]["ReportTotals"];
+        };
+        DayHistoryRow: {
+            /** Format: date */
+            businessDate: string;
+            /** @description Diferença de caixa: soma de informado − esperado das aberturas fechadas (RN-07.08, CA-07.04). */
+            cashDifferenceCents: number;
+            /** @description Descontos das comandas que contam na venda. */
+            discountsCents: number;
+            /** @description Pendurado: saldo das comandas penduradas no período, no momento em que foram penduradas (RN-07.03). */
+            onCreditCents: number;
+            /** @description Dia atual com caixa aberto (RN-07.06). */
+            partial: boolean;
+            /** @description Recebido: pagamentos não estornados das aberturas de caixa do período, vendas e quitações (RN-07.02). */
+            receivedCents: number;
+            /** @description Parte do recebido que é de comandas. */
+            receivedSalesCents: number;
+            /** @description Parte do recebido que é quitação de fiado (RN-07.02). */
+            receivedSettlementsCents: number;
+            /** @description Venda: total, após desconto, das comandas que passaram a `paid` ou `on_credit` no período (`settled` conta pelo dia em que foi pendurada), RN-07.01. */
+            salesCents: number;
+            /** @description Comandas que contam na venda. */
+            tabCount: number;
+            /** Format: uuid */
+            unitId: string;
+            unitName: string;
+            /** @description Perdas: itens cancelados marcados como perda, pelo dia do cancelamento (RN-07.04). */
+            wasteCents: number;
+            /** @description Unidades perdidas (RN-07.04). */
+            wasteQuantity: number;
         };
         /**
          * @description Desconto da comanda (spec 05): `amount` em centavos ou `percent` de 1 a 100.
@@ -2414,7 +2978,7 @@ export interface components {
                 message: string;
             };
         };
-        /** @description Caixa fechado, com a conferência em `counts` (sala `unit`, spec 05). */
+        /** @description Caixa fechado: `session` é a abertura fechada, com a conferência em `counts` e os pendentes (sala `unit`, spec 05). */
         EventCashRegisterClosed: {
             data: components["schemas"]["CashRegister"];
             /** Format: date-time */
@@ -2428,7 +2992,7 @@ export interface components {
             /** @description Versão do recurso. O app ignora eventos com versão menor que a do estado que já tem. */
             version: number;
         };
-        /** @description Caixa aberto no turno (sala `unit`, spec 05). `version` é a do caixa. */
+        /** @description Caixa aberto: `session` é a abertura nova (sala `unit`, spec 05). `version` é a do caixa. */
         EventCashRegisterOpened: {
             data: components["schemas"]["CashRegister"];
             /** Format: date-time */
@@ -2442,7 +3006,7 @@ export interface components {
             /** @description Versão do recurso. O app ignora eventos com versão menor que a do estado que já tem. */
             version: number;
         };
-        /** @description Esperado do caixa mudou: pagamento, estorno, sangria ou suprimento (sala `unit`, spec 05). */
+        /** @description Caixa alterado: pagamento, estorno, sangria ou suprimento na abertura em andamento, ou o cadastro do caixa (sala `unit`, spec 05). */
         EventCashRegisterUpdated: {
             data: components["schemas"]["CashRegister"];
             /** Format: date-time */
@@ -2455,6 +3019,54 @@ export interface components {
             unitId: string;
             /** @description Versão do recurso. O app ignora eventos com versão menor que a do estado que já tem. */
             version: number;
+        };
+        /** @description Evento contratado criado, alterado, iniciado, encerrado ou cancelado (sala `unit`). `version` é a do evento. */
+        EventContractedEventUpdated: {
+            data: components["schemas"]["ContractedEvent"];
+            /** Format: date-time */
+            occurredAt: string;
+            /** Format: uuid */
+            organizationId: string;
+            /** @constant */
+            type: "event.updated";
+            /** Format: uuid */
+            unitId: string;
+            /** @description Versão do recurso. O app ignora eventos com versão menor que a do estado que já tem. */
+            version: number;
+        };
+        /** @description Eventos que começam no período, mais recentes primeiro; os totais são os do período inteiro (dias de operação). */
+        EventHistory: {
+            data: components["schemas"]["EventHistoryRow"][];
+            /** @description Cursor da próxima página; `null` na última. */
+            nextCursor: string | null;
+            period: {
+                /** Format: date */
+                from: string;
+                /** @enum {string} */
+                timeZone: "America/Sao_Paulo";
+                /**
+                 * Format: date
+                 * @description Inclusive.
+                 */
+                to: string;
+            };
+            totals: components["schemas"]["ReportTotals"];
+        };
+        EventHistoryRow: {
+            agreedQuantity: number | null;
+            consumedQuantity: number;
+            contractorName: string;
+            endsOn: string | null;
+            /** Format: uuid */
+            eventId: string;
+            quantityDifference: number | null;
+            salesCents: number;
+            /** Format: date */
+            startsOn: string;
+            status: components["schemas"]["ContractedEventStatus"];
+            /** Format: uuid */
+            unitId: string;
+            unitName: string;
         };
         /** @description Qualquer outra alteração no cardápio da unidade. `version` é a versão do cardápio (`GET /units/{id}/menu`): o app recarrega o cardápio se a versão dele for menor. */
         EventMenuUpdated: {
@@ -2569,6 +3181,52 @@ export interface components {
             /** @description Versão do recurso. O app ignora eventos com versão menor que a do estado que já tem. */
             version: number;
         };
+        /** @description Relatório do evento (spec 07, seção 6). */
+        EventReport: {
+            agreement: {
+                /** @description Valor consumido (= venda do evento). */
+                consumedCents: number;
+                /** @description Unidades não canceladas das comandas do evento que contam na venda. */
+                consumedQuantity: number;
+                /** @description Quantidade combinada − consumida (CA-07.03); negativa se passou do combinado; `null` sem quantidade combinada. */
+                quantityDifference: number | null;
+            };
+            cancellations: {
+                items: components["schemas"]["ReportCanceledItem"][];
+                tabs: components["schemas"]["ReportCanceledTab"][];
+                wasteCents: number;
+                wasteQuantity: number;
+            };
+            credit: {
+                onCreditCents: number;
+                /** @description Quitações não estornadas recebidas. */
+                settlements: components["schemas"]["ReportSettlement"][];
+                settlementsCents: number;
+                /** @description Comandas penduradas (hoje `on_credit` ou já `settled`). */
+                tabs: components["schemas"]["ReportCreditTab"][];
+            };
+            event: components["schemas"]["ContractedEvent"];
+            /** @description Evento em andamento (RN-07.06). */
+            partial: boolean;
+            products: components["schemas"]["ReportProductLine"][];
+            summary: components["schemas"]["ReportSummary"];
+            tabs: {
+                /** @description Saldo atual (as penduradas, a receber). */
+                balanceCents: number;
+                /** Format: date */
+                businessDate: string;
+                customerName: string;
+                number: number;
+                paidCents: number;
+                status: components["schemas"]["TabStatus"];
+                /** Format: uuid */
+                tabId: string;
+                totalCents: number;
+            }[];
+            /** @enum {string} */
+            timeZone: "America/Sao_Paulo";
+            unitName: string;
+        };
         /** @description As unidades ou estações que o usuário acessa mudaram. A sessão continua válida: o servidor desconecta o socket logo depois, e o app busca `GET /auth/me` e reconecta (`socket.connect()`), entrando nas salas do novo acesso (spec 01, seção 10; spec 03). */
         EventSessionAccessChanged: {
             data: {
@@ -2602,48 +3260,6 @@ export interface components {
             occurredAt: string;
             /** @constant */
             type: "session.revoked";
-        };
-        /** @description Turno fechado (sala `unit`). Itens que ainda não estavam na etapa final foram levados a ela (RN-04.08): as filas das estações ficam vazias. */
-        EventShiftClosed: {
-            data: components["schemas"]["Shift"];
-            /** Format: date-time */
-            occurredAt: string;
-            /** Format: uuid */
-            organizationId: string;
-            /** @constant */
-            type: "shift.closed";
-            /** Format: uuid */
-            unitId: string;
-            /** @description Versão do recurso. O app ignora eventos com versão menor que a do estado que já tem. */
-            version: number;
-        };
-        /** @description Turno aberto na unidade (sala `unit`). `version` é a versão do turno. */
-        EventShiftOpened: {
-            data: components["schemas"]["Shift"];
-            /** Format: date-time */
-            occurredAt: string;
-            /** Format: uuid */
-            organizationId: string;
-            /** @constant */
-            type: "shift.opened";
-            /** Format: uuid */
-            unitId: string;
-            /** @description Versão do recurso. O app ignora eventos com versão menor que a do estado que já tem. */
-            version: number;
-        };
-        /** @description Proposta (não listado na spec 04): tabela de preços do turno alterada (RN-04.06). O balcão passa a mostrar os preços novos. */
-        EventShiftUpdated: {
-            data: components["schemas"]["Shift"];
-            /** Format: date-time */
-            occurredAt: string;
-            /** Format: uuid */
-            organizationId: string;
-            /** @constant */
-            type: "shift.updated";
-            /** Format: uuid */
-            unitId: string;
-            /** @description Versão do recurso. O app ignora eventos com versão menor que a do estado que já tem. */
-            version: number;
         };
         /** @description Comanda criada, com totais (sala `unit`). */
         EventTabCreated: {
@@ -2686,6 +3302,20 @@ export interface components {
             organizationId: string;
             /** @constant */
             type: "unit.config_updated";
+            /** Format: uuid */
+            unitId: string;
+            /** @description Versão do recurso. O app ignora eventos com versão menor que a do estado que já tem. */
+            version: number;
+        };
+        /** @description Situação da operação da unidade (mesmo formato do `GET /units/{id}/operation`), sala `unit`. Sai ao abrir ou fechar caixa, trocar a tabela vigente, iniciar ou encerrar evento e mudar o dia de operação: os balcões recarregam os preços (spec 04, seção 7.1). `version` é a versão da operação. */
+        EventUnitOperationUpdated: {
+            data: components["schemas"]["UnitOperation"];
+            /** Format: date-time */
+            occurredAt: string;
+            /** Format: uuid */
+            organizationId: string;
+            /** @constant */
+            type: "unit.operation_updated";
             /** Format: uuid */
             unitId: string;
             /** @description Versão do recurso. O app ignora eventos com versão menor que a do estado que já tem. */
@@ -2770,6 +3400,14 @@ export interface components {
         /** @description Cardápio da unidade em ordem. O dono recebe tudo (com `active`); o colaborador só categorias, produtos e modificadores ativos (RN-03.10). */
         Menu: {
             categories: components["schemas"]["MenuCategory"][];
+            /** @description Tabela vigente da unidade (RN-04.06); `null` = "Normal". */
+            currentPriceListId: string | null;
+            /** @description Tabela efetiva: a do evento em andamento, ou a vigente (RN-04.32); `null` = "Normal". */
+            effectivePriceListId: string | null;
+            /** @description Nome da tabela efetiva para a faixa do balcão ("Normal", "Evento"; RN-04.33). */
+            effectivePriceListName: string;
+            /** @description Tabelas de preço da unidade: todas para o dono, só as ativas para o colaborador. */
+            priceLists: components["schemas"]["PriceList"][];
             /** Format: uuid */
             unitId: string;
             /** @description Versão do cardápio (`menu.updated`). */
@@ -2795,6 +3433,8 @@ export interface components {
             /** Format: uuid */
             categoryId: string;
             description: string | null;
+            /** @description Preço que um item novo usa agora: o da tabela efetiva da unidade ou o preço normal (RN-04.32, RN-04.33). */
+            effectivePriceCents: number;
             /** Format: uuid */
             id: string;
             modifierGroups: components["schemas"]["ModifierGroup"][];
@@ -2805,6 +3445,8 @@ export interface components {
              */
             prepStationId: string;
             priceCents: number;
+            /** @description Preços do produto nas tabelas da unidade que aparecem em `priceLists` (sem linha = preço normal, RN-03.21). */
+            prices: components["schemas"]["ProductListPrice"][];
             soldOut: boolean;
             sortOrder: number;
             /** @description Estação de preparo própria; `null` usa a da categoria. */
@@ -2814,18 +3456,13 @@ export interface components {
             /** @description Versão do produto (`product.sold_out_changed`). */
             version: number;
         };
-        /** @description Painel de métricas (spec 02, seção 6). Turnos e comandas vêm das specs 04 a 06; até lá ficam em zero. */
+        /** @description Painel de métricas (spec 02, seção 6). Dias de operação e comandas vêm das specs 04 a 06. */
         MetricsOverview: {
-            /** @description Organizações com pelo menos um turno aberto no período. */
+            /** @description Organizações com pelo menos um caixa aberto no período. */
             activeOrganizations: number;
             /** @description Valor vendido / comandas, em centavos (0 sem comandas). */
             averageTicketCents: number;
-            /** @description Contagem atual por situação da assinatura. */
-            organizationsByStatus: {
-                [key: string]: number;
-            };
-            period: components["schemas"]["MetricsPeriod"];
-            shifts: {
+            operationDays: {
                 byWeek: {
                     count: number;
                     /**
@@ -2834,9 +3471,14 @@ export interface components {
                      */
                     weekStart: string;
                 }[];
-                /** @description Turnos fechados no período. */
+                /** @description Dias de operação: pares (unidade, dia de operação) com caixa aberto no período (spec 02, seção 6). */
                 total: number;
             };
+            /** @description Contagem atual por situação da assinatura. */
+            organizationsByStatus: {
+                [key: string]: number;
+            };
+            period: components["schemas"]["MetricsPeriod"];
             /** @description Valor vendido registrado, em centavos. */
             soldCents: number;
             /** @description Comandas pagas, penduradas ou quitadas no período. */
@@ -2889,30 +3531,19 @@ export interface components {
             sortOrder: number;
         };
         OpenCashRegisterRequestInput: {
-            /** @description Padrão: "Caixa 1", "Caixa 2"… (RN-05.17). */
-            name?: string;
-            /** @description Fundo de troco em dinheiro, zero ou mais (RN-05.17). */
+            /** @description Fundo de troco em dinheiro, zero ou mais (RN-05.23). */
             openingFloatCents: number;
-        };
-        OpenShiftRequestInput: {
-            /** @description Obrigatório no turno contratado; não vale na venda direta (RN-04.05). */
-            agreement?: {
-                agreedAmountCents?: number | null;
-                agreedQuantity?: number | null;
-                contractorName: string;
-                limits?: string | null;
-                modality: components["schemas"]["AgreementModality"];
-                notes?: string | null;
-            } | null;
-            /** @default [] */
-            prices: components["schemas"]["ShiftPriceInput"][];
-            type: components["schemas"]["ShiftType"];
+            /**
+             * Format: uuid
+             * @description Inicia junto o evento agendado da unidade ("Hoje tem o evento… Iniciar junto?", RN-04.35).
+             */
+            startEventId?: string;
         };
         /**
-         * @description Códigos de erro da operação (specs 04 a 06): turno, comandas, pedidos, itens, descontos, pagamentos, caixas e fiado. `SHIFT_OPEN` (spec 03) e `ORGANIZATION_SUSPENDED`/`ORGANIZATION_CANCELED` (spec 02) também aparecem nestas rotas.
+         * @description Códigos de erro da operação (specs 04 a 06): caixas, eventos, tabela vigente, comandas, pedidos, itens, descontos, pagamentos e fiado. Códigos da configuração (`SetupErrorCode`, como `CASH_REGISTER_OPEN`) e da assinatura (`ORGANIZATION_SUSPENDED`/`ORGANIZATION_CANCELED`, spec 02) também aparecem nestas rotas.
          * @enum {string}
          */
-        OperationErrorCode: "SHIFT_ALREADY_OPEN" | "UNIT_INACTIVE" | "SHIFT_CLOSED" | "SHIFT_HAS_PENDING_ITEMS" | "INVALID_SHIFT_PRICE" | "TAB_NOT_OPEN" | "TAB_NOT_CLOSING" | "TAB_CLOSED" | "TAB_HAS_ACTIVE_ITEMS" | "TAB_CHANGED" | "ORDER_REJECTED" | "ITEM_CHANGED" | "ITEM_CANCELED" | "ITEM_IN_FINAL_STAGE" | "NO_PREVIOUS_STAGE" | "INVALID_QUANTITY" | "NO_CASH_REGISTER_OPEN" | "CASH_REGISTER_REQUIRED" | "INVALID_CASH_REGISTER" | "CASH_REGISTER_CLOSED" | "CASH_REGISTER_NAME_TAKEN" | "WITHDRAWAL_EXCEEDS_CASH" | "CLOSING_NOTE_REQUIRED" | "PAYMENT_EXCEEDS_BALANCE" | "TAB_NOTHING_TO_PAY" | "PAYMENT_INSUFFICIENT" | "PAYMENT_ALREADY_REVERSED" | "TAB_PAYMENTS_EXCEED_TOTAL" | "TAB_HAS_PAYMENTS" | "TAB_PAID" | "TAB_PAY_FIRST" | "CUSTOMER_PHONE_TAKEN" | "CUSTOMER_CPF_TAKEN" | "CUSTOMER_HAS_RECEIVABLE" | "CUSTOMER_REMOVED" | "INVALID_CUSTOMER" | "CUSTOMER_REQUIRED" | "NO_SHIFT_OPEN" | "CUSTOMER_CHANGED";
+        OperationErrorCode: "NO_CASH_REGISTER_OPEN" | "UNIT_INACTIVE" | "CASH_REGISTER_ALREADY_OPEN" | "CASH_REGISTER_INACTIVE" | "EVENT_IN_PROGRESS" | "EVENT_ALREADY_IN_PROGRESS" | "EVENT_NOT_SCHEDULED" | "EVENT_NOT_IN_PROGRESS" | "EVENT_CLOSED" | "INVALID_PRICE_LIST" | "TAB_NOT_OPEN" | "TAB_NOT_CLOSING" | "TAB_CLOSED" | "TAB_HAS_ACTIVE_ITEMS" | "TAB_CHANGED" | "ORDER_REJECTED" | "ITEM_CHANGED" | "ITEM_CANCELED" | "ITEM_IN_FINAL_STAGE" | "NO_PREVIOUS_STAGE" | "INVALID_QUANTITY" | "ITEM_NOT_AT_STATION" | "CASH_REGISTER_REQUIRED" | "INVALID_CASH_REGISTER" | "CASH_REGISTER_CLOSED" | "WITHDRAWAL_EXCEEDS_CASH" | "CLOSING_NOTE_REQUIRED" | "PAYMENT_EXCEEDS_BALANCE" | "TAB_NOTHING_TO_PAY" | "PAYMENT_INSUFFICIENT" | "PAYMENT_ALREADY_REVERSED" | "TAB_PAYMENTS_EXCEED_TOTAL" | "TAB_HAS_PAYMENTS" | "TAB_PAID" | "TAB_PAY_FIRST" | "CUSTOMER_PHONE_TAKEN" | "CUSTOMER_CPF_TAKEN" | "CUSTOMER_HAS_RECEIVABLE" | "CUSTOMER_REMOVED" | "INVALID_CUSTOMER" | "CUSTOMER_REQUIRED" | "CUSTOMER_CHANGED";
         Order: {
             completedAt: string | null;
             createdBy: components["schemas"]["ActorRef"];
@@ -2920,11 +3551,10 @@ export interface components {
             /** Format: uuid */
             id: string;
             items: components["schemas"]["OrderItem"][];
+            /** @description Número do pedido na comanda; a partir do 2 é um "Adicional" (RN-04.44). */
             numberInTab: number;
             /** Format: date-time */
             sentAt: string;
-            /** Format: uuid */
-            shiftId: string;
             status: components["schemas"]["OrderStatus"];
             /** Format: uuid */
             tabId: string;
@@ -2934,15 +3564,19 @@ export interface components {
             version: number;
         };
         OrderItem: {
+            /** @description Quando o item entra em atenção: envio + `attentionAfterMinutes` da estação de preparo (RN-04.23; no balcão vale a estação de preparo). `null` na etapa final ou cancelado. */
+            attentionAt: string | null;
             cancelReason: string | null;
             canceledAt: string | null;
+            /** @description Dia de operação do cancelamento (RN-04.27, RN-04.30). */
+            canceledBusinessDate: string | null;
             canceledBy: components["schemas"]["ActorRef"] | null;
             customerName: string;
             /** Format: uuid */
             id: string;
             /** @description Atrasado no momento da resposta (CA-04.11). */
             isLate: boolean;
-            /** @description Quando o item passa a estar atrasado: envio + `lateAfterMinutes` da unidade (RN-04.23). `null` na etapa final ou cancelado. */
+            /** @description Quando o item passa a estar atrasado: envio + `lateAfterMinutes` da estação de preparo (RN-04.23). `null` na etapa final ou cancelado. */
             lateAt: string | null;
             modifiers: components["schemas"]["OrderItemModifier"][];
             note: string | null;
@@ -2954,6 +3588,8 @@ export interface components {
              * @description Estação de preparo resolvida no envio.
              */
             prepStationId: string;
+            /** @description Tabela de preço cujo preço foi usado (RN-04.18); `null` = preço normal. */
+            priceListId: string | null;
             /** Format: uuid */
             productId: string;
             /** @description Cópia do nome no momento da venda (RN-04.18). */
@@ -2981,7 +3617,7 @@ export interface components {
             totalCents: number;
             /** Format: uuid */
             unitId: string;
-            /** @description Preço unitário vigente no envio: do turno ou do cardápio (RN-04.18). */
+            /** @description Preço unitário no envio: o da tabela efetiva da unidade, ou o preço normal quando o produto não tem preço nela (RN-04.18). */
             unitPriceCents: number;
             version: number;
             /** @description Cancelado depois de sair da primeira etapa: perda (RN-04.27). */
@@ -3038,8 +3674,8 @@ export interface components {
             lastAccessAt: string | null;
             name: string;
             owner: components["schemas"]["OrganizationOwner"] | null;
-            /** @description Últimos 10 turnos, do mais novo para o mais antigo. */
-            recentShifts: components["schemas"]["OrganizationShiftSummary"][];
+            /** @description Últimos 10 dias de operação (unidade, dia, venda), do mais novo. */
+            recentOperationDays: components["schemas"]["OrganizationOperationDay"][];
             subscriptionStatus: components["schemas"]["SubscriptionStatus"];
             /** @description Motivo da suspensão ou do cancelamento. */
             suspendedReason: string | null;
@@ -3059,6 +3695,19 @@ export interface components {
             search?: string;
             status?: components["schemas"]["SubscriptionStatus"];
         };
+        /** @description Dia de operação no detalhe da organização (spec 02, seção 4). */
+        OrganizationOperationDay: {
+            /**
+             * Format: date
+             * @description Dia de operação.
+             */
+            businessDate: string;
+            /** @description Venda do dia (spec 07, RN-07.01). */
+            salesCents: number;
+            /** Format: uuid */
+            unitId: string;
+            unitName: string;
+        };
         OrganizationOwner: {
             active: boolean;
             email: string;
@@ -3072,14 +3721,6 @@ export interface components {
             data: components["schemas"]["OrganizationSummary"][];
             /** @description Cursor da próxima página; `null` na última. */
             nextCursor: string | null;
-        };
-        /** @description Turno no detalhe da organização (spec 04). */
-        OrganizationShiftSummary: {
-            closedAt: string | null;
-            /** Format: uuid */
-            id: string;
-            /** Format: date-time */
-            openedAt: string;
         };
         OrganizationSummary: {
             accessCode: string;
@@ -3102,9 +3743,10 @@ export interface components {
         OrganizationUsage: {
             lastAccessAt: string | null;
             name: string;
+            /** @description Dias de operação no período. */
+            operationDays: number;
             /** Format: uuid */
             organizationId: string;
-            shifts: number;
             soldCents: number;
             subscriptionStatus: components["schemas"]["SubscriptionStatus"];
             tabs: number;
@@ -3129,7 +3771,7 @@ export interface components {
              * @default name
              * @enum {string}
              */
-            sort: "name" | "shifts" | "tabs" | "soldCents" | "lastAccessAt";
+            sort: "name" | "operationDays" | "tabs" | "soldCents" | "lastAccessAt";
             /**
              * Format: date
              * @description Último dia, inclusive (AAAA-MM-DD, horário de Brasília). Padrão: hoje.
@@ -3241,7 +3883,7 @@ export interface components {
         PayFirstRequestInput: {
             /**
              * Format: uuid
-             * @description Caixa que recebe (RN-05.05). Opcional com um único caixa aberto no turno; obrigatório com mais de um (`CASH_REGISTER_REQUIRED`).
+             * @description Caixa cadastrado que recebe; o pagamento entra na abertura em andamento dele (RN-05.05). Opcional com um único caixa aberto na unidade; obrigatório com mais de um (`CASH_REGISTER_REQUIRED`).
              */
             cashRegisterId?: string;
             /** @description Nome do cliente, de 1 a 40 caracteres (RN-04.10). */
@@ -3262,8 +3904,17 @@ export interface components {
         Payment: {
             /** @description Valor aplicado à comanda (RN-05.09). */
             amountCents: number;
-            /** Format: uuid */
+            /**
+             * Format: uuid
+             * @description Caixa cadastrado dessa abertura.
+             */
             cashRegisterId: string;
+            cashRegisterName: string;
+            /**
+             * Format: uuid
+             * @description Abertura de caixa em que o dinheiro entrou (RN-05.05).
+             */
+            cashRegisterSessionId: string;
             /** @description Só dinheiro: troco (`tenderedCents − amountCents`), exibido em destaque. */
             changeCents: number | null;
             /** Format: date-time */
@@ -3279,11 +3930,6 @@ export interface components {
             /** @description Estornado (RN-05.15): o pagamento continua registrado e sai do saldo e do caixa. */
             reversedAt: string | null;
             reversedBy: components["schemas"]["ActorRef"] | null;
-            /**
-             * Format: uuid
-             * @description Turno em que o dinheiro entrou.
-             */
-            shiftId: string;
             /** Format: uuid */
             tabId: string;
             tabNumber: number;
@@ -3300,6 +3946,22 @@ export interface components {
             /** @description A comanda depois do pagamento (`paid` com saldo zero). */
             tab: components["schemas"]["Tab"];
         };
+        /** @description Comanda que segue aberta (RN-05.28). */
+        PendingTab: {
+            /**
+             * Format: date
+             * @description Desde quando (dia de operação).
+             */
+            businessDate: string;
+            customerName: string;
+            /** Format: uuid */
+            id: string;
+            number: number;
+            /** Format: date-time */
+            openedAt: string;
+            status: components["schemas"]["TabStatus"];
+            totalCents: number;
+        };
         /**
          * @description Permissão do admin da plataforma (`recurso:ação`, spec 02, seção 3.2). Catálogo fixo no código da API (RN-02.03).
          * @enum {string}
@@ -3312,6 +3974,38 @@ export interface components {
         PermissionInfo: {
             description: string;
             key: components["schemas"]["Permission"];
+        };
+        /** @description Tabela de preço da unidade (spec 03, seção 5.3). */
+        PriceList: {
+            active: boolean;
+            /** @description É a tabela vigente da unidade (RN-04.06). */
+            current: boolean;
+            /** Format: uuid */
+            id: string;
+            name: string;
+            /** @description Quantos produtos têm preço nesta tabela. */
+            productCount: number;
+            sortOrder: number;
+            /** Format: uuid */
+            unitId: string;
+            version: number;
+        };
+        PriceListList: {
+            data: components["schemas"]["PriceList"][];
+        };
+        /** @description A tabela com os preços que ela tem. */
+        PriceListPrices: {
+            priceList: components["schemas"]["PriceList"];
+            prices: {
+                priceCents: number;
+                /** Format: uuid */
+                productId: string;
+            }[];
+        };
+        PriceListRef: {
+            /** Format: uuid */
+            id: string;
+            name: string;
         };
         Product: {
             active: boolean;
@@ -3339,9 +4033,20 @@ export interface components {
         ProductList: {
             data: components["schemas"]["Product"][];
         };
+        ProductListPrice: {
+            /** @description Preço do produto nesta tabela (RN-03.21). */
+            priceCents: number;
+            /** Format: uuid */
+            priceListId: string;
+        };
         ProductOrderRequestInput: {
             /** @description Todos os produtos da categoria, na nova ordem. */
             productIds: string[];
+        };
+        ProductPrices: {
+            prices: components["schemas"]["ProductListPrice"][];
+            /** Format: uuid */
+            productId: string;
         };
         PublishAnnouncementRequestInput: {
             /**
@@ -3349,6 +4054,12 @@ export interface components {
              * @description Data e hora da publicação. Ausente ou no passado: publica agora; no futuro: agenda.
              */
             publishAt?: string;
+        };
+        PutCurrentPriceListRequestInput: {
+            /** @description Tabela de preço ativa da unidade, ou `null` para "Normal" (RN-04.31). */
+            priceListId: string | null;
+            /** @description Versão da operação que o aparelho tem (`UnitOperation.version`). Opcional. */
+            version?: number;
         };
         /** @description Aplica ou substitui o desconto da comanda (RN-05.01). */
         PutDiscountRequestInput: {
@@ -3367,17 +4078,29 @@ export interface components {
         PutOnCreditRequestInput: {
             /**
              * Format: uuid
-             * @description Cliente da unidade (RN-06.05). Opcional só no turno contratado `consumption_billed`: sem ele, a comanda vai para o cliente com o nome do contratante, criado se preciso (RN-06.08).
+             * @description Cliente da unidade (RN-06.05). Opcional só na comanda de um evento `consumption_billed`: sem ele, a comanda vai para o cliente com o nome do contratante, criado se preciso (RN-06.08).
              */
             customerId?: string;
             /** @description Versão da comanda que o aparelho tem (opcional; `TAB_CHANGED`). */
             version?: number;
         };
-        PutShiftPricesRequestInput: {
-            /** @description A tabela inteira; substitui a anterior. */
-            prices: components["schemas"]["ShiftPriceInput"][];
-            /** @description Versão que o app tem do registro. Se outro aparelho alterou antes, a API responde 409 `VERSION_CONFLICT` com `details.currentVersion`. Opcional. */
-            version?: number;
+        /** @description Preços de vários produtos numa tabela, salvos de uma vez (RN-03.22). */
+        PutPriceListPricesRequestInput: {
+            prices: {
+                /** @description Preço em centavos; `null` remove o preço da tabela (o produto volta ao preço normal). */
+                priceCents: number | null;
+                /** Format: uuid */
+                productId: string;
+            }[];
+        };
+        /** @description Preços de um produto em várias tabelas, do editor do produto (RN-03.22). */
+        PutProductPricesRequestInput: {
+            prices: {
+                /** @description Preço em centavos; `null` remove o preço da tabela (o produto volta ao preço normal). */
+                priceCents: number | null;
+                /** Format: uuid */
+                priceListId: string;
+            }[];
         };
         PutStaffPermissionsRequestInput: {
             /** @description Todas as unidades liberadas (substitui as atuais). */
@@ -3486,36 +4209,28 @@ export interface components {
             /** Format: uuid */
             tabId: string;
         };
-        ReportCashRegister: {
-            cash: components["schemas"]["CashBreakdown"];
-            closedAt: string | null;
-            closedBy: components["schemas"]["ActorRef"] | null;
-            closedByActor: components["schemas"]["ReportActor"] | null;
-            closingNote: string | null;
-            /** @description Conferência gravada no fechamento (vazia enquanto aberto). */
-            counts: components["schemas"]["CashRegisterCount"][];
-            /** @description Total de quitações de fiado recebidas neste caixa, em todas as formas (RN-05.22). */
-            creditSettlementsCents: number;
-            /** @description Soma das diferenças por forma; 0 enquanto aberto (CA-07.04). */
-            differenceCents: number;
-            /** @description Esperado por forma, na ordem `cash`, `pix`, `credit_card`, `debit_card` (tabela da seção 5). */
-            expected: components["schemas"]["CashRegisterExpected"][];
+        /** @description Uma abertura de caixa; tocar abre o relatório do caixa. */
+        ReportCashSessionLine: {
+            /** Format: date */
+            businessDate: string;
             /** Format: uuid */
-            id: string;
+            cashRegisterId: string;
+            closedAt: string | null;
+            /** @description 0 enquanto aberta (RN-07.08). */
+            differenceCents: number;
             name: string;
             /** Format: date-time */
             openedAt: string;
-            /** @description Responsável: quem abriu (RN-05.17). */
-            openedBy: components["schemas"]["ActorRef"];
-            openingFloatCents: number;
-            /** @description Quem abriu o caixa (RN-05.17). */
+            pendingTabsCount: number | null;
+            pendingTabsTotalCents: number | null;
+            receivedCents: number;
             responsible: components["schemas"]["ReportActor"];
             /** Format: uuid */
-            shiftId: string;
-            status: components["schemas"]["CashRegisterStatus"];
+            sessionId: string;
+            status: components["schemas"]["CashRegisterSessionStatus"];
             /** Format: uuid */
             unitId: string;
-            version: number;
+            unitName: string;
         };
         ReportCreditTab: {
             /** @description Valor pendurado (RN-07.03). */
@@ -3533,15 +4248,17 @@ export interface components {
         };
         ReportPaymentMethodLine: {
             method: components["schemas"]["PaymentMethod"];
-            /** @description Pagamentos de comandas do turno. */
+            /** @description Pagamentos de comandas. */
             salesCents: number;
-            /** @description Quitações de fiado recebidas no turno. */
+            /** @description Quitações de fiado. */
             settlementsCents: number;
             totalCents: number;
         };
         ReportProductLine: {
             /** @description Modificadores com acréscimo escolhidos, maior valor primeiro. */
             modifiers: components["schemas"]["ReportProductModifier"][];
+            /** @description Quantidade e valor vendidos em cada tabela (`order_items.price_list_id`); só aparece quando houve venda com tabela de preço. */
+            priceLists: components["schemas"]["ReportProductPriceList"][];
             /** Format: uuid */
             productId: string;
             /** @description Nome gravado no item (RN-04.18). */
@@ -3559,6 +4276,14 @@ export interface components {
             /** @description Acréscimo × quantidade. */
             valueCents: number;
         };
+        ReportProductPriceList: {
+            /** @description `null` = preço normal. */
+            priceListId: string | null;
+            /** @description Nome da tabela, ou "Normal". */
+            priceListName: string;
+            quantity: number;
+            valueCents: number;
+        };
         ReportSettlement: {
             amountCents: number;
             customer: components["schemas"]["TabCustomer"] | null;
@@ -3569,14 +4294,14 @@ export interface components {
             /** Format: date-time */
             receivedAt: string;
             receivedBy: components["schemas"]["ReportActor"];
+            /**
+             * Format: date
+             * @description Dia da comanda quitada (pode ser outro).
+             */
+            tabBusinessDate: string;
             /** Format: uuid */
             tabId: string;
             tabNumber: number;
-            /**
-             * Format: uuid
-             * @description Turno da comanda quitada (pode ser outro).
-             */
-            tabShiftId: string;
         };
         /** @description Linha "Por colaborador" (o dono também aparece). */
         ReportStaffLine: {
@@ -3588,10 +4313,58 @@ export interface components {
             itemsCanceled: number;
             /** @description Pedidos lançados. */
             ordersSent: number;
-            /** @description Pagamentos não estornados recebidos no turno. */
+            /** @description Pagamentos não estornados recebidos. */
             receivedCents: number;
             tabsCanceled: number;
             tabsOpened: number;
+        };
+        ReportSummary: {
+            /** @description Venda ÷ comandas, arredondado para baixo; 0 sem comandas. */
+            averageTicketCents: number;
+            canceledTabCount: number;
+            /** @description Diferença de caixa: soma de informado − esperado das aberturas fechadas (RN-07.08, CA-07.04). */
+            cashDifferenceCents: number;
+            /** @description Descontos das comandas que contam na venda. */
+            discountsCents: number;
+            /** @description Pendurado: saldo das comandas penduradas no período, no momento em que foram penduradas (RN-07.03). */
+            onCreditCents: number;
+            /** @description Recebido: pagamentos não estornados das aberturas de caixa do período, vendas e quitações (RN-07.02). */
+            receivedCents: number;
+            /** @description Parte do recebido que é de comandas. */
+            receivedSalesCents: number;
+            /** @description Parte do recebido que é quitação de fiado (RN-07.02). */
+            receivedSettlementsCents: number;
+            /** @description Venda: total, após desconto, das comandas que passaram a `paid` ou `on_credit` no período (`settled` conta pelo dia em que foi pendurada), RN-07.01. */
+            salesCents: number;
+            /** @description Comandas que contam na venda. */
+            tabCount: number;
+            /** @description Perdas: itens cancelados marcados como perda, pelo dia do cancelamento (RN-07.04). */
+            wasteCents: number;
+            /** @description Unidades perdidas (RN-07.04). */
+            wasteQuantity: number;
+        };
+        /** @description Totais de um período, de um caixa ou de um evento. */
+        ReportTotals: {
+            /** @description Diferença de caixa: soma de informado − esperado das aberturas fechadas (RN-07.08, CA-07.04). */
+            cashDifferenceCents: number;
+            /** @description Descontos das comandas que contam na venda. */
+            discountsCents: number;
+            /** @description Pendurado: saldo das comandas penduradas no período, no momento em que foram penduradas (RN-07.03). */
+            onCreditCents: number;
+            /** @description Recebido: pagamentos não estornados das aberturas de caixa do período, vendas e quitações (RN-07.02). */
+            receivedCents: number;
+            /** @description Parte do recebido que é de comandas. */
+            receivedSalesCents: number;
+            /** @description Parte do recebido que é quitação de fiado (RN-07.02). */
+            receivedSettlementsCents: number;
+            /** @description Venda: total, após desconto, das comandas que passaram a `paid` ou `on_credit` no período (`settled` conta pelo dia em que foi pendurada), RN-07.01. */
+            salesCents: number;
+            /** @description Comandas que contam na venda. */
+            tabCount: number;
+            /** @description Perdas: itens cancelados marcados como perda, pelo dia do cancelamento (RN-07.04). */
+            wasteCents: number;
+            /** @description Unidades perdidas (RN-07.04). */
+            wasteQuantity: number;
         };
         ResetPasswordRequestInput: {
             /** @description Nova senha: de 8 a 128 caracteres. */
@@ -3650,241 +4423,10 @@ export interface components {
             password: string;
         };
         /**
-         * @description Códigos de erro da configuração da unidade (spec 03): unidades, estações, fluxo, cardápio e colaboradores.
+         * @description Códigos de erro da configuração da unidade (spec 03): unidades, estações, fluxo, cardápio, tabelas de preço, colaboradores e o cadastro dos caixas (spec 05).
          * @enum {string}
          */
-        SetupErrorCode: "SHIFT_OPEN" | "LAST_ACTIVE_UNIT" | "UNIT_NAME_TAKEN" | "STATION_NAME_TAKEN" | "CATEGORY_NAME_TAKEN" | "USERNAME_TAKEN" | "STATION_KIND_REQUIRED" | "STATION_IN_USE" | "INVALID_WORKFLOW" | "INVALID_PREP_STATION" | "INVALID_REFERENCE" | "INVALID_ORDER" | "INVALID_MODIFIER_LIMITS";
-        Shift: {
-            /** @description Só no turno contratado. */
-            agreement: components["schemas"]["ShiftAgreement"] | null;
-            closedAt: string | null;
-            closedBy: components["schemas"]["ActorRef"] | null;
-            /** Format: uuid */
-            id: string;
-            /** Format: date-time */
-            openedAt: string;
-            openedBy: components["schemas"]["ActorRef"];
-            /** @description Tabela de preços do turno; produtos fora dela usam o preço do cardápio (RN-04.06). */
-            prices: components["schemas"]["ShiftPrice"][];
-            status: components["schemas"]["ShiftStatus"];
-            type: components["schemas"]["ShiftType"];
-            /** Format: uuid */
-            unitId: string;
-            version: number;
-        };
-        /** @description Acordo do turno contratado (RN-04.05). */
-        ShiftAgreement: {
-            agreedAmountCents: number | null;
-            agreedQuantity: number | null;
-            contractorName: string;
-            limits: string | null;
-            modality: components["schemas"]["AgreementModality"];
-            notes: string | null;
-        };
-        /** @description Turnos do período, mais recentes primeiro (pela abertura), paginados por cursor, com os totais do período (spec 07, seção 5). */
-        ShiftHistory: {
-            data: components["schemas"]["ShiftHistoryRow"][];
-            /** @description Cursor da próxima página; `null` na última. */
-            nextCursor: string | null;
-            period: {
-                /** Format: date */
-                from: string;
-                /** @enum {string} */
-                timeZone: "America/Sao_Paulo";
-                /**
-                 * Format: date
-                 * @description Inclusive.
-                 */
-                to: string;
-            };
-            totals: components["schemas"]["ShiftHistoryTotals"];
-        };
-        ShiftHistoryRow: {
-            /** @description Diferença de caixa: soma de informado − esperado dos caixas fechados, em todas as formas (CA-07.04). */
-            cashDifferenceCents: number;
-            closedAt: string | null;
-            /**
-             * Format: date
-             * @description Dia da abertura em America/Sao_Paulo.
-             */
-            date: string;
-            /** @description Descontos das comandas que contam na venda. */
-            discountsCents: number;
-            /** @description Pendurado: saldo das comandas do turno no momento em que foram penduradas (RN-07.03). */
-            onCreditCents: number;
-            /** Format: date-time */
-            openedAt: string;
-            /** @description Recebido: pagamentos não estornados que entraram no turno, vendas e quitações (RN-07.02). */
-            receivedCents: number;
-            /** @description Parte do recebido que é de comandas do turno. */
-            receivedSalesCents: number;
-            /** @description Parte do recebido que é quitação de fiado, de qualquer turno (RN-07.02). */
-            receivedSettlementsCents: number;
-            /** @description Venda: total, após desconto, das comandas `paid`, `on_credit` e `settled` do turno (RN-07.01). */
-            salesCents: number;
-            /** Format: uuid */
-            shiftId: string;
-            status: components["schemas"]["ShiftStatus"];
-            tabCount: number;
-            type: components["schemas"]["ShiftType"];
-            /** Format: uuid */
-            unitId: string;
-            unitName: string;
-            /** @description Perdas: valor dos itens cancelados marcados como perda (RN-07.04). */
-            wasteCents: number;
-            /** @description Unidades perdidas (RN-07.04). */
-            wasteQuantity: number;
-        };
-        /** @description Totais do período inteiro, não só da página. */
-        ShiftHistoryTotals: {
-            /** @description Diferença de caixa: soma de informado − esperado dos caixas fechados, em todas as formas (CA-07.04). */
-            cashDifferenceCents: number;
-            /** @description Descontos das comandas que contam na venda. */
-            discountsCents: number;
-            /** @description Pendurado: saldo das comandas do turno no momento em que foram penduradas (RN-07.03). */
-            onCreditCents: number;
-            /** @description Recebido: pagamentos não estornados que entraram no turno, vendas e quitações (RN-07.02). */
-            receivedCents: number;
-            /** @description Parte do recebido que é de comandas do turno. */
-            receivedSalesCents: number;
-            /** @description Parte do recebido que é quitação de fiado, de qualquer turno (RN-07.02). */
-            receivedSettlementsCents: number;
-            /** @description Venda: total, após desconto, das comandas `paid`, `on_credit` e `settled` do turno (RN-07.01). */
-            salesCents: number;
-            shiftCount: number;
-            tabCount: number;
-            /** @description Perdas: valor dos itens cancelados marcados como perda (RN-07.04). */
-            wasteCents: number;
-            /** @description Unidades perdidas (RN-07.04). */
-            wasteQuantity: number;
-        };
-        /** @description `details` do 409 `SHIFT_HAS_PENDING_ITEMS` ao fechar o turno (RN-04.07, CA-04.09). */
-        ShiftPendingItems: {
-            /** @description Caixas do turno ainda abertos (spec 05). */
-            cashRegisters: {
-                /** Format: uuid */
-                id: string;
-                name: string;
-            }[];
-            /** @description Comandas em `open` ou `closing`. */
-            tabs: components["schemas"]["ShiftPendingTab"][];
-        };
-        ShiftPendingTab: {
-            customerName: string;
-            /** Format: uuid */
-            id: string;
-            number: number;
-            status: components["schemas"]["TabStatus"];
-        };
-        /** @description Preço de um produto só neste turno (RN-04.06). */
-        ShiftPrice: {
-            priceCents: number;
-            /** Format: uuid */
-            productId: string;
-        };
-        /** @description Preço de um produto só neste turno (RN-04.06). */
-        ShiftPriceInput: {
-            priceCents: number;
-            /** Format: uuid */
-            productId: string;
-        };
-        /** @description Relatório do turno (spec 07, seção 4). */
-        ShiftReport: {
-            /** @description Só no turno contratado. */
-            agreement: components["schemas"]["ShiftReportAgreement"] | null;
-            cancellations: {
-                items: components["schemas"]["ReportCanceledItem"][];
-                tabs: components["schemas"]["ReportCanceledTab"][];
-                wasteCents: number;
-                wasteQuantity: number;
-            };
-            cashRegisters: components["schemas"]["ReportCashRegister"][];
-            credit: {
-                onCreditCents: number;
-                /** @description Quitações não estornadas recebidas no turno. */
-                settlements: components["schemas"]["ReportSettlement"][];
-                settlementsCents: number;
-                /** @description Comandas do turno penduradas (hoje `on_credit` ou já `settled`). */
-                tabs: components["schemas"]["ReportCreditTab"][];
-            };
-            /** @description Turno aberto: o app mostra a faixa "Turno em andamento — valores parciais" (RN-07.06). */
-            partial: boolean;
-            /** @description Sempre as quatro formas, na ordem `cash`, `pix`, `credit_card`, `debit_card`. */
-            paymentMethods: components["schemas"]["ReportPaymentMethodLine"][];
-            /** @description Por produto, maior valor primeiro. */
-            products: components["schemas"]["ReportProductLine"][];
-            shift: {
-                closedAt: string | null;
-                closedBy: components["schemas"]["ReportActor"] | null;
-                /**
-                 * Format: date
-                 * @description Dia da abertura em America/Sao_Paulo.
-                 */
-                date: string;
-                /** Format: uuid */
-                id: string;
-                /** Format: date-time */
-                openedAt: string;
-                openedBy: components["schemas"]["ReportActor"];
-                status: components["schemas"]["ShiftStatus"];
-                type: components["schemas"]["ShiftType"];
-                /** Format: uuid */
-                unitId: string;
-                unitName: string;
-            };
-            /** @description Por colaborador, maior recebido primeiro. */
-            staff: components["schemas"]["ReportStaffLine"][];
-            summary: components["schemas"]["ShiftReportSummary"];
-            /** @enum {string} */
-            timeZone: "America/Sao_Paulo";
-        };
-        /** @description Acordo do turno contratado (RN-04.05). */
-        ShiftReportAgreement: {
-            agreedAmountCents: number | null;
-            agreedQuantity: number | null;
-            /** @description Valor consumido (= venda do turno). */
-            consumedCents: number;
-            /** @description Unidades não canceladas das comandas que contam na venda. */
-            consumedQuantity: number;
-            contractorName: string;
-            limits: string | null;
-            modality: components["schemas"]["AgreementModality"];
-            notes: string | null;
-            /** @description Quantidade combinada − consumida (CA-07.03); negativa se passou do combinado; `null` sem quantidade combinada. */
-            quantityDifference: number | null;
-        };
-        ShiftReportSummary: {
-            /** @description Venda ÷ comandas, arredondado para baixo; 0 sem comandas. */
-            averageTicketCents: number;
-            canceledTabCount: number;
-            /** @description Diferença de caixa: soma de informado − esperado dos caixas fechados, em todas as formas (CA-07.04). */
-            cashDifferenceCents: number;
-            /** @description Descontos das comandas que contam na venda. */
-            discountsCents: number;
-            /** @description Pendurado: saldo das comandas do turno no momento em que foram penduradas (RN-07.03). */
-            onCreditCents: number;
-            /** @description Recebido: pagamentos não estornados que entraram no turno, vendas e quitações (RN-07.02). */
-            receivedCents: number;
-            /** @description Parte do recebido que é de comandas do turno. */
-            receivedSalesCents: number;
-            /** @description Parte do recebido que é quitação de fiado, de qualquer turno (RN-07.02). */
-            receivedSettlementsCents: number;
-            /** @description Venda: total, após desconto, das comandas `paid`, `on_credit` e `settled` do turno (RN-07.01). */
-            salesCents: number;
-            /** @description Comandas que contam na venda (RN-07.01). */
-            tabCount: number;
-            /** @description Perdas: valor dos itens cancelados marcados como perda (RN-07.04). */
-            wasteCents: number;
-            /** @description Unidades perdidas (RN-07.04). */
-            wasteQuantity: number;
-        };
-        /** @enum {string} */
-        ShiftStatus: "open" | "closed";
-        /**
-         * @description `direct_sale`: venda direta; `contracted`: turno contratado, com acordo (RN-04.04). Não muda depois da abertura.
-         * @enum {string}
-         */
-        ShiftType: "direct_sale" | "contracted";
+        SetupErrorCode: "CASH_REGISTER_OPEN" | "ITEMS_IN_PROGRESS" | "UNIT_HAS_OPEN_TABS" | "INVALID_TIME_LIMITS" | "PRICE_LIST_NAME_TAKEN" | "PRICE_LIST_NAME_RESERVED" | "PRICE_LIST_IN_USE" | "CASH_REGISTER_NAME_TAKEN" | "LAST_ACTIVE_CASH_REGISTER" | "LAST_ACTIVE_UNIT" | "UNIT_NAME_TAKEN" | "STATION_NAME_TAKEN" | "CATEGORY_NAME_TAKEN" | "USERNAME_TAKEN" | "STATION_KIND_REQUIRED" | "STATION_IN_USE" | "INVALID_WORKFLOW" | "INVALID_PREP_STATION" | "INVALID_REFERENCE" | "INVALID_ORDER" | "INVALID_MODIFIER_LIMITS";
         StaffLoginRequestInput: {
             /**
              * @description Código do estabelecimento (6 caracteres), o mesmo do link `/e/{code}`.
@@ -3951,6 +4493,21 @@ export interface components {
             unitId: string;
             unitName: string;
         };
+        /** @description Comanda aberta há mais de 2 dias: aviso no início do painel com link para `/balcao/comandas/{numero}` (RN-01.28). */
+        StaleTab: {
+            /**
+             * Format: date
+             * @description Desde quando (dia de operação).
+             */
+            businessDate: string;
+            customerName: string;
+            /** Format: uuid */
+            id: string;
+            number: number;
+            /** Format: date-time */
+            openedAt: string;
+            totalCents: number;
+        };
         StartImpersonationRequestInput: {
             /** Format: uuid */
             organizationId: string;
@@ -3969,9 +4526,13 @@ export interface components {
         };
         Station: {
             active: boolean;
+            /** @description Limite de atenção (RN-03.25); só nas estações `queue`, `null` no balcão. */
+            attentionAfterMinutes: number | null;
             /** Format: uuid */
             id: string;
             kind: components["schemas"]["StationKind"];
+            /** @description Limite de atraso (RN-03.25); só nas estações `queue`, `null` no balcão. */
+            lateAfterMinutes: number | null;
             name: string;
             sortOrder: number;
             /** Format: uuid */
@@ -3982,13 +4543,112 @@ export interface components {
          * @enum {string}
          */
         StationKind: "counter" | "queue";
+        StationLine: {
+            /** @description Quando o item entra em atenção: envio + `attentionAfterMinutes` da estação de preparo (RN-04.23; no balcão vale a estação de preparo). `null` na etapa final ou cancelado. */
+            attentionAt: string | null;
+            cancelReason: string | null;
+            canceledAt: string | null;
+            /** @description Dia de operação do cancelamento (RN-04.27, RN-04.30). */
+            canceledBusinessDate: string | null;
+            canceledBy: components["schemas"]["ActorRef"] | null;
+            customerName: string;
+            /** Format: uuid */
+            id: string;
+            /** @description Atrasado no momento da resposta (CA-04.11). */
+            isLate: boolean;
+            /** @description Quando o item passa a estar atrasado: envio + `lateAfterMinutes` da estação de preparo (RN-04.23). `null` na etapa final ou cancelado. */
+            lateAt: string | null;
+            modifiers: components["schemas"]["OrderItemModifier"][];
+            note: string | null;
+            /** Format: uuid */
+            orderId: string;
+            orderNumberInTab: number;
+            /**
+             * Format: uuid
+             * @description Estação de preparo resolvida no envio.
+             */
+            prepStationId: string;
+            /** @description Tabela de preço cujo preço foi usado (RN-04.18); `null` = preço normal. */
+            priceListId: string | null;
+            /** Format: uuid */
+            productId: string;
+            /** @description Cópia do nome no momento da venda (RN-04.18). */
+            productName: string;
+            quantity: number;
+            /**
+             * Format: date-time
+             * @description Envio do pedido.
+             */
+            sentAt: string;
+            /** @description Linha original de uma divisão (avançar ou cancelar parte, RN-04.24/RN-04.26). */
+            splitFromId: string | null;
+            /** Format: date-time */
+            stageEnteredAt: string;
+            /** Format: uuid */
+            stageId: string;
+            stageIsFinal: boolean;
+            stageName: string;
+            state: components["schemas"]["StationLineState"];
+            /** @description Estação em que o item aparece agora; `null` na etapa final ou cancelado. */
+            stationId: string | null;
+            /** Format: uuid */
+            tabId: string;
+            tabNumber: number;
+            /** @description `(unitPriceCents + Σ priceDeltaCents) × quantity` (spec 04, seção 6). */
+            totalCents: number;
+            /** Format: uuid */
+            unitId: string;
+            /** @description Preço unitário no envio: o da tabela efetiva da unidade, ou o preço normal quando o produto não tem preço nela (RN-04.18). */
+            unitPriceCents: number;
+            version: number;
+            /** @description Cancelado depois de sair da primeira etapa: perda (RN-04.27). */
+            wasted: boolean;
+        };
+        /**
+         * @description Linha do cartão (RN-04.41, RN-04.45): `pending` está nesta estação; `done` passou por ela e saiu (riscada, com confirmação); `canceled` foi cancelada no cartão (riscada, com o motivo).
+         * @enum {string}
+         */
+        StationLineState: "pending" | "done" | "canceled";
         StationList: {
             data: components["schemas"]["Station"][];
         };
+        /** @description Um cartão da estação: um pedido (RN-04.40). */
+        StationOrder: {
+            /**
+             * Format: date-time
+             * @description Envio + limite de atenção da estação (RN-04.46).
+             */
+            attentionAt: string;
+            customerName: string;
+            /** @description Pedido 2 em diante da comanda: o cartão mostra "Adicional · pedido N" (RN-04.44). */
+            isAdditional: boolean;
+            /**
+             * Format: date-time
+             * @description Envio + limite de atraso da estação (RN-04.46).
+             */
+            lateAt: string;
+            /** @description Linhas do pedido que são desta estação, na ordem do pedido: pendentes, feitas e canceladas (RN-04.40 a RN-04.45). */
+            lines: components["schemas"]["StationLine"][];
+            numberInTab: number;
+            /** Format: uuid */
+            orderId: string;
+            /** @description Unidades ativas do pedido que estão em etapas de outras estações: "+ N itens em outra estação" (RN-04.43). */
+            otherStationsQuantity: number;
+            /** Format: date-time */
+            sentAt: string;
+            /** Format: uuid */
+            tabId: string;
+            /** @description O cartão mostra "Paga antes" quando for. */
+            tabMode: components["schemas"]["TabMode"];
+            tabNumber: number;
+        };
         StationQueue: {
-            /** @description Itens nesta estação, do pedido mais antigo para o mais novo; itens do mesmo pedido juntos. */
-            items: components["schemas"]["OrderItem"][];
+            /** @description Limite de atenção da estação (RN-03.25). */
+            attentionAfterMinutes: number;
+            /** @description Limite de atraso da estação (RN-03.25). */
             lateAfterMinutes: number;
+            /** @description Cartões com pelo menos uma linha pendente nesta estação, do pedido mais antigo para o mais novo (RN-04.40, RN-04.42). */
+            orders: components["schemas"]["StationOrder"][];
             /** @description Fluxo da unidade em ordem, para o nome do botão de avançar ("Começar", "Pronto") e o filtro por etapa. */
             stages: components["schemas"]["WorkflowStage"][];
             /** Format: uuid */
@@ -4003,7 +4663,7 @@ export interface components {
             name: string;
         };
         /**
-         * @description Erros da situação da assinatura ao abrir turno (RN-01.01, RN-02.12; CA-02.05).
+         * @description Erros da situação da assinatura ao abrir caixa (RN-01.01, RN-02.12, RN-05.24; CA-02.05).
          * @enum {string}
          */
         SubscriptionErrorCode: "ORGANIZATION_SUSPENDED" | "ORGANIZATION_CANCELED";
@@ -4015,6 +4675,65 @@ export interface components {
         SubscriptionStatusChangeRequestInput: {
             reason: string;
             status: components["schemas"]["SubscriptionStatus"];
+        };
+        /** @description Relatório do dia ou do período (spec 07, seção 4). */
+        SummaryReport: {
+            cancellations: {
+                items: components["schemas"]["ReportCanceledItem"][];
+                tabs: components["schemas"]["ReportCanceledTab"][];
+                wasteCents: number;
+                wasteQuantity: number;
+            };
+            /** @description Uma linha por abertura de caixa do período, mais recente primeiro. */
+            cashSessions: components["schemas"]["ReportCashSessionLine"][];
+            credit: {
+                onCreditCents: number;
+                /** @description Quitações não estornadas recebidas. */
+                settlements: components["schemas"]["ReportSettlement"][];
+                settlementsCents: number;
+                /** @description Comandas penduradas (hoje `on_credit` ou já `settled`). */
+                tabs: components["schemas"]["ReportCreditTab"][];
+            };
+            /** @description Eventos com comandas no período; vazio quando não houve (a seção some). */
+            events: {
+                contractorName: string;
+                /** Format: uuid */
+                eventId: string;
+                /** @description Venda das comandas do evento no período. */
+                salesCents: number;
+                status: components["schemas"]["ContractedEventStatus"];
+            }[];
+            /** @description Quando parcial: comandas em aberto agora (quantidade e valor). */
+            openTabsNow: {
+                count: number;
+                totalCents: number;
+            } | null;
+            /** @description Inclui o dia de operação atual de uma unidade com caixa aberto: faixa "Em andamento — valores parciais" (RN-07.06). */
+            partial: boolean;
+            /** @description Sempre as quatro formas, na ordem `cash`, `pix`, `credit_card`, `debit_card`. */
+            paymentMethods: components["schemas"]["ReportPaymentMethodLine"][];
+            period: {
+                /** Format: date */
+                from: string;
+                /** @enum {string} */
+                timeZone: "America/Sao_Paulo";
+                /**
+                 * Format: date
+                 * @description Inclusive.
+                 */
+                to: string;
+            };
+            /** @description Por produto, maior valor primeiro. */
+            products: components["schemas"]["ReportProductLine"][];
+            /** @description Por colaborador, maior recebido primeiro. */
+            staff: components["schemas"]["ReportStaffLine"][];
+            summary: components["schemas"]["ReportSummary"];
+            /** @description `null` = todas as unidades. */
+            unit: {
+                /** Format: uuid */
+                id: string;
+                name: string;
+            } | null;
         };
         /** @description Acesso de suporte ("entrar como") na conta (RN-02.22). */
         SupportAccess: {
@@ -4043,7 +4762,14 @@ export interface components {
         Tab: {
             /** @description Saldo a receber: `totalCents − paidCents` (RN-05.07). */
             balanceCents: number;
+            /**
+             * Format: date
+             * @description Dia de operação em que foi aberta (RN-04.30); de um dia anterior, o balcão mostra "desde dd/mm" (RN-04.10).
+             */
+            businessDate: string;
             closedAt: string | null;
+            /** @description Dia de operação em que saiu de `open`/`closing` (RN-04.38): o dia da venda (spec 07). */
+            closedBusinessDate: string | null;
             /** @description Quando foi pendurada (spec 06). */
             creditAt: string | null;
             /** @description Cliente do fiado (`on_credit`, `settled`; RN-06.05); `null` nas outras. */
@@ -4054,13 +4780,16 @@ export interface components {
             discountReason: string | null;
             discountType: components["schemas"]["DiscountType"] | null;
             discountValue: number | null;
+            /** @description Evento em andamento quando a comanda foi aberta (RN-04.36). */
+            eventId: string | null;
             /** Format: uuid */
             id: string;
             /** @description Unidades em itens não cancelados. */
             itemCount: number;
-            /** @description Unidades atrasadas (RN-04.23). */
+            /** @description Unidades atrasadas pelo limite da estação de preparo (RN-04.23). */
             lateItemCount: number;
             mode: components["schemas"]["TabMode"];
+            /** @description Número no dia de operação, nunca repetido entre as comandas em aberto (RN-04.09). */
             number: number;
             /** Format: date-time */
             openedAt: string;
@@ -4075,8 +4804,6 @@ export interface components {
             readyItemCount: number;
             /** @description Quando o saldo pendurado chegou a zero (RN-06.10). */
             settledAt: string | null;
-            /** Format: uuid */
-            shiftId: string;
             status: components["schemas"]["TabStatus"];
             /** @description Soma dos itens não cancelados (RN-04.14). */
             subtotalCents: number;
@@ -4115,7 +4842,14 @@ export interface components {
         TabSummary: {
             /** @description Saldo a receber: `totalCents − paidCents` (RN-05.07). */
             balanceCents: number;
+            /**
+             * Format: date
+             * @description Dia de operação em que foi aberta (RN-04.30); de um dia anterior, o balcão mostra "desde dd/mm" (RN-04.10).
+             */
+            businessDate: string;
             closedAt: string | null;
+            /** @description Dia de operação em que saiu de `open`/`closing` (RN-04.38): o dia da venda (spec 07). */
+            closedBusinessDate: string | null;
             /** @description Quando foi pendurada (spec 06). */
             creditAt: string | null;
             /** @description Cliente do fiado (`on_credit`, `settled`; RN-06.05); `null` nas outras. */
@@ -4126,13 +4860,16 @@ export interface components {
             discountReason: string | null;
             discountType: components["schemas"]["DiscountType"] | null;
             discountValue: number | null;
+            /** @description Evento em andamento quando a comanda foi aberta (RN-04.36). */
+            eventId: string | null;
             /** Format: uuid */
             id: string;
             /** @description Unidades em itens não cancelados. */
             itemCount: number;
-            /** @description Unidades atrasadas (RN-04.23). */
+            /** @description Unidades atrasadas pelo limite da estação de preparo (RN-04.23). */
             lateItemCount: number;
             mode: components["schemas"]["TabMode"];
+            /** @description Número no dia de operação, nunca repetido entre as comandas em aberto (RN-04.09). */
             number: number;
             /** Format: date-time */
             openedAt: string;
@@ -4143,8 +4880,6 @@ export interface components {
             readyItemCount: number;
             /** @description Quando o saldo pendurado chegou a zero (RN-06.10). */
             settledAt: string | null;
-            /** Format: uuid */
-            shiftId: string;
             status: components["schemas"]["TabStatus"];
             /** @description Soma dos itens não cancelados (RN-04.14). */
             subtotalCents: number;
@@ -4167,6 +4902,37 @@ export interface components {
             /** @description Versão da configuração (unidade, estações e fluxo). */
             version: number;
         };
+        /** @description Situação da operação da unidade (spec 04, seção 7): usada pelo início do painel (RN-01.24) e pelo balcão. */
+        UnitOperation: {
+            /** @description Dia de operação atual (RN-04.29); `null` antes do primeiro caixa aberto. */
+            businessDate: string | null;
+            /** @description Caixas ativos da unidade, cada um com a abertura em andamento (responsável, desde quando, `openSinceEarlierDay`) ou a última fechada. */
+            cashRegisters: components["schemas"]["CashRegister"][];
+            /** @description Tabela vigente (RN-04.06); `null` = "Normal". */
+            currentPriceList: components["schemas"]["PriceListRef"] | null;
+            /** @description Tabela efetiva: a do evento em andamento ou a vigente (RN-04.32); `null` = "Normal". */
+            effectivePriceList: components["schemas"]["PriceListRef"] | null;
+            eventInProgress: components["schemas"]["ContractedEvent"] | null;
+            /** @description Eventos agendados que incluem hoje: a abertura do caixa oferece iniciar (RN-04.35). */
+            eventsToday: components["schemas"]["ContractedEvent"][];
+            /** @description Há pelo menos um caixa aberto (RN-04.01): libera abrir comanda e lançar pedido (RN-04.02). */
+            inOperation: boolean;
+            /** @description Unidades de itens em etapas não finais. */
+            itemsInProgress: number;
+            openTabs: {
+                /** @description Comandas `open` e `closing` da unidade, de qualquer dia. */
+                count: number;
+                /** @description Delas, as abertas antes do dia de operação atual ("3 comandas em aberto"). */
+                fromEarlierDaysCount: number;
+                totalCents: number;
+            };
+            /** @description Comandas `open`/`closing` com dia de operação anterior ao atual menos 2 (RN-01.28), mais antigas primeiro. */
+            staleTabs: components["schemas"]["StaleTab"][];
+            /** Format: uuid */
+            unitId: string;
+            /** @description Versão da operação (`unit.operation_updated`). */
+            version: number;
+        };
         UnitPage: {
             data: components["schemas"]["Unit"][];
             /** @description Cursor da próxima página; `null` na última. */
@@ -4186,6 +4952,15 @@ export interface components {
             organizationIds?: string[];
             title?: string;
         };
+        UpdateCashRegisterRequestInput: {
+            /** @description Caixa aberto não é desativado (`CASH_REGISTER_OPEN`), nem o último ativo (`LAST_ACTIVE_CASH_REGISTER`), RN-05.27, CA-05.14. */
+            active?: boolean;
+            name?: string;
+            /** @description Posição na lista (1 é o primeiro). */
+            sortOrder?: number;
+            /** @description Versão que o app tem do registro. Se outro aparelho alterou antes, a API responde 409 `VERSION_CONFLICT` com `details.currentVersion`. Opcional. */
+            version?: number;
+        };
         UpdateCategoryRequestInput: {
             active?: boolean;
             /** Format: uuid */
@@ -4193,6 +4968,23 @@ export interface components {
             name?: string;
             /** @description Posição na lista (1 é o primeiro). */
             sortOrder?: number;
+        };
+        /** @description Edição do acordo e da tabela até o evento ser encerrado (RN-04.37). */
+        UpdateContractedEventRequestInput: {
+            agreedAmountCents?: number | null;
+            agreedQuantity?: number | null;
+            contractorName?: string;
+            endsOn?: string | null;
+            /** @description Limites em texto livre (ex.: "500 espetos", "das 18h às 23h"). */
+            limits?: string | null;
+            modality?: components["schemas"]["AgreementModality"];
+            notes?: string | null;
+            /** @description `null` volta para "Normal". Num evento em andamento, vale para itens novos (RN-04.37). */
+            priceListId?: string | null;
+            /** Format: date */
+            startsOn?: string;
+            /** @description Versão que o app tem do registro. Se outro aparelho alterou antes, a API responde 409 `VERSION_CONFLICT` com `details.currentVersion`. Opcional. */
+            version?: number;
         };
         /** @description Campos ausentes não mudam; `null` ou texto vazio apaga um dado opcional. */
         UpdateCustomerRequestInput: {
@@ -4231,6 +5023,16 @@ export interface components {
                 name?: string;
             };
         };
+        UpdatePriceListRequestInput: {
+            /** @description Desativar a tabela vigente ou a de um evento agendado ou em andamento é recusado (`PRICE_LIST_IN_USE`, RN-03.23). */
+            active?: boolean;
+            /** @description De 1 a 30 caracteres, único na unidade; "Normal" é reservado (RN-03.20). */
+            name?: string;
+            /** @description Posição na lista (1 é o primeiro). */
+            sortOrder?: number;
+            /** @description Versão que o app tem do registro. Se outro aparelho alterou antes, a API responde 409 `VERSION_CONFLICT` com `details.currentVersion`. Opcional. */
+            version?: number;
+        };
         UpdateProductRequestInput: {
             active?: boolean;
             /**
@@ -4261,16 +5063,21 @@ export interface components {
             /** @description Letras, números, ponto e sublinhado (3 a 32); único na organização. */
             username?: string;
         };
+        /** @description Mudar só os limites de tempo é permitido com caixa aberto e vale na hora para os cartões (RN-03.25); as demais mudanças seguem a RN-03.07. */
         UpdateStationRequestInput: {
             active?: boolean;
+            /** @description Minutos desde o envio do pedido a partir dos quais o cartão fica em atenção (RN-03.25); de 1 até o atraso − 1. */
+            attentionAfterMinutes?: number;
             kind?: components["schemas"]["StationKind"];
+            /** @description Minutos desde o envio do pedido a partir dos quais o cartão fica atrasado (RN-03.25), até 240. */
+            lateAfterMinutes?: number;
             name?: string;
             /** @description Posição na lista (1 é o primeiro). */
             sortOrder?: number;
         };
         UpdateUnitRequestInput: {
             active?: boolean;
-            /** @description Minutos a partir dos quais um item na estação aparece como atrasado (1 a 240). */
+            /** @description Padrão do atraso das estações novas da unidade, em minutos (1 a 240); a atenção nasce na metade (RN-03.25). */
             lateAfterMinutes?: number;
             name?: string;
             /** @description Versão que o app tem do registro. Se outro aparelho alterou antes, a API responde 409 `VERSION_CONFLICT` com `details.currentVersion`. Opcional. */
@@ -5266,7 +6073,7 @@ export interface operations {
                 from?: string;
                 /** @description Último dia, inclusive (AAAA-MM-DD, horário de Brasília). Padrão: hoje. */
                 to?: string;
-                sort?: "name" | "shifts" | "tabs" | "soldCents" | "lastAccessAt";
+                sort?: "name" | "operationDays" | "tabs" | "soldCents" | "lastAccessAt";
                 order?: "asc" | "desc";
             };
             header?: never;
@@ -6942,7 +7749,7 @@ export interface operations {
             };
         };
     };
-    CashController_getRegister: {
+    CashController_getSession: {
         parameters: {
             query?: never;
             header?: never;
@@ -6958,7 +7765,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["CashRegisterDetail"];
+                    "application/json": components["schemas"]["CashRegisterSessionDetail"];
                 };
             };
             /** @description `UNAUTHENTICATED`: sem sessão do app ou sessão encerrada. */
@@ -7025,7 +7832,7 @@ export interface operations {
                     "application/json": components["schemas"]["CashRegister"];
                 };
             };
-            /** @description `CLOSING_NOTE_REQUIRED` (`details.counts` com as diferenças) ou `VALIDATION_FAILED`. */
+            /** @description `CLOSING_NOTE_REQUIRED` (`details.counts` com as diferenças, CA-05.07) ou `VALIDATION_FAILED`. */
             400: {
                 headers: {
                     [name: string]: unknown;
@@ -7085,6 +7892,63 @@ export interface operations {
             };
         };
     };
+    CashController_closePreview: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CashRegisterClosePreview"];
+                };
+            };
+            /** @description `UNAUTHENTICATED`: sem sessão do app ou sessão encerrada. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description `FORBIDDEN`: só o dono ou quem opera o caixa na unidade (RN-05.16). */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description `NOT_FOUND`: não existe ou é de outra organização. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Erro no formato `ErrorResponse` (spec 01, seção 5). */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
     CashController_move: {
         parameters: {
             query?: never;
@@ -7108,7 +7972,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["CashRegisterDetail"];
+                    "application/json": components["schemas"]["CashRegisterSessionDetail"];
                 };
             };
             /** @description `UNAUTHENTICATED`: sem sessão do app ou sessão encerrada. */
@@ -7140,6 +8004,210 @@ export interface operations {
             };
             /**
              * @description `WITHDRAWAL_EXCEEDS_CASH`, `CASH_REGISTER_CLOSED` ou `VERSION_CONFLICT`.
+             *
+             *     `IDEMPOTENCY_KEY_REUSED` (mesma chave com outro corpo) ou `IDEMPOTENCY_REQUEST_IN_PROGRESS`.
+             */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Erro no formato `ErrorResponse` (spec 01, seção 5). */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    ReportsController_sessionReport: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CashSessionReport"];
+                };
+            };
+            /** @description `UNAUTHENTICATED`: sem sessão do app ou sessão encerrada. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description `FORBIDDEN`: só o dono pode usar esta rota. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description `NOT_FOUND`: não existe ou é de outra organização. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Erro no formato `ErrorResponse` (spec 01, seção 5). */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    CashController_updateRegister: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UpdateCashRegisterRequestInput"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CashRegister"];
+                };
+            };
+            /** @description `UNAUTHENTICATED`: sem sessão do app ou sessão encerrada. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description `FORBIDDEN`: só o dono pode usar esta rota. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description `NOT_FOUND`: não existe ou é de outra organização. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description `CASH_REGISTER_OPEN`, `LAST_ACTIVE_CASH_REGISTER` (CA-05.14), `CASH_REGISTER_NAME_TAKEN` ou `VERSION_CONFLICT`. */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Erro no formato `ErrorResponse` (spec 01, seção 5). */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    CashController_openRegister: {
+        parameters: {
+            query?: never;
+            header?: {
+                /** @description UUID gerado no aparelho. Repetir a mesma chave devolve a mesma resposta por 24 h, sem repetir a ação. */
+                "Idempotency-Key"?: string;
+            };
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["OpenCashRegisterRequestInput"];
+            };
+        };
+        responses: {
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CashRegister"];
+                };
+            };
+            /** @description `UNAUTHENTICATED`: sem sessão do app ou sessão encerrada. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description `FORBIDDEN`: só o dono ou quem opera o caixa na unidade (RN-05.16). */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description `NOT_FOUND`: não existe ou é de outra organização. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /**
+             * @description `CASH_REGISTER_ALREADY_OPEN` (CA-05.10), `CASH_REGISTER_INACTIVE`, `UNIT_INACTIVE`, `ORGANIZATION_SUSPENDED` ou `ORGANIZATION_CANCELED` (CA-02.05), `EVENT_ALREADY_IN_PROGRESS` ou `EVENT_NOT_SCHEDULED` (com `startEventId`).
              *
              *     `IDEMPOTENCY_KEY_REUSED` (mesma chave com outro corpo) ou `IDEMPOTENCY_REQUEST_IN_PROGRESS`.
              */
@@ -7611,6 +8679,430 @@ export interface operations {
             };
         };
     };
+    OperationController_getEvent: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ContractedEvent"];
+                };
+            };
+            /** @description `UNAUTHENTICATED`: sem sessão do app ou sessão encerrada. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description `FORBIDDEN`: só o dono ou quem opera o caixa na unidade. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description `NOT_FOUND`: não existe ou é de outra organização. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Erro no formato `ErrorResponse` (spec 01, seção 5). */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    OperationController_updateEvent: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UpdateContractedEventRequestInput"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ContractedEvent"];
+                };
+            };
+            /** @description `INVALID_PRICE_LIST` ou `VALIDATION_FAILED`. */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description `UNAUTHENTICATED`: sem sessão do app ou sessão encerrada. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description `FORBIDDEN`: só o dono edita eventos. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description `NOT_FOUND`: não existe ou é de outra organização. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description `EVENT_CLOSED` ou `VERSION_CONFLICT`. */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Erro no formato `ErrorResponse` (spec 01, seção 5). */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    OperationController_cancelEvent: {
+        parameters: {
+            query?: never;
+            header?: {
+                /** @description UUID gerado no aparelho. Repetir a mesma chave devolve a mesma resposta por 24 h, sem repetir a ação. */
+                "Idempotency-Key"?: string;
+            };
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ContractedEventActionRequestInput"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ContractedEvent"];
+                };
+            };
+            /** @description `UNAUTHENTICATED`: sem sessão do app ou sessão encerrada. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description `FORBIDDEN`: só o dono cancela eventos. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description `NOT_FOUND`: não existe ou é de outra organização. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /**
+             * @description `EVENT_NOT_SCHEDULED` ou `VERSION_CONFLICT`.
+             *
+             *     `IDEMPOTENCY_KEY_REUSED` (mesma chave com outro corpo) ou `IDEMPOTENCY_REQUEST_IN_PROGRESS`.
+             */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Erro no formato `ErrorResponse` (spec 01, seção 5). */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    OperationController_finishEvent: {
+        parameters: {
+            query?: never;
+            header?: {
+                /** @description UUID gerado no aparelho. Repetir a mesma chave devolve a mesma resposta por 24 h, sem repetir a ação. */
+                "Idempotency-Key"?: string;
+            };
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ContractedEventActionRequestInput"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ContractedEvent"];
+                };
+            };
+            /** @description `UNAUTHENTICATED`: sem sessão do app ou sessão encerrada. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description `FORBIDDEN`: só o dono ou quem opera o caixa na unidade. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description `NOT_FOUND`: não existe ou é de outra organização. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /**
+             * @description `EVENT_NOT_IN_PROGRESS` ou `VERSION_CONFLICT`.
+             *
+             *     `IDEMPOTENCY_KEY_REUSED` (mesma chave com outro corpo) ou `IDEMPOTENCY_REQUEST_IN_PROGRESS`.
+             */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Erro no formato `ErrorResponse` (spec 01, seção 5). */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    ReportsController_eventReport: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["EventReport"];
+                };
+            };
+            /** @description `UNAUTHENTICATED`: sem sessão do app ou sessão encerrada. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description `FORBIDDEN`: só o dono pode usar esta rota. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description `NOT_FOUND`: não existe ou é de outra organização. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Erro no formato `ErrorResponse` (spec 01, seção 5). */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    OperationController_startEvent: {
+        parameters: {
+            query?: never;
+            header?: {
+                /** @description UUID gerado no aparelho. Repetir a mesma chave devolve a mesma resposta por 24 h, sem repetir a ação. */
+                "Idempotency-Key"?: string;
+            };
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ContractedEventActionRequestInput"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ContractedEvent"];
+                };
+            };
+            /** @description `UNAUTHENTICATED`: sem sessão do app ou sessão encerrada. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description `FORBIDDEN`: só o dono ou quem opera o caixa na unidade. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description `NOT_FOUND`: não existe ou é de outra organização. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /**
+             * @description `EVENT_ALREADY_IN_PROGRESS` (CA-04.15), `EVENT_NOT_SCHEDULED` ou `VERSION_CONFLICT`.
+             *
+             *     `IDEMPOTENCY_KEY_REUSED` (mesma chave com outro corpo) ou `IDEMPOTENCY_REQUEST_IN_PROGRESS`.
+             */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Erro no formato `ErrorResponse` (spec 01, seção 5). */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
     HealthController_check: {
         parameters: {
             query?: never;
@@ -8032,7 +9524,7 @@ export interface operations {
                 };
             };
             /**
-             * @description `ITEM_CHANGED` (outro aparelho mudou o item antes: `details.item` traz o estado atual, CA-04.05), `ITEM_CANCELED`, `SHIFT_CLOSED` ou `ITEM_IN_FINAL_STAGE`.
+             * @description `ITEM_CHANGED` (outro aparelho mudou o item antes: `details.item` traz o estado atual, CA-04.05), `ITEM_CANCELED` ou `ITEM_IN_FINAL_STAGE`.
              *
              *     `IDEMPOTENCY_KEY_REUSED` (mesma chave com outro corpo) ou `IDEMPOTENCY_REQUEST_IN_PROGRESS`.
              */
@@ -8109,7 +9601,7 @@ export interface operations {
                 };
             };
             /**
-             * @description `ITEM_CHANGED` (outro aparelho mudou o item antes: `details.item` traz o estado atual, CA-04.05), `ITEM_CANCELED`, `SHIFT_CLOSED`, `ITEM_IN_FINAL_STAGE` ou `NO_PREVIOUS_STAGE`.
+             * @description `ITEM_CHANGED` (outro aparelho mudou o item antes: `details.item` traz o estado atual, CA-04.05), `ITEM_CANCELED`, `ITEM_IN_FINAL_STAGE` ou `NO_PREVIOUS_STAGE`.
              *
              *     `IDEMPOTENCY_KEY_REUSED` (mesma chave com outro corpo) ou `IDEMPOTENCY_REQUEST_IN_PROGRESS`.
              */
@@ -8195,7 +9687,84 @@ export interface operations {
                 };
             };
             /**
-             * @description `ITEM_CHANGED` (outro aparelho mudou o item antes: `details.item` traz o estado atual, CA-04.05), `ITEM_CANCELED`, `SHIFT_CLOSED` ou `TAB_CLOSED` (RN-04.28).
+             * @description `ITEM_CHANGED` (outro aparelho mudou o item antes: `details.item` traz o estado atual, CA-04.05), `ITEM_CANCELED` ou `TAB_CLOSED` (RN-04.28).
+             *
+             *     `IDEMPOTENCY_KEY_REUSED` (mesma chave com outro corpo) ou `IDEMPOTENCY_REQUEST_IN_PROGRESS`.
+             */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Erro no formato `ErrorResponse` (spec 01, seção 5). */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    OperationController_advanceOrder: {
+        parameters: {
+            query?: never;
+            header?: {
+                /** @description UUID gerado no aparelho. Repetir a mesma chave devolve a mesma resposta por 24 h, sem repetir a ação. */
+                "Idempotency-Key"?: string;
+            };
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AdvanceOrderRequestInput"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AdvanceOrderResult"];
+                };
+            };
+            /** @description `UNAUTHENTICATED`: sem sessão do app ou sessão encerrada. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description `FORBIDDEN`: sem acesso à estação. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description `NOT_FOUND`: não existe ou é de outra organização. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /**
+             * @description `ITEM_CHANGED` (alguma linha mudou ou faltou: `details.items` traz as linhas atuais), `ITEM_NOT_AT_STATION` ou `ITEM_IN_FINAL_STAGE`.
              *
              *     `IDEMPOTENCY_KEY_REUSED` (mesma chave com outro corpo) ou `IDEMPOTENCY_REQUEST_IN_PROGRESS`.
              */
@@ -8318,11 +9887,208 @@ export interface operations {
                 };
             };
             /**
-             * @description `PAYMENT_ALREADY_REVERSED`, `CASH_REGISTER_CLOSED`, `TAB_CLOSED` ou `SHIFT_CLOSED`.
+             * @description `PAYMENT_ALREADY_REVERSED`, `CASH_REGISTER_CLOSED` (abertura já fechada, CA-05.13) ou `TAB_CLOSED`.
              *
              *     `IDEMPOTENCY_KEY_REUSED` (mesma chave com outro corpo) ou `IDEMPOTENCY_REQUEST_IN_PROGRESS`.
              */
             409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Erro no formato `ErrorResponse` (spec 01, seção 5). */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    MenuController_getPriceList: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PriceListPrices"];
+                };
+            };
+            /** @description `UNAUTHENTICATED`: sem sessão do app ou sessão encerrada. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description `FORBIDDEN`: só o dono pode usar esta rota. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description `NOT_FOUND`: não existe ou é de outra organização. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Erro no formato `ErrorResponse` (spec 01, seção 5). */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    MenuController_updatePriceList: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UpdatePriceListRequestInput"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PriceList"];
+                };
+            };
+            /** @description `UNAUTHENTICATED`: sem sessão do app ou sessão encerrada. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description `FORBIDDEN`: só o dono pode usar esta rota. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description `NOT_FOUND`: não existe ou é de outra organização. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description `PRICE_LIST_IN_USE` (vigente ou de evento agendado ou em andamento, CA-03.10), `PRICE_LIST_NAME_TAKEN`, `PRICE_LIST_NAME_RESERVED` ou `VERSION_CONFLICT`. */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Erro no formato `ErrorResponse` (spec 01, seção 5). */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    MenuController_putPriceListPrices: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PutPriceListPricesRequestInput"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PriceListPrices"];
+                };
+            };
+            /** @description `INVALID_REFERENCE` (produto de outra unidade) ou `VALIDATION_FAILED`. */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description `UNAUTHENTICATED`: sem sessão do app ou sessão encerrada. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description `FORBIDDEN`: só o dono pode usar esta rota. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description `NOT_FOUND`: não existe ou é de outra organização. */
+            404: {
                 headers: {
                     [name: string]: unknown;
                 };
@@ -8491,6 +10257,76 @@ export interface operations {
             };
         };
     };
+    MenuController_putProductPrices: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PutProductPricesRequestInput"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProductPrices"];
+                };
+            };
+            /** @description `INVALID_REFERENCE` (tabela de outra unidade) ou `VALIDATION_FAILED`. */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description `UNAUTHENTICATED`: sem sessão do app ou sessão encerrada. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description `FORBIDDEN`: só o dono pode usar esta rota. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description `NOT_FOUND`: não existe ou é de outra organização. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Erro no formato `ErrorResponse` (spec 01, seção 5). */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
     MenuController_markSoldOut: {
         parameters: {
             query?: never;
@@ -8629,7 +10465,7 @@ export interface operations {
             };
         };
     };
-    ReportsController_history: {
+    ReportsController_cashSessions: {
         parameters: {
             query?: {
                 /** @description Itens por página (1 a 100, padrão 50). */
@@ -8638,11 +10474,12 @@ export interface operations {
                 cursor?: string;
                 /** @description Unidade; sem ela, todas da organização. */
                 unitId?: string;
-                /** @description Primeiro dia (AAAA-MM-DD, horário de Brasília). Padrão: 29 dias antes de `to`. */
+                /** @description Primeiro dia de operação (AAAA-MM-DD). Padrão: 29 dias antes de `to`. */
                 from?: string;
-                /** @description Último dia, inclusive (AAAA-MM-DD, horário de Brasília). Padrão: hoje. */
+                /** @description Último dia de operação, inclusive (AAAA-MM-DD). Padrão: hoje. */
                 to?: string;
-                type?: components["schemas"]["ShiftType"];
+                /** @description Só as aberturas deste caixa. */
+                cashRegisterId?: string;
             };
             header?: never;
             path?: never;
@@ -8655,7 +10492,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ShiftHistory"];
+                    "application/json": components["schemas"]["CashSessionHistory"];
                 };
             };
             /** @description `VALIDATION_FAILED`: datas, período de 1 a 366 dias ou cursor inválido. */
@@ -8705,13 +10542,22 @@ export interface operations {
             };
         };
     };
-    CashController_listRegisters: {
+    ReportsController_days: {
         parameters: {
-            query?: never;
+            query?: {
+                /** @description Itens por página (1 a 100, padrão 50). */
+                limit?: number;
+                /** @description Valor de `nextCursor` da página anterior. Opaco: não monte à mão. */
+                cursor?: string;
+                /** @description Unidade; sem ela, todas da organização. */
+                unitId?: string;
+                /** @description Primeiro dia de operação (AAAA-MM-DD). Padrão: 29 dias antes de `to`. */
+                from?: string;
+                /** @description Último dia de operação, inclusive (AAAA-MM-DD). Padrão: hoje. */
+                to?: string;
+            };
             header?: never;
-            path: {
-                id: string;
-            };
+            path?: never;
             cookie?: never;
         };
         requestBody?: never;
@@ -8721,300 +10567,16 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["CashRegisterList"];
+                    "application/json": components["schemas"]["DayHistory"];
                 };
             };
-            /** @description `UNAUTHENTICATED`: sem sessão do app ou sessão encerrada. */
-            401: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ErrorResponse"];
-                };
-            };
-            /** @description `FORBIDDEN`: só o balcão e quem opera o caixa na unidade. */
-            403: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ErrorResponse"];
-                };
-            };
-            /** @description `NOT_FOUND`: não existe ou é de outra organização. */
-            404: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ErrorResponse"];
-                };
-            };
-            /** @description Erro no formato `ErrorResponse` (spec 01, seção 5). */
-            default: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ErrorResponse"];
-                };
-            };
-        };
-    };
-    CashController_openRegister: {
-        parameters: {
-            query?: never;
-            header?: {
-                /** @description UUID gerado no aparelho. Repetir a mesma chave devolve a mesma resposta por 24 h, sem repetir a ação. */
-                "Idempotency-Key"?: string;
-            };
-            path: {
-                id: string;
-            };
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["OpenCashRegisterRequestInput"];
-            };
-        };
-        responses: {
-            201: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["CashRegister"];
-                };
-            };
-            /** @description `UNAUTHENTICATED`: sem sessão do app ou sessão encerrada. */
-            401: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ErrorResponse"];
-                };
-            };
-            /** @description `FORBIDDEN`: só o dono ou quem opera o caixa na unidade (RN-05.16). */
-            403: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ErrorResponse"];
-                };
-            };
-            /** @description `NOT_FOUND`: não existe ou é de outra organização. */
-            404: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ErrorResponse"];
-                };
-            };
-            /**
-             * @description `CASH_REGISTER_NAME_TAKEN` ou `SHIFT_CLOSED`.
-             *
-             *     `IDEMPOTENCY_KEY_REUSED` (mesma chave com outro corpo) ou `IDEMPOTENCY_REQUEST_IN_PROGRESS`.
-             */
-            409: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ErrorResponse"];
-                };
-            };
-            /** @description Erro no formato `ErrorResponse` (spec 01, seção 5). */
-            default: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ErrorResponse"];
-                };
-            };
-        };
-    };
-    OperationController_closeShift: {
-        parameters: {
-            query?: never;
-            header?: {
-                /** @description UUID gerado no aparelho. Repetir a mesma chave devolve a mesma resposta por 24 h, sem repetir a ação. */
-                "Idempotency-Key"?: string;
-            };
-            path: {
-                id: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["Shift"];
-                };
-            };
-            /** @description `UNAUTHENTICATED`: sem sessão do app ou sessão encerrada. */
-            401: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ErrorResponse"];
-                };
-            };
-            /** @description `FORBIDDEN`: só o dono ou quem opera o caixa na unidade. */
-            403: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ErrorResponse"];
-                };
-            };
-            /** @description `NOT_FOUND`: não existe ou é de outra organização. */
-            404: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ErrorResponse"];
-                };
-            };
-            /**
-             * @description `SHIFT_HAS_PENDING_ITEMS` com `details` no formato `ShiftPendingItems` (CA-04.09) ou `SHIFT_CLOSED`.
-             *
-             *     `IDEMPOTENCY_KEY_REUSED` (mesma chave com outro corpo) ou `IDEMPOTENCY_REQUEST_IN_PROGRESS`.
-             */
-            409: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ErrorResponse"];
-                };
-            };
-            /** @description Erro no formato `ErrorResponse` (spec 01, seção 5). */
-            default: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ErrorResponse"];
-                };
-            };
-        };
-    };
-    OperationController_updatePrices: {
-        parameters: {
-            query?: never;
-            header?: {
-                /** @description UUID gerado no aparelho. Repetir a mesma chave devolve a mesma resposta por 24 h, sem repetir a ação. */
-                "Idempotency-Key"?: string;
-            };
-            path: {
-                id: string;
-            };
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["PutShiftPricesRequestInput"];
-            };
-        };
-        responses: {
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["Shift"];
-                };
-            };
-            /** @description `INVALID_SHIFT_PRICE` ou `VALIDATION_FAILED`. */
+            /** @description `VALIDATION_FAILED`: datas, período de 1 a 366 dias ou cursor inválido. */
             400: {
                 headers: {
                     [name: string]: unknown;
                 };
                 content: {
                     "application/json": components["schemas"]["ErrorResponse"];
-                };
-            };
-            /** @description `UNAUTHENTICATED`: sem sessão do app ou sessão encerrada. */
-            401: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ErrorResponse"];
-                };
-            };
-            /** @description `FORBIDDEN`: só o dono ou quem opera o caixa na unidade. */
-            403: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ErrorResponse"];
-                };
-            };
-            /** @description `NOT_FOUND`: não existe ou é de outra organização. */
-            404: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ErrorResponse"];
-                };
-            };
-            /**
-             * @description `SHIFT_CLOSED` ou `VERSION_CONFLICT`.
-             *
-             *     `IDEMPOTENCY_KEY_REUSED` (mesma chave com outro corpo) ou `IDEMPOTENCY_REQUEST_IN_PROGRESS`.
-             */
-            409: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ErrorResponse"];
-                };
-            };
-            /** @description Erro no formato `ErrorResponse` (spec 01, seção 5). */
-            default: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ErrorResponse"];
-                };
-            };
-        };
-    };
-    ReportsController_shiftReport: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                id: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ShiftReport"];
                 };
             };
             /** @description `UNAUTHENTICATED`: sem sessão do app ou sessão encerrada. */
@@ -9055,16 +10617,23 @@ export interface operations {
             };
         };
     };
-    OperationController_listTabs: {
+    ReportsController_events: {
         parameters: {
             query?: {
-                /** @description Situações (`TabStatus`) separadas por vírgula; padrão `open,closing`. Ex.: `open,closing,paid`. */
-                status?: string;
+                /** @description Itens por página (1 a 100, padrão 50). */
+                limit?: number;
+                /** @description Valor de `nextCursor` da página anterior. Opaco: não monte à mão. */
+                cursor?: string;
+                /** @description Unidade; sem ela, todas da organização. */
+                unitId?: string;
+                /** @description Primeiro dia de operação (AAAA-MM-DD). Padrão: 29 dias antes de `to`. */
+                from?: string;
+                /** @description Último dia de operação, inclusive (AAAA-MM-DD). Padrão: hoje. */
+                to?: string;
+                status?: components["schemas"]["ContractedEventStatus"];
             };
             header?: never;
-            path: {
-                id: string;
-            };
+            path?: never;
             cookie?: never;
         };
         requestBody?: never;
@@ -9074,151 +10643,10 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["TabList"];
+                    "application/json": components["schemas"]["EventHistory"];
                 };
             };
-            /** @description `UNAUTHENTICATED`: sem sessão do app ou sessão encerrada. */
-            401: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ErrorResponse"];
-                };
-            };
-            /** @description `FORBIDDEN`: colaborador sem acesso à unidade. */
-            403: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ErrorResponse"];
-                };
-            };
-            /** @description `NOT_FOUND`: não existe ou é de outra organização. */
-            404: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ErrorResponse"];
-                };
-            };
-            /** @description Erro no formato `ErrorResponse` (spec 01, seção 5). */
-            default: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ErrorResponse"];
-                };
-            };
-        };
-    };
-    OperationController_createTab: {
-        parameters: {
-            query?: never;
-            header?: {
-                /** @description UUID gerado no aparelho. Repetir a mesma chave devolve a mesma resposta por 24 h, sem repetir a ação. */
-                "Idempotency-Key"?: string;
-            };
-            path: {
-                id: string;
-            };
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["CreateTabRequestInput"];
-            };
-        };
-        responses: {
-            201: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["Tab"];
-                };
-            };
-            /** @description `UNAUTHENTICATED`: sem sessão do app ou sessão encerrada. */
-            401: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ErrorResponse"];
-                };
-            };
-            /** @description `FORBIDDEN`: é preciso ter acesso ao balcão da unidade. */
-            403: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ErrorResponse"];
-                };
-            };
-            /** @description `NOT_FOUND`: não existe ou é de outra organização. */
-            404: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ErrorResponse"];
-                };
-            };
-            /**
-             * @description `SHIFT_CLOSED`.
-             *
-             *     `IDEMPOTENCY_KEY_REUSED` (mesma chave com outro corpo) ou `IDEMPOTENCY_REQUEST_IN_PROGRESS`.
-             */
-            409: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ErrorResponse"];
-                };
-            };
-            /** @description Erro no formato `ErrorResponse` (spec 01, seção 5). */
-            default: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ErrorResponse"];
-                };
-            };
-        };
-    };
-    CashController_payFirst: {
-        parameters: {
-            query?: never;
-            header?: {
-                /** @description UUID gerado no aparelho. Repetir a mesma chave devolve a mesma resposta por 24 h, sem repetir a ação. */
-                "Idempotency-Key"?: string;
-            };
-            path: {
-                id: string;
-            };
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["PayFirstRequestInput"];
-            };
-        };
-        responses: {
-            201: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["Tab"];
-                };
-            };
-            /** @description `INVALID_CASH_REGISTER` ou `VALIDATION_FAILED`. */
+            /** @description `VALIDATION_FAILED`: datas, período de 1 a 366 dias ou cursor inválido. */
             400: {
                 headers: {
                     [name: string]: unknown;
@@ -9236,7 +10664,7 @@ export interface operations {
                     "application/json": components["schemas"]["ErrorResponse"];
                 };
             };
-            /** @description `FORBIDDEN`: é preciso ter acesso ao balcão da unidade. */
+            /** @description `FORBIDDEN`: só o dono pode usar esta rota. */
             403: {
                 headers: {
                     [name: string]: unknown;
@@ -9254,12 +10682,70 @@ export interface operations {
                     "application/json": components["schemas"]["ErrorResponse"];
                 };
             };
-            /**
-             * @description `PAYMENT_INSUFFICIENT` (nada é gravado, CA-05.09), `ORDER_REJECTED`, `NO_CASH_REGISTER_OPEN` (CA-05.08), `CASH_REGISTER_REQUIRED` (`details.cashRegisters`), `CASH_REGISTER_CLOSED`, `PAYMENT_EXCEEDS_BALANCE` (CA-05.03), `TAB_NOTHING_TO_PAY`, `TAB_CHANGED` ou `SHIFT_CLOSED`.
-             *
-             *     `IDEMPOTENCY_KEY_REUSED` (mesma chave com outro corpo) ou `IDEMPOTENCY_REQUEST_IN_PROGRESS`.
-             */
-            409: {
+            /** @description Erro no formato `ErrorResponse` (spec 01, seção 5). */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    ReportsController_summary: {
+        parameters: {
+            query?: {
+                /** @description Unidade; sem ela, todas da organização. */
+                unitId?: string;
+                /** @description Primeiro dia de operação (AAAA-MM-DD). Padrão: 29 dias antes de `to`. */
+                from?: string;
+                /** @description Último dia de operação, inclusive (AAAA-MM-DD). Padrão: hoje. */
+                to?: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SummaryReport"];
+                };
+            };
+            /** @description `VALIDATION_FAILED`: datas, período de 1 a 366 dias ou cursor inválido. */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description `UNAUTHENTICATED`: sem sessão do app ou sessão encerrada. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description `FORBIDDEN`: só o dono pode usar esta rota. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description `NOT_FOUND`: não existe ou é de outra organização. */
+            404: {
                 headers: {
                     [name: string]: unknown;
                 };
@@ -9697,6 +11183,15 @@ export interface operations {
                     "application/json": components["schemas"]["Station"];
                 };
             };
+            /** @description `INVALID_TIME_LIMITS` (CA-03.12) ou `VALIDATION_FAILED`. */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
             /** @description `UNAUTHENTICATED`: sem sessão do app ou sessão encerrada. */
             401: {
                 headers: {
@@ -9724,7 +11219,7 @@ export interface operations {
                     "application/json": components["schemas"]["ErrorResponse"];
                 };
             };
-            /** @description `SHIFT_OPEN`: a unidade está com turno aberto (CA-03.03); `VERSION_CONFLICT`; nomes repetidos (`*_NAME_TAKEN`); `STATION_KIND_REQUIRED` ou `STATION_IN_USE`. */
+            /** @description `CASH_REGISTER_OPEN` (caixa aberto) ou `ITEMS_IN_PROGRESS` (itens em preparo), CA-03.03; `VERSION_CONFLICT`; nomes repetidos (`*_NAME_TAKEN`); `STATION_KIND_REQUIRED` ou `STATION_IN_USE`. Mudar só os limites de tempo é permitido com caixa aberto (RN-03.25). */
             409: {
                 headers: {
                     [name: string]: unknown;
@@ -9963,7 +11458,7 @@ export interface operations {
                 };
             };
             /**
-             * @description `TAB_HAS_ACTIVE_ITEMS` (`details.itemIds`), `TAB_CLOSED`, `TAB_CHANGED` ou `SHIFT_CLOSED`.
+             * @description `TAB_HAS_ACTIVE_ITEMS` (`details.itemIds`), `TAB_HAS_PAYMENTS`, `TAB_CLOSED` ou `TAB_CHANGED`.
              *
              *     `IDEMPOTENCY_KEY_REUSED` (mesma chave com outro corpo) ou `IDEMPOTENCY_REQUEST_IN_PROGRESS`.
              */
@@ -10049,7 +11544,7 @@ export interface operations {
                 };
             };
             /**
-             * @description `TAB_PAYMENTS_EXCEED_TOTAL` (o total ficaria menor que o já pago), `TAB_PAID`, `TAB_CLOSED`, `TAB_CHANGED` ou `SHIFT_CLOSED`.
+             * @description `TAB_PAYMENTS_EXCEED_TOTAL` (o total ficaria menor que o já pago), `TAB_PAID`, `TAB_CLOSED` ou `TAB_CHANGED`.
              *
              *     `IDEMPOTENCY_KEY_REUSED` (mesma chave com outro corpo) ou `IDEMPOTENCY_REQUEST_IN_PROGRESS`.
              */
@@ -10126,7 +11621,7 @@ export interface operations {
                 };
             };
             /**
-             * @description `TAB_PAID`, `TAB_CLOSED`, `TAB_PAYMENTS_EXCEED_TOTAL`, `TAB_CHANGED` ou `SHIFT_CLOSED`.
+             * @description `TAB_PAID`, `TAB_CLOSED`, `TAB_PAYMENTS_EXCEED_TOTAL` ou `TAB_CHANGED`.
              *
              *     `IDEMPOTENCY_KEY_REUSED` (mesma chave com outro corpo) ou `IDEMPOTENCY_REQUEST_IN_PROGRESS`.
              */
@@ -10203,7 +11698,7 @@ export interface operations {
                 };
             };
             /**
-             * @description `ORDER_REJECTED` com `details` no formato `OrderRejectedDetails` (CA-04.06, CA-03.06), `TAB_NOT_OPEN` (RN-04.13), `TAB_CLOSED` ou `SHIFT_CLOSED`.
+             * @description `ORDER_REJECTED` com `details` no formato `OrderRejectedDetails` (CA-04.06, CA-03.06), `TAB_NOT_OPEN` (RN-04.13), `TAB_CLOSED` ou `NO_CASH_REGISTER_OPEN` (sem caixa aberto na unidade, RN-04.02, CA-04.01).
              *
              *     `IDEMPOTENCY_KEY_REUSED` (mesma chave com outro corpo) ou `IDEMPOTENCY_REQUEST_IN_PROGRESS`.
              */
@@ -10289,7 +11784,7 @@ export interface operations {
                 };
             };
             /**
-             * @description `NO_CASH_REGISTER_OPEN` (CA-05.08), `CASH_REGISTER_REQUIRED` (`details.cashRegisters`), `CASH_REGISTER_CLOSED`, `PAYMENT_EXCEEDS_BALANCE` (CA-05.03), `TAB_NOTHING_TO_PAY`, `TAB_CHANGED` ou `SHIFT_CLOSED`, `TAB_NOT_CLOSING` (RN-05.07), `NO_SHIFT_OPEN` (quitação, RN-06.09) ou `TAB_CLOSED`.
+             * @description `NO_CASH_REGISTER_OPEN` (CA-05.08), `CASH_REGISTER_REQUIRED` (`details` no formato `CashRegisterRequiredDetails`), `CASH_REGISTER_CLOSED`, `PAYMENT_EXCEEDS_BALANCE` (CA-05.03), `TAB_NOTHING_TO_PAY` ou `TAB_CHANGED`, `TAB_NOT_CLOSING` (RN-05.07) ou `TAB_CLOSED`.
              *
              *     `IDEMPOTENCY_KEY_REUSED` (mesma chave com outro corpo) ou `IDEMPOTENCY_REQUEST_IN_PROGRESS`.
              */
@@ -10375,7 +11870,7 @@ export interface operations {
                 };
             };
             /**
-             * @description `TAB_NOT_CLOSING` (CA-06.02), `TAB_CLOSED`, `TAB_NOTHING_TO_PAY`, `TAB_CHANGED` ou `SHIFT_CLOSED`.
+             * @description `TAB_NOT_CLOSING` (CA-06.02), `TAB_CLOSED`, `TAB_NOTHING_TO_PAY` ou `TAB_CHANGED`.
              *
              *     `IDEMPOTENCY_KEY_REUSED` (mesma chave com outro corpo) ou `IDEMPOTENCY_REQUEST_IN_PROGRESS`.
              */
@@ -10452,7 +11947,7 @@ export interface operations {
                 };
             };
             /**
-             * @description `TAB_NOT_CLOSING`, `TAB_CLOSED`, `TAB_CHANGED` ou `SHIFT_CLOSED`.
+             * @description `TAB_NOT_CLOSING`, `TAB_CLOSED` ou `TAB_CHANGED`.
              *
              *     `IDEMPOTENCY_KEY_REUSED` (mesma chave com outro corpo) ou `IDEMPOTENCY_REQUEST_IN_PROGRESS`.
              */
@@ -10529,7 +12024,7 @@ export interface operations {
                 };
             };
             /**
-             * @description `TAB_NOT_OPEN`, `TAB_CLOSED`, `TAB_CHANGED` ou `SHIFT_CLOSED`.
+             * @description `TAB_NOT_OPEN`, `TAB_CLOSED` ou `TAB_CHANGED`.
              *
              *     `IDEMPOTENCY_KEY_REUSED` (mesma chave com outro corpo) ou `IDEMPOTENCY_REQUEST_IN_PROGRESS`.
              */
@@ -10719,7 +12214,141 @@ export interface operations {
                     "application/json": components["schemas"]["ErrorResponse"];
                 };
             };
-            /** @description `SHIFT_OPEN` (RN-03.02), `LAST_ACTIVE_UNIT` (RN-03.01), `UNIT_NAME_TAKEN` ou `VERSION_CONFLICT`. */
+            /** @description `CASH_REGISTER_OPEN` ou `UNIT_HAS_OPEN_TABS` (RN-03.02), `LAST_ACTIVE_UNIT` (RN-03.01), `UNIT_NAME_TAKEN` ou `VERSION_CONFLICT`. */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Erro no formato `ErrorResponse` (spec 01, seção 5). */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    CashController_listRegisters: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CashRegisterList"];
+                };
+            };
+            /** @description `UNAUTHENTICATED`: sem sessão do app ou sessão encerrada. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description `FORBIDDEN`: só o balcão e quem opera o caixa na unidade. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description `NOT_FOUND`: não existe ou é de outra organização. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Erro no formato `ErrorResponse` (spec 01, seção 5). */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    CashController_createRegister: {
+        parameters: {
+            query?: never;
+            header?: {
+                /** @description UUID gerado no aparelho. Repetir a mesma chave devolve a mesma resposta por 24 h, sem repetir a ação. */
+                "Idempotency-Key"?: string;
+            };
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateCashRegisterRequestInput"];
+            };
+        };
+        responses: {
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CashRegister"];
+                };
+            };
+            /** @description `UNAUTHENTICATED`: sem sessão do app ou sessão encerrada. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description `FORBIDDEN`: só o dono pode usar esta rota. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description `NOT_FOUND`: não existe ou é de outra organização. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /**
+             * @description `CASH_REGISTER_NAME_TAKEN`.
+             *
+             *     `IDEMPOTENCY_KEY_REUSED` (mesma chave com outro corpo) ou `IDEMPOTENCY_REQUEST_IN_PROGRESS`.
+             */
             409: {
                 headers: {
                     [name: string]: unknown;
@@ -10791,6 +12420,92 @@ export interface operations {
             };
             /** @description `NOT_FOUND`: não existe ou é de outra organização. */
             404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Erro no formato `ErrorResponse` (spec 01, seção 5). */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    OperationController_setCurrentPriceList: {
+        parameters: {
+            query?: never;
+            header?: {
+                /** @description UUID gerado no aparelho. Repetir a mesma chave devolve a mesma resposta por 24 h, sem repetir a ação. */
+                "Idempotency-Key"?: string;
+            };
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PutCurrentPriceListRequestInput"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["UnitOperation"];
+                };
+            };
+            /** @description `INVALID_PRICE_LIST` (inexistente, de outra unidade ou inativa). */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description `UNAUTHENTICATED`: sem sessão do app ou sessão encerrada. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description `FORBIDDEN`: só o dono ou quem opera o caixa na unidade (RN-04.31). */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description `NOT_FOUND`: não existe ou é de outra organização. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /**
+             * @description `EVENT_IN_PROGRESS` (a tabela é a do evento, RN-04.32, CA-04.14) ou `VERSION_CONFLICT`.
+             *
+             *     `IDEMPOTENCY_KEY_REUSED` (mesma chave com outro corpo) ou `IDEMPOTENCY_REQUEST_IN_PROGRESS`.
+             */
+            409: {
                 headers: {
                     [name: string]: unknown;
                 };
@@ -10959,6 +12674,152 @@ export interface operations {
             };
         };
     };
+    OperationController_listEvents: {
+        parameters: {
+            query?: {
+                /** @description Situações (`ContractedEventStatus`) separadas por vírgula; padrão: todas. */
+                status?: string;
+                /** @description Eventos que terminam neste dia ou depois (AAAA-MM-DD). */
+                from?: string;
+                /** @description Eventos que começam neste dia ou antes (AAAA-MM-DD). */
+                to?: string;
+            };
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ContractedEventList"];
+                };
+            };
+            /** @description `UNAUTHENTICATED`: sem sessão do app ou sessão encerrada. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description `FORBIDDEN`: só o dono ou quem opera o caixa na unidade. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description `NOT_FOUND`: não existe ou é de outra organização. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Erro no formato `ErrorResponse` (spec 01, seção 5). */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    OperationController_createEvent: {
+        parameters: {
+            query?: never;
+            header?: {
+                /** @description UUID gerado no aparelho. Repetir a mesma chave devolve a mesma resposta por 24 h, sem repetir a ação. */
+                "Idempotency-Key"?: string;
+            };
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateContractedEventRequestInput"];
+            };
+        };
+        responses: {
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ContractedEvent"];
+                };
+            };
+            /** @description `INVALID_PRICE_LIST` ou `VALIDATION_FAILED`. */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description `UNAUTHENTICATED`: sem sessão do app ou sessão encerrada. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description `FORBIDDEN`: só o dono cadastra eventos. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description `NOT_FOUND`: não existe ou é de outra organização. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description `IDEMPOTENCY_KEY_REUSED` (mesma chave com outro corpo) ou `IDEMPOTENCY_REQUEST_IN_PROGRESS`. */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Erro no formato `ErrorResponse` (spec 01, seção 5). */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
     MenuController_readMenu: {
         parameters: {
             query?: never;
@@ -11016,6 +12877,197 @@ export interface operations {
             };
         };
     };
+    OperationController_getOperation: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["UnitOperation"];
+                };
+            };
+            /** @description `UNAUTHENTICATED`: sem sessão do app ou sessão encerrada. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description `FORBIDDEN`: colaborador sem acesso à unidade. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description `NOT_FOUND`: não existe ou é de outra organização. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Erro no formato `ErrorResponse` (spec 01, seção 5). */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    MenuController_listPriceLists: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PriceListList"];
+                };
+            };
+            /** @description `UNAUTHENTICATED`: sem sessão do app ou sessão encerrada. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description `FORBIDDEN`: colaborador sem acesso à unidade. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description `NOT_FOUND`: não existe ou é de outra organização. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Erro no formato `ErrorResponse` (spec 01, seção 5). */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    MenuController_createPriceList: {
+        parameters: {
+            query?: never;
+            header?: {
+                /** @description UUID gerado no aparelho. Repetir a mesma chave devolve a mesma resposta por 24 h, sem repetir a ação. */
+                "Idempotency-Key"?: string;
+            };
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreatePriceListRequestInput"];
+            };
+        };
+        responses: {
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PriceList"];
+                };
+            };
+            /** @description `UNAUTHENTICATED`: sem sessão do app ou sessão encerrada. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description `FORBIDDEN`: só o dono pode usar esta rota. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description `NOT_FOUND`: não existe ou é de outra organização. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /**
+             * @description `PRICE_LIST_NAME_TAKEN` ou `PRICE_LIST_NAME_RESERVED` ("Normal"), CA-03.10.
+             *
+             *     `IDEMPOTENCY_KEY_REUSED` (mesma chave com outro corpo) ou `IDEMPOTENCY_REQUEST_IN_PROGRESS`.
+             */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Erro no formato `ErrorResponse` (spec 01, seção 5). */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
     CreditController_receivables: {
         parameters: {
             query?: never;
@@ -11045,149 +13097,6 @@ export interface operations {
                 };
             };
             /** @description `FORBIDDEN`: é preciso ter acesso ao balcão ou operar o caixa da unidade. */
-            403: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ErrorResponse"];
-                };
-            };
-            /** @description `NOT_FOUND`: não existe ou é de outra organização. */
-            404: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ErrorResponse"];
-                };
-            };
-            /** @description Erro no formato `ErrorResponse` (spec 01, seção 5). */
-            default: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ErrorResponse"];
-                };
-            };
-        };
-    };
-    OperationController_openShift: {
-        parameters: {
-            query?: never;
-            header?: {
-                /** @description UUID gerado no aparelho. Repetir a mesma chave devolve a mesma resposta por 24 h, sem repetir a ação. */
-                "Idempotency-Key"?: string;
-            };
-            path: {
-                id: string;
-            };
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["OpenShiftRequestInput"];
-            };
-        };
-        responses: {
-            201: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["Shift"];
-                };
-            };
-            /** @description `INVALID_SHIFT_PRICE` ou `VALIDATION_FAILED` (acordo obrigatório no turno contratado). */
-            400: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ErrorResponse"];
-                };
-            };
-            /** @description `UNAUTHENTICATED`: sem sessão do app ou sessão encerrada. */
-            401: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ErrorResponse"];
-                };
-            };
-            /** @description `FORBIDDEN`: só o dono ou quem opera o caixa na unidade. */
-            403: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ErrorResponse"];
-                };
-            };
-            /** @description `NOT_FOUND`: não existe ou é de outra organização. */
-            404: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ErrorResponse"];
-                };
-            };
-            /**
-             * @description `SHIFT_ALREADY_OPEN` (CA-04.01), `UNIT_INACTIVE`, `ORGANIZATION_SUSPENDED` ou `ORGANIZATION_CANCELED` (CA-02.05).
-             *
-             *     `IDEMPOTENCY_KEY_REUSED` (mesma chave com outro corpo) ou `IDEMPOTENCY_REQUEST_IN_PROGRESS`.
-             */
-            409: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ErrorResponse"];
-                };
-            };
-            /** @description Erro no formato `ErrorResponse` (spec 01, seção 5). */
-            default: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ErrorResponse"];
-                };
-            };
-        };
-    };
-    OperationController_currentShift: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                id: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["CurrentShift"];
-                };
-            };
-            /** @description `UNAUTHENTICATED`: sem sessão do app ou sessão encerrada. */
-            401: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ErrorResponse"];
-                };
-            };
-            /** @description `FORBIDDEN`: colaborador sem acesso à unidade. */
             403: {
                 headers: {
                     [name: string]: unknown;
@@ -11299,6 +13208,15 @@ export interface operations {
                     "application/json": components["schemas"]["Station"];
                 };
             };
+            /** @description `INVALID_TIME_LIMITS` (CA-03.12) ou `VALIDATION_FAILED`. */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
             /** @description `UNAUTHENTICATED`: sem sessão do app ou sessão encerrada. */
             401: {
                 headers: {
@@ -11327,7 +13245,230 @@ export interface operations {
                 };
             };
             /**
-             * @description `SHIFT_OPEN`: a unidade está com turno aberto (CA-03.03); `VERSION_CONFLICT`; nomes repetidos (`*_NAME_TAKEN`); `STATION_KIND_REQUIRED` ou `STATION_IN_USE`.
+             * @description `CASH_REGISTER_OPEN` (caixa aberto) ou `ITEMS_IN_PROGRESS` (itens em preparo), CA-03.03; `VERSION_CONFLICT`; nomes repetidos (`*_NAME_TAKEN`); `STATION_KIND_REQUIRED` ou `STATION_IN_USE`. Mudar só os limites de tempo é permitido com caixa aberto (RN-03.25).
+             *
+             *     `IDEMPOTENCY_KEY_REUSED` (mesma chave com outro corpo) ou `IDEMPOTENCY_REQUEST_IN_PROGRESS`.
+             */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Erro no formato `ErrorResponse` (spec 01, seção 5). */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    OperationController_listTabs: {
+        parameters: {
+            query?: {
+                /** @description Situações (`TabStatus`) separadas por vírgula; padrão `open,closing`. Ex.: `open,closing,paid`. */
+                status?: string;
+            };
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TabList"];
+                };
+            };
+            /** @description `UNAUTHENTICATED`: sem sessão do app ou sessão encerrada. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description `FORBIDDEN`: colaborador sem acesso à unidade. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description `NOT_FOUND`: não existe ou é de outra organização. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Erro no formato `ErrorResponse` (spec 01, seção 5). */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    OperationController_createTab: {
+        parameters: {
+            query?: never;
+            header?: {
+                /** @description UUID gerado no aparelho. Repetir a mesma chave devolve a mesma resposta por 24 h, sem repetir a ação. */
+                "Idempotency-Key"?: string;
+            };
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateTabRequestInput"];
+            };
+        };
+        responses: {
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Tab"];
+                };
+            };
+            /** @description `UNAUTHENTICATED`: sem sessão do app ou sessão encerrada. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description `FORBIDDEN`: é preciso ter acesso ao balcão da unidade. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description `NOT_FOUND`: não existe ou é de outra organização. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /**
+             * @description `NO_CASH_REGISTER_OPEN` (sem caixa aberto na unidade, RN-04.02, CA-04.01).
+             *
+             *     `IDEMPOTENCY_KEY_REUSED` (mesma chave com outro corpo) ou `IDEMPOTENCY_REQUEST_IN_PROGRESS`.
+             */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Erro no formato `ErrorResponse` (spec 01, seção 5). */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    CashController_payFirst: {
+        parameters: {
+            query?: never;
+            header?: {
+                /** @description UUID gerado no aparelho. Repetir a mesma chave devolve a mesma resposta por 24 h, sem repetir a ação. */
+                "Idempotency-Key"?: string;
+            };
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PayFirstRequestInput"];
+            };
+        };
+        responses: {
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Tab"];
+                };
+            };
+            /** @description `INVALID_CASH_REGISTER` ou `VALIDATION_FAILED`. */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description `UNAUTHENTICATED`: sem sessão do app ou sessão encerrada. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description `FORBIDDEN`: é preciso ter acesso ao balcão da unidade. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description `NOT_FOUND`: não existe ou é de outra organização. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /**
+             * @description `PAYMENT_INSUFFICIENT` (nada é gravado, CA-05.09), `ORDER_REJECTED`, `NO_CASH_REGISTER_OPEN` (CA-05.08), `CASH_REGISTER_REQUIRED` (`details` no formato `CashRegisterRequiredDetails`), `CASH_REGISTER_CLOSED`, `PAYMENT_EXCEEDS_BALANCE` (CA-05.03), `TAB_NOTHING_TO_PAY` ou `TAB_CHANGED`.
              *
              *     `IDEMPOTENCY_KEY_REUSED` (mesma chave com outro corpo) ou `IDEMPOTENCY_REQUEST_IN_PROGRESS`.
              */
@@ -11466,7 +13607,7 @@ export interface operations {
                     "application/json": components["schemas"]["ErrorResponse"];
                 };
             };
-            /** @description `SHIFT_OPEN` (CA-03.03) ou `VERSION_CONFLICT`. */
+            /** @description `CASH_REGISTER_OPEN` ou `ITEMS_IN_PROGRESS` (CA-03.03, RN-03.07) ou `VERSION_CONFLICT`. */
             409: {
                 headers: {
                     [name: string]: unknown;

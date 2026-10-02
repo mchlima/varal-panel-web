@@ -7,36 +7,12 @@ import TabBoard from '~/components/TabBoard.vue'
 import TabItemRow from '~/components/TabItemRow.vue'
 import { createTabBoard } from '~/lib/live-collection'
 import type { CashRegister } from '~/lib/payment'
-import { SHIFT, item, stages, tabSummary } from '../support/operation-fixtures'
+import { UNIT, cashRegister, item, stages, tabSummary } from '../support/operation-fixtures'
 
 const now = Date.parse('2026-10-01T20:05:00.000Z')
 
 function register(overrides: Partial<CashRegister> = {}): CashRegister {
-  return {
-    id: 'r1',
-    shiftId: 'sh',
-    unitId: 'u',
-    name: 'Caixa 1',
-    status: 'open',
-    openingFloatCents: 10_000,
-    openedBy: { type: 'staff', id: 's1' },
-    openedAt: '2026-10-01T19:00:00.000Z',
-    closedBy: null,
-    closedAt: null,
-    closingNote: null,
-    expected: [],
-    cash: {
-      openingFloatCents: 10_000,
-      paymentsCents: 0,
-      creditSettlementsCents: 0,
-      depositsCents: 0,
-      withdrawalsCents: 0,
-    },
-    creditSettlementsCents: 0,
-    counts: [],
-    version: 0,
-    ...overrides,
-  }
+  return cashRegister({ id: 'r1', ...overrides })
 }
 
 describe('teclado de receber (spec 05, seção 8)', () => {
@@ -116,12 +92,12 @@ describe('desconto (RN-05.01 a 05.03)', () => {
 })
 
 describe('escolha do caixa (RN-05.05, RN-05.06)', () => {
-  it('CA-05.08: sem caixa aberto orienta "Abra um caixa para receber"', async () => {
+  it('CA-05.08: sem caixa aberto orienta "Abra um caixa para vender"', async () => {
     const picker = await mountSuspended(RegisterPicker, {
       props: { registers: [], selectedId: null, loaded: true, canOpen: true, unitId: 'u' },
     })
-    expect(picker.text()).toContain('Abra um caixa para receber.')
-    expect(picker.get('a').attributes('href')).toBe('/caixas?unidade=u')
+    expect(picker.text()).toContain('Abra um caixa para vender.')
+    expect(picker.get('a').attributes('href')).toBe('/caixas?unidade=u&volta=balcao')
   })
 
   it('com mais de um caixa, pede a escolha', async () => {
@@ -179,15 +155,15 @@ describe('estado honesto sem conexão (spec 01, seção 11)', () => {
   it('paga antes na fila aparece no varal como não confirmada; pagamento na fila não muda a comanda', async () => {
     const counter = useCounterStore()
     const connection = useConnectionStore()
-    counter.board = createTabBoard(SHIFT)
+    counter.board = createTabBoard(UNIT)
     counter.board.apply(tabSummary({ status: 'closing', balanceCents: 3_600 }))
     connection.online = false
     connection.pending = [
       queued({
         kind: 'tab.pay_first',
-        shiftId: SHIFT,
+        unitId: UNIT,
         customerName: 'Lucas',
-        draftKey: `pay-first:${SHIFT}`,
+        draftKey: `pay-first:${UNIT}`,
         lines: [],
         payments: [{ method: 'pix', cents: 1_800 }],
         totalCents: 1_800,

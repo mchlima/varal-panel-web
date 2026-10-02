@@ -1,6 +1,12 @@
 import { describe, expect, it } from 'vitest'
 import { apiErrorMessage, NETWORK_ERROR_MESSAGE } from '~/lib/api-error'
-import { homePathFor, isLoginRoute, isPublicRoute } from '~/lib/routes'
+import {
+  canOperateCashIn,
+  hasPanelAccess,
+  homePathFor,
+  isLoginRoute,
+  isPublicRoute,
+} from '~/lib/routes'
 import { isUuid, uuidv7 } from '~/lib/uuid'
 
 describe('rotas do app (spec 01, seção 14.1)', () => {
@@ -15,9 +21,62 @@ describe('rotas do app (spec 01, seção 14.1)', () => {
     expect(isLoginRoute('/definir-senha')).toBe(false)
   })
 
-  it('depois do login: dono no painel, colaborador nas estações', () => {
-    expect(homePathFor('owner')).toBe('/painel')
-    expect(homePathFor('staff')).toBe('/estacoes')
+  const unit = (
+    stations: { id: string; kind: 'counter' | 'queue' }[],
+    canOperateCash = false,
+    id = 'u1',
+  ) => ({ id, canOperateCash, stations })
+
+  it('RN-01.23: painel para o dono e para quem opera caixa', () => {
+    expect(hasPanelAccess({ subject: { type: 'owner' }, units: [] })).toBe(true)
+    expect(
+      hasPanelAccess({
+        subject: { type: 'staff' },
+        units: [unit([{ id: 'b', kind: 'counter' }], true)],
+      }),
+    ).toBe(true)
+    expect(
+      hasPanelAccess({ subject: { type: 'staff' }, units: [unit([{ id: 'k', kind: 'queue' }])] }),
+    ).toBe(false)
+  })
+
+  it('depois do login (RN-01.26, CA-01.17): painel, estação única direto ou escolha', () => {
+    expect(homePathFor({ subject: { type: 'owner' }, units: [] })).toBe('/painel')
+    expect(
+      homePathFor({
+        subject: { type: 'staff' },
+        units: [unit([{ id: 'b', kind: 'counter' }], true)],
+      }),
+    ).toBe('/painel')
+    // Só a Cozinha: entra direto nela, sem painel nem "Trocar de estação".
+    expect(
+      homePathFor({ subject: { type: 'staff' }, units: [unit([{ id: 'k', kind: 'queue' }])] }),
+    ).toBe('/estacao/k')
+    expect(
+      homePathFor({ subject: { type: 'staff' }, units: [unit([{ id: 'b', kind: 'counter' }])] }),
+    ).toBe('/balcao')
+    expect(
+      homePathFor({
+        subject: { type: 'staff' },
+        units: [
+          unit([
+            { id: 'b', kind: 'counter' },
+            { id: 'e', kind: 'queue' },
+          ]),
+        ],
+      }),
+    ).toBe('/estacoes')
+    expect(homePathFor(null)).toBe('/entrar')
+  })
+
+  it('caixa: dono em todas as unidades; colaborador só onde opera caixa', () => {
+    const staff = {
+      subject: { type: 'staff' as const },
+      units: [unit([], true, 'u1'), unit([], false, 'u2')],
+    }
+    expect(canOperateCashIn(staff, 'u1')).toBe(true)
+    expect(canOperateCashIn(staff, 'u2')).toBe(false)
+    expect(canOperateCashIn({ subject: { type: 'owner' }, units: [] }, 'u2')).toBe(true)
   })
 })
 

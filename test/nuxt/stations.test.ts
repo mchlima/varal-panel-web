@@ -57,7 +57,9 @@ describe('/estacoes (spec 01, seção 14)', () => {
     session.status = 'authenticated'
     const wrapper = await mountSuspended(Estacoes)
     expect(wrapper.text()).toContain('Nenhuma estação configurada ainda.')
-    expect(wrapper.find('a[href="/painel"]').text()).toBe('Ir para o painel')
+    // RN-01.25: o botão "Painel" fica sempre no topo para quem tem painel.
+    expect(wrapper.get('[data-testid="go-panel"]').text()).toBe('Painel')
+    expect(wrapper.get('[data-testid="go-panel"]').attributes('href')).toBe('/painel')
   })
 
   it('RN-03.16: mostra as estações liberadas com o nome e o tipo reais, sem numerar', async () => {

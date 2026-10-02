@@ -1,11 +1,13 @@
 <script setup lang="ts">
-import { centsToInput, parseReais } from '~/lib/money'
+import { centsToInput, formatCents, parseReais } from '~/lib/money'
+import { priceChanges, pricesToInput } from '~/lib/price-lists'
 
 /**
  * Editor de produto (spec 03, seção 5): nome, descrição curta (até 120), preço digitado em
  * reais e guardado em centavos (RN-03.09: ≥ 0), categoria, estação de preparo própria
- * (opcional, RN-03.08), ativo, esgotado (RN-03.11) e grupos de modificadores. Mudar preço ou
- * modificadores com turno aberto vale para pedidos novos (RN-03.12).
+ * (opcional, RN-03.08), ativo, esgotado (RN-03.11), grupos de modificadores e "Preços por
+ * tabela" (RN-03.22: um campo por tabela ativa, vazio = preço normal). Mudar preço ou
+ * modificadores com caixa aberto vale para pedidos novos (RN-03.12, RN-03.24).
  */
 const props = defineProps<{ unitId: string; productId: string | null; categoryId: string }>()
 const emit = defineEmits<{ created: [id: string]; close: [] }>()
@@ -97,6 +99,53 @@ async function save() {
   }
 }
 
+// Preços por tabela (RN-03.21, RN-03.22): só as tabelas ativas aparecem para preencher.
+const priceAction = useApiAction()
+const activeLists = computed(() =>
+  [...(menu.menu?.priceLists ?? [])]
+    .filter((list) => list.active)
+    .sort((a, b) => a.sortOrder - b.sortOrder),
+)
+const savedPrices = computed<Record<string, number>>(() =>
+  Object.fromEntries(
+    (product.value?.prices ?? [])
+      .filter((price) => activeLists.value.some((list) => list.id === price.priceListId))
+      .map((price) => [price.priceListId, price.priceCents]),
+  ),
+)
+const listInput = ref<Record<string, string>>({})
+const listErrors = ref<Record<string, string>>({})
+const listsSaved = ref(false)
+watch(savedPrices, (prices) => (listInput.value = pricesToInput(prices)), { immediate: true })
+
+async function saveListPrices() {
+  const current = product.value
+  if (!current) return
+  listsSaved.value = false
+  const { changes, errors: invalid } = priceChanges(savedPrices.value, listInput.value)
+  listErrors.value = invalid
+  if (Object.keys(invalid).length) return
+  if (changes.length === 0) {
+    listsSaved.value = true
+    return
+  }
+  const result = await priceAction.run(() =>
+    $api.PUT('/api/v1/products/{id}/prices', {
+      params: { path: { id: current.id } },
+      body: {
+        prices: changes.map((change) => ({
+          priceListId: change.key,
+          priceCents: change.priceCents,
+        })),
+      },
+    }),
+  )
+  if (result.ok) {
+    await menu.reload()
+    listsSaved.value = true
+  }
+}
+
 async function reloadAndFill() {
   await menu.reload()
   fill()
@@ -150,6 +199,51 @@ async function groupsChanged() {
         {{ product ? 'Salvar produto' : 'Criar produto' }}
       </AppButton>
     </form>
+
+    <section v-if="product" class="flex flex-col gap-3" aria-labelledby="list-prices-heading">
+      <div class="flex flex-col gap-1">
+        <h3 id="list-prices-heading" class="text-lg">Preços por tabela</h3>
+        <p class="text-sm text-text-muted">
+          Deixe vazio para usar o preço normal ({{ formatCents(product.priceCents) }}) quando a
+          tabela estiver valendo.
+        </p>
+      </div>
+      <AppAlert v-if="activeLists.length === 0">
+        <p>Nenhuma tabela de preço ainda.</p>
+        <p>
+          Crie uma (ex.: "Evento") em
+          <NuxtLink to="/painel/cardapio/tabelas" class="font-bold underline"
+            >Tabelas de preço</NuxtLink
+          >
+          para ter preços diferentes em festas e eventos.
+        </p>
+      </AppAlert>
+      <form
+        v-else
+        class="flex flex-col gap-3"
+        novalidate
+        aria-label="Preços por tabela"
+        data-testid="list-prices"
+        @submit.prevent="saveListPrices"
+      >
+        <AppTextField
+          v-for="list in activeLists"
+          :key="list.id"
+          :model-value="listInput[list.id] ?? ''"
+          :label="list.current ? `${list.name} (valendo agora)` : list.name"
+          prefix="R$"
+          inputmode="decimal"
+          :placeholder="centsToInput(product.priceCents)"
+          :error="listErrors[list.id] ?? ''"
+          @update:model-value="listInput = { ...listInput, [list.id]: $event }"
+        />
+        <ErrorAlert :error="priceAction.error.value" @reload="reloadAndFill" />
+        <AppAlert v-if="listsSaved" tone="success">Preços das tabelas salvos.</AppAlert>
+        <AppButton type="submit" variant="secondary" :loading="priceAction.busy.value">
+          Salvar preços das tabelas
+        </AppButton>
+      </form>
+    </section>
 
     <section v-if="product" class="flex flex-col gap-3" aria-labelledby="sold-out-heading">
       <h3 id="sold-out-heading" class="text-lg">Esgotado</h3>

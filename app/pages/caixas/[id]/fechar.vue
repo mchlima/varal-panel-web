@@ -1,74 +1,102 @@
 <script setup lang="ts">
-import OperationShell from '~/components/OperationShell.vue'
-import PanelShell from '~/components/PanelShell.vue'
 import { formatCents, parseReais } from '~/lib/money'
+import { sinceLabel, shortDay } from '~/lib/operation'
 import {
   CLOSING_NOTE_MAX,
   COUNT_HINTS,
   PAYMENT_METHOD_LABELS,
   PAYMENT_METHODS,
+  cashRegisterHint,
   closingRows,
   countsOf,
-  expectedSplit,
-  splitLabel,
   differenceLabel,
+  expectedSplit,
   hasDifference,
-  type CashRegisterDetail,
+  splitLabel,
+  toCloseBody,
+  type CashRegister,
+  type CashRegisterClosePreview,
+  type CashRegisterSession,
   type PaymentMethod,
 } from '~/lib/payment'
 import { explainError, type ExplainedError } from '~/lib/setup'
 
 /**
- * Fechar caixa (`/caixas/{id}/fechar`, spec 05, RN-05.20, CA-05.07): para cada forma, o
- * esperado, o valor conferido e a diferença (informado − esperado) calculada ao vivo; havendo
- * diferença, a observação é obrigatória (`CLOSING_NOTE_REQUIRED`). Confirmação final antes de
- * enviar: caixa fechado não reabre (RN-05.21). Feito com conexão, com `Idempotency-Key` e a
- * `version` do caixa (um pagamento que chega no meio muda o esperado e a tela avisa).
+ * Fechar caixa (`/caixas/{id}/fechar`, spec 05, seção 5.4): para cada forma, o esperado, o valor
+ * conferido e a diferença calculada ao vivo; havendo diferença, a observação é obrigatória
+ * (RN-05.20, CA-05.07). Comandas em aberto não impedem fechar: aparecem como pendentes que
+ * seguem abertas (RN-05.28, CA-05.11). No último caixa aberto, a confirmação mostra os itens em
+ * preparo ("Encerrar o preparo pendente", marcado) e o evento em andamento ("Encerrar também o
+ * evento", desmarcado), RN-05.29. Depois de fechar, quem fechou vê só o resumo do próprio
+ * fechamento; o relatório do caixa é do dono (RN-07.07).
  */
 const route = useRoute()
-const session = useSessionStore()
 const { $api } = useNuxtApp()
-const id = computed(() => String(route.params.id))
+const session = useSessionStore()
+const registerId = computed(() => String(route.params.id))
+const { unitId, unit, register, notFound, reload } = useRegisterPlace(registerId)
 
-useHead({ title: 'Fechar caixa · Varal' })
+useHead({ title: () => `Fechar ${register.value?.name ?? 'caixa'} · Varal` })
 
-const register = ref<CashRegisterDetail | null>(null)
-const loadError = ref('')
+const preview = ref<CashRegisterClosePreview | null>(null)
+const previewError = ref('')
 const expectedChanged = ref(false)
+/** Abertura fechada nesta tela: o resumo do fechamento (spec 05, seção 8). */
+const closedSession = ref<CashRegisterSession | null>(null)
 
-async function load() {
-  loadError.value = ''
+const openSessionId = computed(() =>
+  register.value?.session?.status === 'open' ? register.value.session.id : null,
+)
+
+async function loadPreview() {
+  const id = openSessionId.value
+  if (!id || closedSession.value) return
+  previewError.value = ''
   try {
-    const { data, error } = await $api.GET('/api/v1/cash-registers/{id}', {
-      params: { path: { id: id.value } },
+    const { data, error } = await $api.GET('/api/v1/cash-register-sessions/{id}/close-preview', {
+      params: { path: { id } },
     })
     if (!data) {
-      loadError.value = explainError(error).message
+      previewError.value = explainError(error).message
       return
     }
-    register.value = data
+    const before = preview.value?.session
+    if (before && before.id === data.session.id && expectedDiffers(before, data.session)) {
+      expectedChanged.value = true
+    }
+    preview.value = data
   } catch (error) {
-    loadError.value = explainError(error).message
+    previewError.value = explainError(error).message
   }
 }
-onMounted(load)
-useRealtimeResync(load)
-useRealtimeEvent('cash_register.updated', (event) => {
-  const current = register.value
-  if (!current || event.data.id !== current.id || event.data.version <= current.version) return
-  // Pagamento, estorno ou movimento novo: o esperado muda na hora.
-  const changed = PAYMENT_METHODS.some(
+
+function expectedDiffers(a: CashRegisterSession, b: CashRegisterSession): boolean {
+  return PAYMENT_METHODS.some(
     (method) =>
-      event.data.expected.find((entry) => entry.method === method)?.expectedCents !==
-      current.expected.find((entry) => entry.method === method)?.expectedCents,
+      a.expected.find((entry) => entry.method === method)?.expectedCents !==
+      b.expected.find((entry) => entry.method === method)?.expectedCents,
   )
-  register.value = { ...current, ...event.data }
-  if (changed) expectedChanged.value = true
+}
+
+watch(openSessionId, () => void loadPreview(), { immediate: true })
+useRealtimeResync(loadPreview)
+let timer: ReturnType<typeof setTimeout> | null = null
+function previewSoon() {
+  if (timer) clearTimeout(timer)
+  timer = setTimeout(() => void loadPreview(), 300)
+}
+// Pagamento, estorno ou movimento novo muda o esperado; comanda nova ou paga muda os pendentes.
+useRealtimeEvent('cash_register.updated', (event) => {
+  if (event.data.id === registerId.value) previewSoon()
 })
-useRealtimeEvent('cash_register.closed', (event) => {
-  if (register.value && event.data.id === register.value.id) {
-    register.value = { ...register.value, ...event.data }
-  }
+useRealtimeEvent('tab.updated', (event) => {
+  if (event.unitId === unitId.value) previewSoon()
+})
+useRealtimeEvent('tab.created', (event) => {
+  if (event.unitId === unitId.value) previewSoon()
+})
+onScopeDispose(() => {
+  if (timer) clearTimeout(timer)
 })
 
 const inputs = reactive<Record<PaymentMethod, string>>({
@@ -80,6 +108,8 @@ const inputs = reactive<Record<PaymentMethod, string>>({
 const note = ref('')
 const touched = ref(false)
 const confirming = ref(false)
+const finishPendingItems = ref(true)
+const finishEvent = ref(false)
 
 const informed = computed(() => {
   const result: Partial<Record<PaymentMethod, number | null>> = {}
@@ -88,18 +118,10 @@ const informed = computed(() => {
   }
   return result
 })
-const rows = computed(() => (register.value ? closingRows(register.value, informed.value) : []))
+const rows = computed(() =>
+  preview.value ? closingRows(preview.value.session, informed.value) : [],
+)
 const differs = computed(() => hasDifference(rows.value))
-/** Vendas do turno e quitações de fiado separadas no esperado de cada forma (RN-05.22). */
-const splits = computed(() => {
-  const current = register.value
-  return Object.fromEntries(
-    PAYMENT_METHODS.map((method) => [
-      method,
-      current ? splitLabel(expectedSplit(current, method)) : '',
-    ]),
-  ) as Record<PaymentMethod, string>
-})
 
 function fieldError(method: PaymentMethod): string {
   if (!touched.value) return ''
@@ -111,14 +133,11 @@ const noteError = computed(() => {
   if (differs.value && !note.value.trim()) return 'Há diferença: explique na observação.'
   return ''
 })
-const valid = computed(
-  () => PAYMENT_METHODS.every((method) => informed.value[method] != null) && !noteError.value,
-)
+const complete = computed(() => PAYMENT_METHODS.every((method) => informed.value[method] != null))
 
 function review() {
   touched.value = true
-  if (differs.value && !note.value.trim()) return
-  if (!PAYMENT_METHODS.every((method) => informed.value[method] != null)) return
+  if (!complete.value || noteError.value) return
   confirming.value = true
 }
 
@@ -127,137 +146,182 @@ const key = useIdempotencyKey()
 const closeError = ref<ExplainedError | null>(null)
 
 async function close() {
-  const current = register.value
-  if (!current || !valid.value) return
+  const current = preview.value
+  if (!current || !complete.value || noteError.value) return
   closeError.value = null
-  const body = {
-    counts: PAYMENT_METHODS.map((method) => ({
-      method,
-      informedCents: informed.value[method] ?? 0,
-    })),
-    ...(note.value.trim() ? { note: note.value.trim() } : {}),
-    version: current.version,
-  }
+  const body = toCloseBody({
+    informed: informed.value,
+    note: note.value,
+    lastOpenRegister: current.lastOpenRegister,
+    finishPendingItems: finishPendingItems.value,
+    finishEvent: finishEvent.value,
+    version: current.session.version,
+  })
   const result = await action.run(() =>
-    $api.POST('/api/v1/cash-registers/{id}/close', {
-      params: { path: { id: current.id }, header: { 'Idempotency-Key': key.keyFor(body) } },
+    $api.POST('/api/v1/cash-register-sessions/{id}/close', {
+      params: {
+        path: { id: current.session.id },
+        header: { 'Idempotency-Key': key.keyFor(body) },
+      },
       body,
     }),
   )
+  confirming.value = false
   if (result.ok) {
     key.reset()
-    if (result.data) register.value = { ...current, ...result.data }
-    confirming.value = false
+    const data = result.data as CashRegister | undefined
+    closedSession.value = data?.session ?? { ...current.session, status: 'closed' }
+    if (data) useOperationStore().applyRegister(data)
+    void reload()
     return
   }
-  closeError.value = action.error.value
-  confirming.value = false
-  const code = action.error.value?.code
-  if (code === 'CLOSING_NOTE_REQUIRED') {
-    // A API devolve a prévia das diferenças: a tela mostra com a observação obrigatória.
-    const preview = countsOf(action.error.value?.details)
-    const current = register.value
-    if (preview.length && current) {
-      register.value = {
+  const error = action.error.value
+  closeError.value = error ? { ...error, hint: cashRegisterHint(error.code) ?? error.hint } : null
+  if (error?.code === 'CLOSING_NOTE_REQUIRED') {
+    // A API devolve a prévia das diferenças: o esperado da tela passa a ser o dela.
+    const counts = countsOf(error.details)
+    if (counts.length) {
+      preview.value = {
         ...current,
-        expected: preview.map((count) => {
-          const before = current.expected.find((entry) => entry.method === count.method)
-          return {
+        session: {
+          ...current.session,
+          expected: counts.map((count) => ({
             method: count.method,
             expectedCents: count.expectedCents,
-            salesCents: before?.salesCents ?? 0,
-            creditSettlementsCents:
-              count.creditSettlementsCents ?? before?.creditSettlementsCents ?? 0,
-          }
-        }),
+            salesCents:
+              current.session.expected.find((entry) => entry.method === count.method)?.salesCents ??
+              0,
+            creditSettlementsCents: count.creditSettlementsCents,
+          })),
+        },
       }
     }
-  } else if (code === 'VERSION_CONFLICT' || code === 'CASH_REGISTER_CLOSED') {
-    expectedChanged.value = code === 'VERSION_CONFLICT'
-    await load()
+  } else if (error?.code === 'VERSION_CONFLICT') {
+    expectedChanged.value = true
+    await loadPreview()
+  } else if (error?.code === 'CASH_REGISTER_CLOSED') {
+    await reload()
   }
 }
 
-const canOperate = computed(() => {
-  const unitId = register.value?.unitId
-  if (session.isOwner) return true
-  return session.me?.units.some((unit) => unit.id === unitId && unit.canOperateCash) === true
-})
-const isOwner = computed(() => session.isOwner)
-const closed = computed(() => register.value?.status === 'closed')
-const back = computed(() =>
-  register.value ? `/caixas?unidade=${register.value.unitId}` : '/caixas',
-)
+const backToCash = computed(() => (unitId.value ? `/caixas?unidade=${unitId.value}` : '/caixas'))
+const summaryRows = computed(() => closedSession.value?.counts ?? [])
 </script>
 
 <template>
-  <component
-    :is="isOwner ? PanelShell : OperationShell"
-    v-bind="
-      isOwner
-        ? {}
-        : {
-            title: register ? `Fechar ${register.name}` : 'Fechar caixa',
-            back,
-            backLabel: 'Voltar aos caixas',
-          }
-    "
-  >
-    <div v-if="isOwner" class="flex flex-col gap-1">
-      <NuxtLink
-        :to="back"
-        class="inline-flex min-h-12 items-center gap-1.5 font-bold text-primary-deep"
-      >
-        <AppIcon name="arrow-left" />
-        Caixas
-      </NuxtLink>
-      <h1 class="text-2xl">{{ register ? `Fechar ${register.name}` : 'Fechar caixa' }}</h1>
+  <PanelShell>
+    <NuxtLink
+      :to="backToCash"
+      class="inline-flex min-h-12 items-center gap-2 self-start font-bold text-primary-deep"
+    >
+      <AppIcon name="arrow-left" />
+      Caixas
+    </NuxtLink>
+    <div class="flex flex-col gap-1">
+      <p v-if="unit" class="text-text-muted">{{ unit.name }}</p>
+      <h1 class="text-2xl">
+        {{
+          closedSession
+            ? `${register?.name ?? 'Caixa'} fechado`
+            : `Fechar ${register?.name ?? 'caixa'}`
+        }}
+      </h1>
     </div>
 
-    <AppAlert v-if="loadError" tone="error">{{ loadError }}</AppAlert>
-    <p v-else-if="!register" class="text-text-muted">Carregando…</p>
-    <AppAlert v-else-if="!canOperate" tone="error">
-      Só o dono e quem opera o caixa fecham caixa.
-    </AppAlert>
-
-    <!-- Fechado: a conferência gravada (CA-05.07) -->
-    <template v-else-if="closed">
+    <!-- Resumo do próprio fechamento (spec 05, seção 8; RN-07.07) -->
+    <template v-if="closedSession">
       <AppAlert tone="success">
-        <p class="font-bold" data-testid="register-closed">{{ register.name }} fechado.</p>
-        <p>Caixa fechado não recebe pagamentos nem movimentos e não pode ser reaberto.</p>
+        <p class="font-bold" data-testid="register-closed">Caixa fechado.</p>
+        <p>
+          Para vender de novo, abra o caixa outra vez: ele começa com um troco novo e os pagamentos
+          antigos não mudam.
+        </p>
       </AppAlert>
-      <ul class="flex flex-col gap-2">
-        <li
-          v-for="count in register.counts"
-          :key="count.method"
-          class="flex flex-col gap-1 rounded-card border-2 border-border bg-surface p-3"
+      <section
+        class="flex max-w-xl flex-col gap-2"
+        aria-label="Resumo do fechamento"
+        data-testid="closing-summary"
+      >
+        <ul class="flex flex-col gap-2">
+          <li
+            v-for="count in summaryRows"
+            :key="count.method"
+            class="flex flex-col gap-1 rounded-card border-2 border-border bg-surface p-3"
+          >
+            <div class="flex items-center gap-2">
+              <span class="flex-1 font-bold">{{ PAYMENT_METHOD_LABELS[count.method] }}</span>
+              <span class="tabular-nums">{{ formatCents(count.informedCents) }}</span>
+            </div>
+            <p class="flex items-center gap-1.5 text-sm tabular-nums">
+              <span class="text-text-muted">Esperado {{ formatCents(count.expectedCents) }} ·</span>
+              <AppIcon
+                :name="count.differenceCents === 0 ? 'check-circle' : 'alert-circle'"
+                :size="14"
+              />
+              <span :class="count.differenceCents === 0 ? 'text-text' : 'font-bold text-error'">{{
+                differenceLabel(count.differenceCents)
+              }}</span>
+            </p>
+          </li>
+        </ul>
+        <dl
+          class="grid grid-cols-[1fr_auto] gap-x-3 gap-y-1 rounded-card border-2 border-border bg-surface p-3"
         >
-          <div class="flex items-center gap-2">
-            <span class="flex-1 font-bold">{{ PAYMENT_METHOD_LABELS[count.method] }}</span>
-            <span class="tabular-nums">{{ formatCents(count.informedCents) }}</span>
-          </div>
-          <p v-if="count.creditSettlementsCents > 0" class="text-sm text-text-muted tabular-nums">
-            Inclui {{ formatCents(count.creditSettlementsCents) }} de quitações de fiado
-          </p>
-          <p class="text-sm text-text-muted tabular-nums">
-            Esperado {{ formatCents(count.expectedCents) }} ·
-            <span :class="count.differenceCents === 0 ? '' : 'font-bold text-error'">{{
-              differenceLabel(count.differenceCents)
-            }}</span>
-          </p>
-        </li>
-      </ul>
-      <p v-if="register.closingNote">Observação: {{ register.closingNote }}</p>
-      <AppButton :to="back" variant="secondary">Voltar aos caixas</AppButton>
+          <dt class="text-text-muted">Recebido neste caixa</dt>
+          <dd class="text-right font-bold tabular-nums">
+            {{ formatCents(closedSession.receivedCents) }}
+          </dd>
+          <dt class="text-text-muted">Diferença total</dt>
+          <dd class="text-right font-bold tabular-nums">
+            {{ differenceLabel(closedSession.differenceCents) }}
+          </dd>
+          <dt class="text-text-muted">Comandas que seguem abertas</dt>
+          <dd class="text-right font-bold tabular-nums">
+            {{ closedSession.pendingTabsCount ?? 0 }} ·
+            {{ formatCents(closedSession.pendingTabsTotalCents ?? 0) }}
+          </dd>
+        </dl>
+        <p v-if="closedSession.closingNote">Observação: {{ closedSession.closingNote }}</p>
+      </section>
+      <AppButton to="/painel" data-testid="back-home">Voltar ao início</AppButton>
+      <AppButton
+        v-if="session.isOwner"
+        variant="secondary"
+        :to="`/painel/relatorios/caixas/${closedSession.id}`"
+        data-testid="session-report"
+      >
+        <AppIcon name="chart" />
+        Ver relatório do caixa
+      </AppButton>
     </template>
 
-    <form v-else class="flex flex-col gap-4" novalidate @submit.prevent="review">
+    <AppAlert v-else-if="notFound" tone="error">
+      Este caixa não existe ou é de uma unidade em que você não opera caixa.
+      <NuxtLink to="/caixas" class="font-bold underline">Ver os caixas</NuxtLink>
+    </AppAlert>
+    <p v-else-if="!register" class="text-text-muted">Carregando…</p>
+    <template v-else-if="!openSessionId">
+      <AppAlert data-testid="not-open">
+        <p class="font-bold">{{ register.name }} não está aberto.</p>
+        <p>Não há nada para fechar. Para vender, abra o caixa.</p>
+      </AppAlert>
+      <AppButton :to="`/caixas/${register.id}/abrir`">Abrir {{ register.name }}</AppButton>
+    </template>
+    <AppAlert v-else-if="previewError" tone="error">{{ previewError }}</AppAlert>
+    <p v-else-if="!preview" class="text-text-muted">Carregando…</p>
+
+    <form v-else class="flex max-w-xl flex-col gap-4" novalidate @submit.prevent="review">
       <p class="text-text-muted">
-        Para cada forma, informe o valor conferido: o dinheiro contado na gaveta, o Pix no extrato e
-        os cartões pela maquininha.
+        Confira cada forma e digite o valor que você encontrou: o dinheiro contado na gaveta, o Pix
+        no extrato e os cartões no total da maquininha. O sistema mostra se bate com o esperado.
       </p>
+      <AppAlert v-if="preview.session.openSinceEarlierDay">
+        <p class="font-bold">
+          {{ register.name }} aberto desde {{ sinceLabel(preview.session.openedAt) }}.
+        </p>
+      </AppAlert>
       <AppAlert v-if="expectedChanged">
-        <p>O esperado mudou (pagamento ou movimento novo neste caixa). Confira de novo.</p>
+        <p>Entrou pagamento ou movimento neste caixa: o esperado mudou. Confira de novo.</p>
         <button type="button" class="min-h-12 font-bold underline" @click="expectedChanged = false">
           Entendi
         </button>
@@ -280,10 +344,10 @@ const back = computed(() =>
             >
           </div>
           <p
+            v-if="expectedSplit(preview.session, row.method).creditSettlementsCents > 0"
             class="-mt-1 text-sm text-text-muted tabular-nums"
-            :data-testid="`count-split-${row.method}`"
           >
-            {{ splits[row.method] }}
+            {{ splitLabel(expectedSplit(preview.session, row.method)) }}
           </p>
           <AppTextField
             v-model="inputs[row.method]"
@@ -331,7 +395,89 @@ const back = computed(() =>
         }}</span>
       </label>
 
-      <ErrorAlert :error="closeError" @reload="load" />
+      <!-- RN-05.28: pendentes não impedem fechar -->
+      <section
+        class="flex flex-col gap-2 rounded-card border-2 border-border bg-surface p-4"
+        data-testid="pending-tabs"
+      >
+        <h2 class="text-lg">Comandas em aberto</h2>
+        <p v-if="preview.pendingTabs.length === 0" class="text-text-muted">
+          Nenhuma comanda em aberto.
+        </p>
+        <template v-else>
+          <p class="text-text-muted">
+            Elas não impedem fechar: continuam abertas, com o mesmo número, para o próximo dia ou
+            para outro caixa aberto.
+          </p>
+          <ul class="flex flex-col divide-y divide-border">
+            <li
+              v-for="tab in preview.pendingTabs"
+              :key="tab.id"
+              class="flex items-center gap-3 py-2"
+              data-testid="pending-tab"
+            >
+              <span class="min-w-10 font-display text-xl font-extrabold tabular-nums">{{
+                tab.number
+              }}</span>
+              <span class="flex min-w-0 flex-1 flex-col">
+                <span class="truncate font-bold">{{ tab.customerName }}</span>
+                <span class="text-sm text-text-muted">desde {{ shortDay(tab.businessDate) }}</span>
+              </span>
+              <span class="font-bold tabular-nums">{{ formatCents(tab.totalCents) }}</span>
+            </li>
+          </ul>
+          <p class="text-right font-bold tabular-nums">
+            Total: {{ formatCents(preview.pendingTabsTotalCents) }}
+          </p>
+        </template>
+      </section>
+
+      <!-- RN-05.29: só no último caixa aberto da unidade -->
+      <section
+        v-if="preview.lastOpenRegister && (preview.itemsInProgress > 0 || preview.eventInProgress)"
+        class="flex flex-col gap-3 rounded-card border-2 border-border bg-surface p-4"
+        data-testid="last-register-options"
+      >
+        <h2 class="text-lg">Último caixa aberto</h2>
+        <label v-if="preview.itemsInProgress > 0" class="flex min-h-12 items-start gap-3">
+          <input
+            v-model="finishPendingItems"
+            type="checkbox"
+            class="mt-1 size-6 accent-primary"
+            data-testid="finish-pending-items"
+          />
+          <span>
+            <span class="font-bold">Encerrar o preparo pendente</span>
+            <span class="block text-sm text-text-muted">
+              {{
+                preview.itemsInProgress === 1
+                  ? '1 item ainda está'
+                  : `${preview.itemsInProgress} itens ainda estão`
+              }}
+              em preparo. Marcado, eles vão para a etapa final e a cozinha começa o próximo dia com
+              a tela limpa.
+            </span>
+          </span>
+        </label>
+        <label v-if="preview.eventInProgress" class="flex min-h-12 items-start gap-3">
+          <input
+            v-model="finishEvent"
+            type="checkbox"
+            class="mt-1 size-6 accent-primary"
+            data-testid="finish-event"
+          />
+          <span>
+            <span class="font-bold"
+              >Encerrar também o evento {{ preview.eventInProgress.contractorName }}</span
+            >
+            <span class="block text-sm text-text-muted">
+              Deixe desmarcado se o evento continua amanhã.
+            </span>
+          </span>
+        </label>
+      </section>
+
+      <ErrorAlert :error="closeError" @reload="loadPreview" />
 
       <div
         v-if="confirming"
@@ -340,11 +486,22 @@ const back = computed(() =>
         class="flex flex-col gap-3 rounded-card border-2 border-primary bg-surface p-4"
         data-testid="confirm-close"
       >
-        <p class="font-bold">Fechar {{ register.name }}? Depois disso ele não reabre.</p>
+        <p class="font-bold">Fechar {{ register.name }} com estes valores?</p>
+        <p class="text-sm">
+          Depois de fechado, os valores não mudam mais. Para vender de novo, é só abrir o caixa
+          outra vez.
+        </p>
         <ul class="flex flex-col gap-1 text-sm tabular-nums">
           <li v-for="row in rows" :key="row.method">
             {{ PAYMENT_METHOD_LABELS[row.method] }}: {{ formatCents(row.informedCents ?? 0) }} ·
             {{ differenceLabel(row.differenceCents ?? 0) }}
+          </li>
+          <li v-if="preview.pendingTabs.length">
+            {{
+              preview.pendingTabs.length === 1
+                ? '1 comanda segue aberta'
+                : `${preview.pendingTabs.length} comandas seguem abertas`
+            }}
           </li>
         </ul>
         <AppButton :loading="action.busy.value" data-testid="confirm-close-register" @click="close">
@@ -354,8 +511,8 @@ const back = computed(() =>
       </div>
       <AppButton v-else type="submit" data-testid="review-close">
         <AppIcon name="check" />
-        Fechar caixa
+        Fechar {{ register.name }}
       </AppButton>
     </form>
-  </component>
+  </PanelShell>
 </template>

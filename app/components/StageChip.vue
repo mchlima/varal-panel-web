@@ -7,7 +7,15 @@ import type { IconName } from './AppIcon.vue'
  * (primeira = Novo, do meio = Preparando, anterior à final = Pronto, final = Entregue).
  */
 export type ChipStatus =
-  'new' | 'preparing' | 'ready' | 'delivered' | 'late' | 'canceled' | 'pending' | 'closing'
+  | 'new'
+  | 'preparing'
+  | 'ready'
+  | 'delivered'
+  | 'attention'
+  | 'late'
+  | 'canceled'
+  | 'pending'
+  | 'closing'
 
 const props = defineProps<{ status: ChipStatus; label: string }>()
 
@@ -16,6 +24,10 @@ const look = {
   preparing: { icon: 'clock', class: 'bg-status-preparing-bg text-status-preparing-text' },
   ready: { icon: 'check-circle', class: 'bg-status-ready-bg text-status-ready-text' },
   delivered: { icon: 'check', class: 'bg-status-canceled-bg text-status-canceled-text' },
+  attention: {
+    icon: 'hourglass',
+    class: 'bg-status-attention-bg text-status-attention-ink',
+  },
   late: { icon: 'alert-circle', class: 'bg-status-late-bg text-status-late-text' },
   canceled: { icon: 'x', class: 'bg-status-canceled-bg text-status-canceled-text line-through' },
   pending: { icon: 'refresh', class: 'bg-surface-muted text-text border border-border-strong' },

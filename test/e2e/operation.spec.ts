@@ -1,9 +1,7 @@
 import { expect, test, type Browser, type BrowserContext, type Page } from '@playwright/test'
 import {
-  apiBaseUrl,
   expectApiUp,
   hideDevtools,
-  loginOwner,
   loginStaffByLink,
   ownerApi,
   runSuffix,
@@ -12,8 +10,9 @@ import {
 } from './fixtures'
 
 /**
- * Turno, balcão e estações (spec 04) contra a API real, com dois aparelhos (dois contextos):
- * balcão (ana) e cozinha (bruno). Precisa do seed com turno aberto na Barraca da Praça.
+ * Balcão e estações (spec 04) contra a API real, com dois aparelhos (dois contextos): balcão
+ * (ana, que opera caixa e entra pelo painel) e cozinha (bruno, que só tem a Cozinha e entra direto
+ * nela, RN-01.26). Precisa do seed com o "Caixa 1" aberto na Barraca da Praça.
  */
 
 let api: OwnerApi
@@ -21,6 +20,7 @@ let api: OwnerApi
 test.beforeAll(async () => {
   await expectApiUp()
   api = await ownerApi()
+  await api.ensureRegisterOpen()
 })
 
 test.afterAll(async () => {
@@ -47,17 +47,27 @@ async function device(
   return { context, page: await context.newPage() }
 }
 
-async function openStation(page: Page, username: string, station: RegExp) {
-  await loginStaffByLink(page, username)
-  await page.getByRole('button', { name: station }).click()
+/** Cozinha: o bruno só tem ela e entra direto (RN-01.26). */
+async function openKitchen(page: Page) {
+  await loginStaffByLink(page, 'bruno', /\/estacao\/[\w-]+$/)
   await expect(page.getByTestId('realtime-status')).toContainText('Conectado')
 }
 
-function queueCard(page: Page, customer: string, product: string) {
-  return page
-    .getByTestId('queue-item')
-    .filter({ hasText: customer })
-    .filter({ has: page.getByTestId('queue-item-title').filter({ hasText: product }) })
+/** Balcão: a ana opera caixa, entra no painel e toca em "Abrir balcão" (RN-01.24). */
+async function openCounter(page: Page) {
+  await loginStaffByLink(page, 'ana', /\/painel$/)
+  await page.getByTestId('primary-action').click()
+  await expect(page).toHaveURL(/\/balcao$/)
+  await expect(page.getByTestId('realtime-status')).toContainText('Conectado')
+}
+
+/** Cartão do pedido na estação (um pedido, um cartão; RN-04.40). */
+function orderCard(page: Page, customer: string) {
+  return page.getByTestId('order-card').filter({ hasText: customer })
+}
+
+function cardLine(page: Page, customer: string, product: string) {
+  return orderCard(page, customer).getByTestId('card-line').filter({ hasText: product })
 }
 
 test('balcão envia o pedido, a cozinha recebe em até 2 s, avança parte e o balcão entrega (CA-04.03, CA-04.04, CA-04.13)', async ({
@@ -68,9 +78,8 @@ test('balcão envia o pedido, a cozinha recebe em até 2 s, avança parte e o ba
   const counter = await device(browser, baseURL)
   const kitchen = await device(browser, baseURL)
   try {
-    await openStation(kitchen.page, 'bruno', /Cozinha/)
-    await openStation(counter.page, 'ana', /^Balcão Balcão de pedidos/)
-    await expect(counter.page).toHaveURL(/\/balcao$/)
+    await openKitchen(kitchen.page)
+    await openCounter(counter.page)
 
     // Nova comanda: com rede, a tela vai direto para o pedido da comanda nova.
     await counter.page.getByTestId('new-tab').click()
@@ -104,26 +113,25 @@ test('balcão envia o pedido, a cozinha recebe em até 2 s, avança parte e o ba
     expect(response.request().headers()['idempotency-key']).toMatch(/^[0-9a-f-]{36}$/)
     await expect(counter.page).toHaveURL(/\/balcao\/comandas\/\d+$/)
 
-    // CA-04.03: chega à cozinha em até 2 segundos, sem recarregar.
-    const card = queueCard(kitchen.page, customer, 'Espeto de carne')
+    // CA-04.03: chega à cozinha em até 2 segundos, sem recarregar, num cartão só (RN-04.40).
+    const card = orderCard(kitchen.page, customer)
     await expect(card).toBeVisible({ timeout: 2_000 })
-    await expect(card).toContainText('3×')
+    await expect(card).toHaveCount(1)
+    await expect(card).toContainText('3')
     await expect(card).toContainText('Ao ponto')
-    await expect(card).toContainText('Obs.: bem tostado')
-    await expect(card).toContainText('Novo')
+    await expect(card).toContainText('bem tostado')
+    await expect(card.getByTestId('card-status')).toContainText('Novo')
 
-    // Avançar parte (RN-04.24, CA-04.13): 2 de 3 vão para Preparando; 1 fica em Recebido.
-    await card.getByTestId('item-menu').click()
+    // Avançar parte (RN-04.24, CA-04.13): 2 de 3 vão para Preparando; 1 fica em Recebido. As
+    // duas linhas continuam no mesmo cartão.
+    const line = cardLine(kitchen.page, customer, 'Espeto de carne')
+    await line.getByTestId('line-menu').click()
     await card.getByTestId('advance-part').click()
     await card.getByTestId('advance-2').click()
-    const cards = kitchen.page.getByTestId('queue-item').filter({ hasText: customer })
-    const inStage = (stage: string) =>
-      kitchen.page
-        .locator(`[data-testid="queue-item"][data-stage="${stage}"]`)
-        .filter({ hasText: customer })
-    await expect(cards).toHaveCount(2)
-    await expect(inStage('Recebido')).toContainText('1×')
-    await expect(inStage('Preparando')).toContainText('2×')
+    await expect(card).toHaveCount(1)
+    await expect(line).toHaveCount(2)
+    await expect(card.getByTestId('card-line').filter({ hasText: 'Recebido' })).toContainText('1')
+    await expect(card.getByTestId('card-line').filter({ hasText: 'Preparando' })).toContainText('2')
 
     // CA-04.04: o balcão vê as duas linhas em até 2 segundos; o total não muda.
     const items = counter.page.getByTestId('tab-item')
@@ -133,9 +141,14 @@ test('balcão envia o pedido, a cozinha recebe em até 2 s, avança parte e o ba
     ).toContainText('2×')
     await expect(counter.page.getByTestId('tab-total')).toHaveText('R$ 45,00')
 
-    // Os 2 ficam prontos: saem da cozinha e vão para o Balcão de entrega.
-    await inStage('Preparando').getByTestId('advance').click()
-    await expect(cards).toHaveCount(1)
+    // Os 2 ficam prontos: a linha sai da cozinha e fica riscada no cartão (RN-04.41).
+    await card
+      .getByTestId('card-line')
+      .filter({ hasText: 'Preparando' })
+      .getByTestId('line-advance')
+      .click()
+    await expect(card.locator('[data-testid="card-line"][data-state="done"]')).toHaveCount(1)
+    await expect(card).toHaveCount(1)
 
     // RN-04.21: o balcão registra a entrega na comanda.
     const ready = counter.page.locator('[data-testid="tab-item"][data-stage="Pronto"]')
@@ -161,29 +174,26 @@ test('dois aparelhos avançam o mesmo item: um avança, o outro recebe o aviso (
   const first = await device(browser, baseURL)
   const second = await device(browser, baseURL)
   try {
-    await openStation(first.page, 'bruno', /Cozinha/)
-    await openStation(second.page, 'bruno', /Cozinha/)
-    const firstCard = queueCard(first.page, customer, 'Queijo coalho')
-    const secondCard = queueCard(second.page, customer, 'Queijo coalho')
+    await openKitchen(first.page)
+    await openKitchen(second.page)
+    const firstCard = orderCard(first.page, customer)
+    const secondCard = orderCard(second.page, customer)
     await expect(firstCard).toBeVisible()
     await expect(secondCard).toBeVisible()
 
     // O segundo aparelho toca "avançar" sem rede: a ação fica na fila com a versão que ele viu.
     await second.context.setOffline(true)
-    await secondCard.getByTestId('advance').click()
+    await secondCard.getByTestId('line-advance').click()
     await expect(secondCard).toContainText('Na fila')
 
     // O primeiro avança antes.
-    await firstCard.getByTestId('advance').click()
-    await expect(firstCard).toHaveAttribute('data-stage', 'Preparando')
+    await firstCard.getByTestId('line-advance').click()
+    await expect(firstCard.getByTestId('card-line')).toContainText('Preparando')
 
     // A rede volta: a API recusa a ação velha (ITEM_CHANGED) e o cartão mostra o estado atual.
     await second.context.setOffline(false)
-    await expect(secondCard).toContainText('Outro aparelho mexeu neste item antes', {
-      timeout: 10_000,
-    })
-    await expect(secondCard).toHaveAttribute('data-stage', 'Preparando')
-    await secondCard.getByRole('button', { name: 'Entendi' }).click()
+    await expect(secondCard).toContainText('Outro aparelho mexeu', { timeout: 10_000 })
+    await expect(secondCard.getByTestId('card-line')).toContainText('Preparando')
 
     // Um único avanço: o item está em Preparando, não em Pronto.
     const current = await api.getTab(tab.id)
@@ -203,8 +213,8 @@ test('pedido feito sem rede fica na fila e chega à cozinha uma vez só quando a
   const counter = await device(browser, baseURL)
   const kitchen = await device(browser, baseURL)
   try {
-    await openStation(kitchen.page, 'bruno', /Cozinha/)
-    await openStation(counter.page, 'ana', /^Balcão Balcão de pedidos/)
+    await openKitchen(kitchen.page)
+    await openCounter(counter.page)
     await counter.page.goto(`/balcao/comandas/${tab.number}`)
     await expect(counter.page.getByText('Nenhum pedido ainda.')).toBeVisible()
     await counter.page.getByTestId('new-order').click()
@@ -224,12 +234,12 @@ test('pedido feito sem rede fica na fila e chega à cozinha uma vez só quando a
     await expect(counter.page.getByTestId('connection-banner')).toContainText(
       '1 ação aguardando envio',
     )
-    await expect(queueCard(kitchen.page, customer, 'Queijo coalho')).toHaveCount(0)
+    await expect(orderCard(kitchen.page, customer)).toHaveCount(0)
 
     await counter.context.setOffline(false)
     await expect(pending).toHaveCount(0, { timeout: 15_000 })
     await expect(counter.page.getByTestId('tab-order')).toHaveCount(1)
-    await expect(queueCard(kitchen.page, customer, 'Queijo coalho')).toHaveCount(1)
+    await expect(orderCard(kitchen.page, customer)).toHaveCount(1)
 
     // Uma vez só, mesmo com reenvio.
     const current = await api.getTab(tab.id)
@@ -238,69 +248,5 @@ test('pedido feito sem rede fica na fila e chega à cozinha uma vez só quando a
   } finally {
     await counter.context.close()
     await kitchen.context.close()
-  }
-})
-
-test('fechar o turno é recusado com comanda aberta e mostra as pendências (CA-04.09)', async ({
-  page,
-}) => {
-  await loginOwner(page)
-  await page.goto('/painel/turnos')
-  await expect(page.getByTestId('current-shift')).toContainText('Turno aberto')
-  await page.getByRole('button', { name: 'Fechar turno' }).click()
-  await page
-    .getByRole('group', { name: /Fechar o turno agora/ })
-    .getByRole('button', { name: 'Fechar turno' })
-    .click()
-  const pendingList = page.getByTestId('shift-pending')
-  await expect(pendingList).toContainText('Ainda há comandas')
-  await expect(pendingList.getByRole('link', { name: /Dona Marta/ })).toBeVisible()
-  // O turno continua aberto.
-  await page.reload()
-  await expect(page.getByTestId('current-shift')).toContainText('Turno aberto')
-})
-
-test('dono abre turno contratado com o acordo e fecha sem pendências (RN-04.04 a RN-04.07)', async ({
-  page,
-}) => {
-  // Unidade nova, sem turno (a do seed já tem um aberto); desativada no fim.
-  const suffix = runSuffix()
-  const created = await api.request.post(`${apiBaseUrl}/api/v1/units`, {
-    data: { name: `Evento ${suffix}`, lateAfterMinutes: 15 },
-    headers: { 'Idempotency-Key': crypto.randomUUID() },
-  })
-  expect(created.ok(), await created.text()).toBe(true)
-  const unit = (await created.json()) as { id: string }
-  try {
-    await hideDevtools(page.context())
-    await loginOwner(page)
-    await page.goto(`/painel/turnos?unidade=${unit.id}`)
-    await expect(page.getByRole('heading', { name: 'Abrir turno' })).toBeVisible()
-    await page.getByLabel('Turno contratado').check()
-    // Contratante obrigatório (RN-04.05).
-    await page.getByTestId('open-shift').click()
-    await expect(page.getByText('Informe o nome do contratante.')).toBeVisible()
-    await page.getByLabel('Contratante', { exact: true }).fill(`Festa ${suffix}`)
-    await page.getByLabel('Valor combinado (opcional)').fill('1.500,00')
-    const opened = page.waitForResponse(
-      (r) => r.url().endsWith('/shifts') && r.request().method() === 'POST',
-    )
-    await page.getByTestId('open-shift').click()
-    expect((await opened).status()).toBe(201)
-    const current = page.getByTestId('current-shift')
-    await expect(current).toContainText('Turno contratado')
-    await expect(current).toContainText(`Acordo com Festa ${suffix}`)
-    await expect(current).toContainText('R$ 1.500,00')
-
-    // Fechar sem comandas: aceito, e a tela volta para "Abrir turno".
-    await page.getByRole('button', { name: 'Fechar turno' }).click()
-    await page
-      .getByRole('group', { name: /Fechar o turno agora/ })
-      .getByRole('button', { name: 'Fechar turno' })
-      .click()
-    await expect(page.getByText('Turno fechado.')).toBeVisible()
-    await expect(page.getByRole('heading', { name: 'Abrir turno' })).toBeVisible()
-  } finally {
-    await api.request.patch(`${apiBaseUrl}/api/v1/units/${unit.id}`, { data: { active: false } })
   }
 })

@@ -1,19 +1,28 @@
 <script setup lang="ts">
 import { formatCents } from '~/lib/money'
-import { itemsLabel, type TabSummary } from '~/lib/operation'
+import { itemsLabel, tabSinceLabel, type TabSummary } from '~/lib/operation'
 
 /**
  * Cartão de comanda (spec 08, seção 6): número grande à esquerda, nome e resumo ao centro,
  * total à direita; borda esquerda primária quando selecionado. Sinais de "pronto para
- * entregar" e de atrasados sempre com texto e ícone (spec 04, seção 8.1).
+ * entregar" e de atrasados sempre com texto e ícone (spec 04, seção 8.1). Comanda aberta num dia
+ * de operação anterior mostra a data ("desde 01/10", RN-04.10).
  */
 const props = withDefaults(
-  defineProps<{ tab: TabSummary; selected?: boolean; pending?: string }>(),
+  defineProps<{
+    tab: TabSummary
+    selected?: boolean
+    pending?: string
+    /** Dia de operação atual da unidade (RN-04.29). */
+    businessDate?: string | null
+  }>(),
   {
     selected: false,
     pending: undefined,
+    businessDate: null,
   },
 )
+const since = computed(() => tabSinceLabel(props.tab, props.businessDate))
 
 const readyLabel = computed(() =>
   props.tab.readyItemCount === 1 ? '1 pronto' : `${props.tab.readyItemCount} prontos`,
@@ -43,6 +52,14 @@ const lateLabel = computed(() =>
       </span>
       <span class="flex flex-wrap items-center gap-1.5 text-sm text-text-muted">
         <span>{{ itemsLabel(tab.itemCount) }}</span>
+        <span
+          v-if="since"
+          class="inline-flex items-center gap-1 font-bold text-text"
+          data-testid="tab-card-since"
+        >
+          <AppIcon name="calendar" :size="14" />
+          {{ since }}
+        </span>
         <StageChip v-if="tab.status === 'closing'" status="closing" label="Fechando" />
         <StageChip v-if="tab.readyItemCount > 0" status="ready" :label="readyLabel" />
         <StageChip v-if="tab.lateItemCount > 0" status="late" :label="lateLabel" />

@@ -1,11 +1,12 @@
 <script setup lang="ts">
-import { formatTime } from '~/lib/datetime'
+import { formatDateTime, formatTime } from '~/lib/datetime'
 import { formatCents } from '~/lib/money'
 import {
   TAB_STATUS_LABELS,
   changedItemOf,
   itemConflictMessage,
   itemsLabel,
+  tabSinceLabel,
   type ItemChange,
   type OrderItem,
   type Tab,
@@ -29,7 +30,9 @@ import { discountLabel } from '~/lib/payment'
  */
 const route = useRoute()
 const number = computed(() => Number(route.params.numero))
-const { place, counter } = useCounterLive()
+const { place, counter, operation } = useCounterLive()
+/** RN-04.02: lançar pedido e receber exigem caixa aberto (enquanto carrega, deixa). */
+const selling = computed(() => operation.value?.inOperation !== false)
 const { tab, notFound, error, reloadSoon, applyItem } = useTabDetail(number)
 const connection = useConnectionStore()
 const operations = useOperations()
@@ -208,18 +211,20 @@ function cancelTab(current: Tab) {
     <AppAlert v-if="!place">
       Escolha uma estação de balcão liberada para você em "Trocar de estação".
     </AppAlert>
-    <template v-else-if="counter.shiftLoaded && !counter.shift">
-      <NoShiftNotice :unit-id="place.unit.id" />
-    </template>
     <div v-else class="grid grid-cols-1 gap-6 lg:grid-cols-[minmax(0,2fr)_minmax(0,3fr)]">
       <aside class="hidden lg:block" aria-label="Outras comandas">
-        <TabBoard :selected-number="number" />
+        <TabBoard
+          :selected-number="number"
+          :business-date="operation?.businessDate ?? null"
+          :can-create="selling"
+        />
       </aside>
 
       <section class="flex min-w-0 flex-col gap-4" aria-label="Comanda">
         <AppAlert v-if="error && !(tab && !connection.online)" tone="error">{{ error }}</AppAlert>
         <AppAlert v-if="notFound" tone="error">
-          A comanda {{ number }} não existe neste turno.
+          A comanda {{ number }} não está aberta nesta unidade. Ela pode ter sido paga, pendurada ou
+          cancelada.
           <NuxtLink to="/balcao" class="font-bold underline">Voltar ao varal</NuxtLink>
         </AppAlert>
         <p v-else-if="!tab" class="text-text-muted">Carregando comanda…</p>
@@ -233,7 +238,13 @@ function cancelTab(current: Tab) {
               <div class="min-w-0 flex-1">
                 <p class="truncate text-lg font-bold">{{ tab.customerName }}</p>
                 <p class="text-sm text-text-muted">
-                  {{ itemsLabel(tab.itemCount) }} · aberta às {{ formatTime(tab.openedAt) }}
+                  {{ itemsLabel(tab.itemCount) }} ·
+                  <template v-if="tabSinceLabel(tab, operation?.businessDate)">
+                    <strong class="text-text" data-testid="tab-since"
+                      >aberta em {{ formatDateTime(tab.openedAt) }}</strong
+                    >
+                  </template>
+                  <template v-else>aberta às {{ formatTime(tab.openedAt) }}</template>
                 </p>
               </div>
               <StageChip
@@ -403,8 +414,17 @@ function cancelTab(current: Tab) {
     </div>
 
     <template v-if="tab && (editable || paid)" #footer>
+      <div v-if="editable && !selling" class="flex flex-col gap-1">
+        <AppButton disabled :data-testid="tab.status === 'open' ? 'new-order' : 'receive'">
+          <AppIcon :name="tab.status === 'open' ? 'plus' : 'wallet'" />
+          {{ tab.status === 'open' ? 'Novo pedido' : `Receber ${formatCents(tab.balanceCents)}` }}
+        </AppButton>
+        <p class="text-center text-sm text-text-muted">
+          Abra um caixa para {{ tab.status === 'open' ? 'vender' : 'receber' }}.
+        </p>
+      </div>
       <AppButton
-        v-if="tab.status === 'open'"
+        v-else-if="tab.status === 'open'"
         :to="`/balcao/comandas/${tab.number}/pedido`"
         data-testid="new-order"
       >

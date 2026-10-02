@@ -1,101 +1,67 @@
 import { defineStore } from 'pinia'
 import { apiErrorMessage } from '~/lib/api-error'
 import { createTabBoard, type LiveCollection } from '~/lib/live-collection'
-import type { Shift, TabSummary, WorkflowStage } from '~/lib/operation'
-import type {
-  EventShiftClosed,
-  EventShiftOpened,
-  EventShiftUpdated,
-  EventTabCreated,
-  EventTabUpdated,
-} from '~/lib/realtime'
+import type { TabSummary, WorkflowStage } from '~/lib/operation'
+import type { EventTabCreated, EventTabUpdated } from '~/lib/realtime'
 
 /** Espera para juntar vários eventos de item numa única recarga do varal. */
 const RELOAD_DEBOUNCE_MS = 400
 
 /**
- * Balcão (spec 04, seção 8.1): turno atual da unidade, fluxo de etapas e o varal de comandas
- * (`open` e `closing`). O REST é a fonte da verdade (RN-01.05); os eventos `tab.*` atualizam os
- * cartões por `version`, inclusive os contadores de prontos e atrasados (a API emite
- * `tab.updated` quando uma mudança de etapa altera esses contadores). O fluxo vem de
- * `GET /units/{id}/workflow`, que o colaborador da unidade também lê.
+ * Balcão (spec 04, seção 8.1): fluxo de etapas e o varal de comandas da unidade (`open` e
+ * `closing`, de qualquer dia de operação, RN-04.07). A situação da operação (caixa aberto,
+ * tabela efetiva, evento) fica no `useOperationStore`. O REST é a fonte da verdade (RN-01.05);
+ * os eventos `tab.*` atualizam os cartões por `version`, inclusive os contadores de prontos e
+ * atrasados. O fluxo vem de `GET /units/{id}/workflow`, que o colaborador da unidade também lê.
  */
 export const useCounterStore = defineStore('counter', () => {
   const unitId = ref<string | null>(null)
   const counterStationId = ref<string | null>(null)
-  const shift = ref<Shift | null>(null)
-  /** O turno já foi consultado ao menos uma vez nesta unidade. */
-  const shiftLoaded = ref(false)
   const stages = ref<WorkflowStage[]>([])
   const board = ref<LiveCollection<TabSummary> | null>(null)
+  /** O varal já foi carregado ao menos uma vez nesta unidade. */
+  const loaded = ref(false)
   const loading = ref(false)
   const loadError = ref('')
   let reloadTimer: ReturnType<typeof setTimeout> | null = null
   let generation = 0
-  let boardShiftId: string | null = null
 
   const tabs = computed<TabSummary[]>(() =>
     board.value ? board.value.list().sort((a, b) => a.number - b.number) : [],
   )
 
-  function boardFor(shiftId: string): LiveCollection<TabSummary> {
-    if (!board.value || boardShiftId !== shiftId) {
-      board.value = createTabBoard(shiftId)
-      boardShiftId = shiftId
-    }
+  function boardOf(unit: string): LiveCollection<TabSummary> {
+    if (!board.value) board.value = createTabBoard(unit)
     return board.value as LiveCollection<TabSummary>
   }
 
   /** Liga o balcão a uma unidade e estação de balcão e carrega tudo por REST. */
   async function open(unit: string, counterStation: string): Promise<void> {
     if (unitId.value !== unit) {
-      shift.value = null
-      shiftLoaded.value = false
       stages.value = []
       board.value = null
-      boardShiftId = null
+      loaded.value = false
     }
     unitId.value = unit
     counterStationId.value = counterStation
     await load()
   }
 
-  async function load(): Promise<void> {
+  async function load(options: { stages?: boolean } = {}): Promise<void> {
     const unit = unitId.value
-    const station = counterStationId.value
-    if (!unit || !station) return
+    if (!unit) return
     const { $api } = useNuxtApp()
     const current = ++generation
+    const live = boardOf(unit)
     loading.value = true
     loadError.value = ''
-    board.value?.beginReload()
+    live.beginReload()
     try {
-      const shiftResult = await $api.GET('/api/v1/units/{id}/shifts/current', {
-        params: { path: { id: unit } },
-      })
-      if (current !== generation) return
-      if (!shiftResult.data) {
-        loadError.value = apiErrorMessage(shiftResult.error)
-        board.value?.abortReload()
-        return
-      }
-      const open = shiftResult.data.shift
-      // O fluxo só muda com o turno fechado (RN-03.07): turno novo, etapas lidas de novo.
-      if (open?.id !== shift.value?.id) stages.value = []
-      shift.value = open
-      shiftLoaded.value = true
-      if (!open) {
-        board.value = null
-        boardShiftId = null
-        return
-      }
-      const live = boardFor(open.id)
-      if (!live.reloading) live.beginReload()
       const [tabsResult, workflowResult] = await Promise.all([
-        $api.GET('/api/v1/shifts/{id}/tabs', {
-          params: { path: { id: open.id }, query: { status: 'open,closing' } },
+        $api.GET('/api/v1/units/{id}/tabs', {
+          params: { path: { id: unit }, query: { status: 'open,closing' } },
         }),
-        stages.value.length === 0
+        stages.value.length === 0 || options.stages
           ? $api.GET('/api/v1/units/{id}/workflow', { params: { path: { id: unit } } })
           : Promise.resolve(null),
       ])
@@ -107,10 +73,11 @@ export const useCounterStore = defineStore('counter', () => {
         return
       }
       live.finishReload(tabsResult.data.data)
+      loaded.value = true
     } catch (error) {
       if (current !== generation) return
       loadError.value = apiErrorMessage(error)
-      board.value?.abortReload()
+      live.abortReload()
     } finally {
       if (current === generation) loading.value = false
     }
@@ -126,24 +93,11 @@ export const useCounterStore = defineStore('counter', () => {
   }
 
   function applyTab(event: EventTabCreated | EventTabUpdated): void {
-    if (event.unitId !== unitId.value || !shift.value) return
-    if (event.data.shiftId !== shift.value.id) return
-    boardFor(shift.value.id).apply(event.data)
+    if (!unitId.value || event.unitId !== unitId.value) return
+    boardOf(unitId.value).apply(event.data)
   }
 
-  function applyShift(event: EventShiftOpened | EventShiftUpdated | EventShiftClosed): void {
-    if (event.unitId !== unitId.value) return
-    if (event.type === 'shift.updated') {
-      if (shift.value?.id === event.data.id && event.data.version > shift.value.version) {
-        shift.value = event.data
-      }
-      return
-    }
-    // Abriu ou fechou: recarrega o turno e o varal inteiros.
-    void load()
-  }
-
-  /** Comanda conhecida no varal pelo número (rota `/balcao/comandas/{numero}`). */
+  /** Comanda em aberto no varal pelo número (rota `/balcao/comandas/{numero}`, RN-04.09). */
   function tabByNumber(number: number): TabSummary | null {
     return tabs.value.find((tab) => tab.number === number) ?? null
   }
@@ -151,28 +105,24 @@ export const useCounterStore = defineStore('counter', () => {
   function clear(): void {
     unitId.value = null
     counterStationId.value = null
-    shift.value = null
-    shiftLoaded.value = false
     stages.value = []
     board.value = null
-    boardShiftId = null
+    loaded.value = false
   }
 
   return {
     unitId,
     counterStationId,
-    shift,
-    shiftLoaded,
     stages,
     board,
     tabs,
+    loaded,
     loading,
     loadError,
     open,
     load,
     reloadSoon,
     applyTab,
-    applyShift,
     tabByNumber,
     clear,
   }

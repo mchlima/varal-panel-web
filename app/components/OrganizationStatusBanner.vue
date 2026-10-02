@@ -1,8 +1,8 @@
 <script setup lang="ts">
 /**
  * Faixa da situação da assinatura no painel do dono (spec 02, RN-02.12; CA-02.05): em
- * `suspended` e `canceled`, explica a situação e o motivo, e que não é possível abrir turno.
- * Turnos já abertos continuam até o fechamento.
+ * `suspended` e `canceled`, explica a situação e o motivo, e que não é possível abrir caixa.
+ * Caixas já abertos continuam até o fechamento (RN-01.01, RN-05.24).
  */
 const session = useSessionStore()
 const organization = computed(() => session.me?.organization)
@@ -35,7 +35,7 @@ const title = computed(() => {
           <span data-testid="organization-status-reason">{{ organization.suspendedReason }}</span>
         </p>
         <p>
-          Não é possível abrir turno. Um turno que já estava aberto pode ser operado até o
+          Não é possível abrir caixa. Um caixa que já estava aberto pode ser operado até o
           fechamento. Fale com a equipe do Varal para reativar.
         </p>
       </div>
