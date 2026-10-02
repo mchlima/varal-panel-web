@@ -21,9 +21,12 @@ type FetchPage<T> = (query: {
  *   páginas seguintes), para uma atualização depois de uma edição ou de um evento em tempo
  *   real não esconder o que a pessoa já tinha aberto.
  * - `loadMore()` pede a página seguinte e junta ao fim.
+ * - `reset()` esvazia e busca do início, para quando a busca ou os filtros mudam; `clear()` só
+ *   esvazia (busca vazia, sem pedir nada à API).
  * - Uma resposta atrasada de um `reload()` anterior é descartada.
  */
-export function useCursorList<T>(fetchPage: FetchPage<T>) {
+export function useCursorList<T>(fetchPage: FetchPage<T>, options: { pageSize?: number } = {}) {
+  const pageSize = options.pageSize ?? PAGE_SIZE
   const items = ref<T[]>([]) as Ref<T[]>
   const nextCursor = ref<string | null>(null)
   const loaded = ref(false)
@@ -32,7 +35,7 @@ export function useCursorList<T>(fetchPage: FetchPage<T>) {
   let generation = 0
 
   async function page(cursor?: string): Promise<CursorPage<T>> {
-    const { data, error: failure } = await fetchPage({ limit: PAGE_SIZE, cursor })
+    const { data, error: failure } = await fetchPage({ limit: pageSize, cursor })
     if (!data) throw failure ?? new Error('sem dados')
     return data
   }
@@ -76,6 +79,20 @@ export function useCursorList<T>(fetchPage: FetchPage<T>) {
     }
   }
 
+  function clear() {
+    generation++
+    items.value = []
+    nextCursor.value = null
+    loaded.value = false
+    loadingMore.value = false
+    error.value = ''
+  }
+
+  function reset() {
+    clear()
+    return reload()
+  }
+
   return {
     items,
     hasMore: computed(() => nextCursor.value !== null),
@@ -84,6 +101,8 @@ export function useCursorList<T>(fetchPage: FetchPage<T>) {
     loadingMore,
     error,
     reload,
+    reset,
+    clear,
     loadMore,
   }
 }

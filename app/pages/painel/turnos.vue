@@ -54,6 +54,8 @@ const tabs = ref<TabSummary[]>([])
 const loaded = ref(false)
 const loadError = ref('')
 const closedMessage = ref('')
+/** Turno que acabou de ser fechado nesta tela: o dono pode abrir o relatório dele (spec 07). */
+const closedShiftId = ref<string | null>(null)
 const summary = computed(() => summarizeTabs(tabs.value))
 /** Caixas abertos do turno: o turno só fecha com todos fechados (RN-04.07). */
 const shiftId = computed(() => shift.value?.id ?? null)
@@ -145,6 +147,7 @@ async function openShift() {
   const id = unit.value?.id
   if (!id) return
   closedMessage.value = ''
+  closedShiftId.value = null
   const { body, errors } = buildOpenShift(type.value, agreement, priceInput.value)
   formErrors.value = errors
   if (!body) return
@@ -218,6 +221,7 @@ async function closeShift() {
   )
   if (result.ok) {
     closeKey.reset()
+    closedShiftId.value = current.id
     closedMessage.value =
       'Turno fechado. Os itens que ainda estavam em preparo foram levados à etapa final.'
     await load()
@@ -274,7 +278,18 @@ const shiftWho = computed(() => {
       </div>
 
       <AppAlert v-if="loadError" tone="error">{{ loadError }}</AppAlert>
-      <AppAlert v-if="closedMessage" tone="success">{{ closedMessage }}</AppAlert>
+      <AppAlert v-if="closedMessage" tone="success">
+        <p>{{ closedMessage }}</p>
+        <NuxtLink
+          v-if="isOwner && closedShiftId"
+          :to="`/painel/relatorios/turnos/${closedShiftId}`"
+          class="inline-flex min-h-12 items-center gap-2 font-bold underline"
+          data-testid="closed-shift-report"
+        >
+          <AppIcon name="chart" />
+          Ver o relatório do turno
+        </NuxtLink>
+      </AppAlert>
       <p v-if="!loaded && !loadError" class="text-text-muted">Carregando…</p>
 
       <!-- Turno aberto -->
@@ -320,6 +335,16 @@ const shiftWho = computed(() => {
               </dd>
             </div>
           </dl>
+          <!-- Relatórios são só do dono (RN-07.07). -->
+          <NuxtLink
+            v-if="isOwner"
+            :to="`/painel/relatorios/turnos/${shift.id}`"
+            class="inline-flex min-h-12 items-center gap-2 self-start font-bold text-primary-deep underline"
+            data-testid="shift-report-link"
+          >
+            <AppIcon name="chart" />
+            Ver relatório parcial do turno
+          </NuxtLink>
           <p class="text-sm" data-testid="shift-registers">
             Caixas abertos: {{ openRegisters }}.
             <NuxtLink
@@ -457,6 +482,14 @@ const shiftWho = computed(() => {
         <div class="flex flex-col gap-1">
           <h2 id="open-title" class="text-xl">Abrir turno</h2>
           <p class="text-text-muted">Nenhum turno aberto em {{ unit?.name }}.</p>
+          <NuxtLink
+            v-if="isOwner"
+            :to="`/painel/relatorios?unidade=${unit?.id}`"
+            class="inline-flex min-h-12 items-center gap-2 self-start font-bold text-primary-deep underline"
+          >
+            <AppIcon name="chart" />
+            Relatórios dos turnos anteriores
+          </NuxtLink>
         </div>
         <fieldset class="flex flex-col gap-2">
           <legend class="mb-2 font-bold">Tipo do turno</legend>

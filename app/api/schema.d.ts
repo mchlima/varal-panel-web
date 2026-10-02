@@ -1110,6 +1110,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/reports/shifts": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Histórico de turnos por unidade (ou todas), período e tipo, mais recentes primeiro, com os totais do período (spec 07, seção 5; CA-07.04) */
+        get: operations["ReportsController_history"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/shifts/{id}/cash-registers": {
         parameters: {
             query?: never;
@@ -1155,6 +1172,23 @@ export interface paths {
         get?: never;
         /** Substitui a tabela de preços do turno aberto (RN-04.06) */
         put: operations["OperationController_updatePrices"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/shifts/{id}/report": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Relatório do turno: resumo, por produto, por forma de pagamento, por colaborador, caixas, fiado, cancelamentos e perdas, acordo; parcial com o turno aberto (spec 07, seção 4; CA-07.01 a CA-07.05) */
+        get: operations["ReportsController_shiftReport"];
+        put?: never;
         post?: never;
         delete?: never;
         options?: never;
@@ -1530,7 +1564,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** Busca clientes da unidade por nome, telefone, CPF ou referência, com os dados de identificação (RN-06.02, CA-06.04) */
+        /** Busca clientes da unidade por nome, telefone, CPF ou referência, com os dados de identificação, paginada por cursor em ordem de nome (RN-06.02, CA-06.04) */
         get: operations["CreditController_list"];
         put?: never;
         /** Cadastra cliente na unidade; só o nome é obrigatório, telefone e CPF únicos na unidade (RN-06.01, RN-06.02) */
@@ -2272,6 +2306,8 @@ export interface components {
         };
         CustomerList: {
             data: components["schemas"]["Customer"][];
+            /** @description Cursor da próxima página; `null` na última. */
+            nextCursor: string | null;
         };
         CustomerReceivable: {
             /** @description Soma dos saldos das comandas penduradas. */
@@ -3418,6 +3454,145 @@ export interface components {
             /** @description Versão da comanda que o aparelho tem (opcional). Diferente da atual: 409 `TAB_CHANGED` com `details.currentVersion`. */
             version?: number;
         };
+        /** @description Quem fez a ação, com o nome para exibir. */
+        ReportActor: {
+            id: string | null;
+            /** @description Nome do dono ou do colaborador; `null` para o sistema ou o suporte. */
+            name: string | null;
+            type: components["schemas"]["ActorType"];
+        };
+        ReportCanceledItem: {
+            /** Format: date-time */
+            canceledAt: string;
+            canceledBy: components["schemas"]["ReportActor"] | null;
+            /** Format: uuid */
+            itemId: string;
+            productName: string;
+            quantity: number;
+            reason: string | null;
+            /** Format: uuid */
+            tabId: string;
+            tabNumber: number;
+            /** @description Valor gravado do item cancelado. */
+            valueCents: number;
+            /** @description Perda (RN-04.27). */
+            wasted: boolean;
+        };
+        ReportCanceledTab: {
+            canceledAt: string | null;
+            canceledBy: components["schemas"]["ReportActor"] | null;
+            customerName: string;
+            number: number;
+            /** Format: uuid */
+            tabId: string;
+        };
+        ReportCashRegister: {
+            cash: components["schemas"]["CashBreakdown"];
+            closedAt: string | null;
+            closedBy: components["schemas"]["ActorRef"] | null;
+            closedByActor: components["schemas"]["ReportActor"] | null;
+            closingNote: string | null;
+            /** @description Conferência gravada no fechamento (vazia enquanto aberto). */
+            counts: components["schemas"]["CashRegisterCount"][];
+            /** @description Total de quitações de fiado recebidas neste caixa, em todas as formas (RN-05.22). */
+            creditSettlementsCents: number;
+            /** @description Soma das diferenças por forma; 0 enquanto aberto (CA-07.04). */
+            differenceCents: number;
+            /** @description Esperado por forma, na ordem `cash`, `pix`, `credit_card`, `debit_card` (tabela da seção 5). */
+            expected: components["schemas"]["CashRegisterExpected"][];
+            /** Format: uuid */
+            id: string;
+            name: string;
+            /** Format: date-time */
+            openedAt: string;
+            /** @description Responsável: quem abriu (RN-05.17). */
+            openedBy: components["schemas"]["ActorRef"];
+            openingFloatCents: number;
+            /** @description Quem abriu o caixa (RN-05.17). */
+            responsible: components["schemas"]["ReportActor"];
+            /** Format: uuid */
+            shiftId: string;
+            status: components["schemas"]["CashRegisterStatus"];
+            /** Format: uuid */
+            unitId: string;
+            version: number;
+        };
+        ReportCreditTab: {
+            /** @description Valor pendurado (RN-07.03). */
+            amountCents: number;
+            /** @description Saldo atual a receber. */
+            balanceCents: number;
+            /** Format: date-time */
+            creditAt: string;
+            customer: components["schemas"]["TabCustomer"] | null;
+            customerName: string;
+            number: number;
+            status: components["schemas"]["TabStatus"];
+            /** Format: uuid */
+            tabId: string;
+        };
+        ReportPaymentMethodLine: {
+            method: components["schemas"]["PaymentMethod"];
+            /** @description Pagamentos de comandas do turno. */
+            salesCents: number;
+            /** @description Quitações de fiado recebidas no turno. */
+            settlementsCents: number;
+            totalCents: number;
+        };
+        ReportProductLine: {
+            /** @description Modificadores com acréscimo escolhidos, maior valor primeiro. */
+            modifiers: components["schemas"]["ReportProductModifier"][];
+            /** Format: uuid */
+            productId: string;
+            /** @description Nome gravado no item (RN-04.18). */
+            productName: string;
+            /** @description Unidades não canceladas (RN-07.04). */
+            quantity: number;
+            /** @description Preço gravado + acréscimos, vezes a quantidade (RN-07.05), antes do desconto. */
+            valueCents: number;
+        };
+        ReportProductModifier: {
+            groupName: string;
+            modifierName: string;
+            priceDeltaCents: number;
+            quantity: number;
+            /** @description Acréscimo × quantidade. */
+            valueCents: number;
+        };
+        ReportSettlement: {
+            amountCents: number;
+            customer: components["schemas"]["TabCustomer"] | null;
+            customerName: string;
+            method: components["schemas"]["PaymentMethod"];
+            /** Format: uuid */
+            paymentId: string;
+            /** Format: date-time */
+            receivedAt: string;
+            receivedBy: components["schemas"]["ReportActor"];
+            /** Format: uuid */
+            tabId: string;
+            tabNumber: number;
+            /**
+             * Format: uuid
+             * @description Turno da comanda quitada (pode ser outro).
+             */
+            tabShiftId: string;
+        };
+        /** @description Linha "Por colaborador" (o dono também aparece). */
+        ReportStaffLine: {
+            actor: components["schemas"]["ReportActor"];
+            /** @description Descontos em vigor dados por quem. */
+            discountCount: number;
+            discountsCents: number;
+            /** @description Unidades de itens canceladas. */
+            itemsCanceled: number;
+            /** @description Pedidos lançados. */
+            ordersSent: number;
+            /** @description Pagamentos não estornados recebidos no turno. */
+            receivedCents: number;
+            tabsCanceled: number;
+            tabsOpened: number;
+        };
         ResetPasswordRequestInput: {
             /** @description Nova senha: de 8 a 128 caracteres. */
             password: string;
@@ -3506,6 +3681,83 @@ export interface components {
             modality: components["schemas"]["AgreementModality"];
             notes: string | null;
         };
+        /** @description Turnos do período, mais recentes primeiro (pela abertura), paginados por cursor, com os totais do período (spec 07, seção 5). */
+        ShiftHistory: {
+            data: components["schemas"]["ShiftHistoryRow"][];
+            /** @description Cursor da próxima página; `null` na última. */
+            nextCursor: string | null;
+            period: {
+                /** Format: date */
+                from: string;
+                /** @enum {string} */
+                timeZone: "America/Sao_Paulo";
+                /**
+                 * Format: date
+                 * @description Inclusive.
+                 */
+                to: string;
+            };
+            totals: components["schemas"]["ShiftHistoryTotals"];
+        };
+        ShiftHistoryRow: {
+            /** @description Diferença de caixa: soma de informado − esperado dos caixas fechados, em todas as formas (CA-07.04). */
+            cashDifferenceCents: number;
+            closedAt: string | null;
+            /**
+             * Format: date
+             * @description Dia da abertura em America/Sao_Paulo.
+             */
+            date: string;
+            /** @description Descontos das comandas que contam na venda. */
+            discountsCents: number;
+            /** @description Pendurado: saldo das comandas do turno no momento em que foram penduradas (RN-07.03). */
+            onCreditCents: number;
+            /** Format: date-time */
+            openedAt: string;
+            /** @description Recebido: pagamentos não estornados que entraram no turno, vendas e quitações (RN-07.02). */
+            receivedCents: number;
+            /** @description Parte do recebido que é de comandas do turno. */
+            receivedSalesCents: number;
+            /** @description Parte do recebido que é quitação de fiado, de qualquer turno (RN-07.02). */
+            receivedSettlementsCents: number;
+            /** @description Venda: total, após desconto, das comandas `paid`, `on_credit` e `settled` do turno (RN-07.01). */
+            salesCents: number;
+            /** Format: uuid */
+            shiftId: string;
+            status: components["schemas"]["ShiftStatus"];
+            tabCount: number;
+            type: components["schemas"]["ShiftType"];
+            /** Format: uuid */
+            unitId: string;
+            unitName: string;
+            /** @description Perdas: valor dos itens cancelados marcados como perda (RN-07.04). */
+            wasteCents: number;
+            /** @description Unidades perdidas (RN-07.04). */
+            wasteQuantity: number;
+        };
+        /** @description Totais do período inteiro, não só da página. */
+        ShiftHistoryTotals: {
+            /** @description Diferença de caixa: soma de informado − esperado dos caixas fechados, em todas as formas (CA-07.04). */
+            cashDifferenceCents: number;
+            /** @description Descontos das comandas que contam na venda. */
+            discountsCents: number;
+            /** @description Pendurado: saldo das comandas do turno no momento em que foram penduradas (RN-07.03). */
+            onCreditCents: number;
+            /** @description Recebido: pagamentos não estornados que entraram no turno, vendas e quitações (RN-07.02). */
+            receivedCents: number;
+            /** @description Parte do recebido que é de comandas do turno. */
+            receivedSalesCents: number;
+            /** @description Parte do recebido que é quitação de fiado, de qualquer turno (RN-07.02). */
+            receivedSettlementsCents: number;
+            /** @description Venda: total, após desconto, das comandas `paid`, `on_credit` e `settled` do turno (RN-07.01). */
+            salesCents: number;
+            shiftCount: number;
+            tabCount: number;
+            /** @description Perdas: valor dos itens cancelados marcados como perda (RN-07.04). */
+            wasteCents: number;
+            /** @description Unidades perdidas (RN-07.04). */
+            wasteQuantity: number;
+        };
         /** @description `details` do 409 `SHIFT_HAS_PENDING_ITEMS` ao fechar o turno (RN-04.07, CA-04.09). */
         ShiftPendingItems: {
             /** @description Caixas do turno ainda abertos (spec 05). */
@@ -3535,6 +3787,96 @@ export interface components {
             priceCents: number;
             /** Format: uuid */
             productId: string;
+        };
+        /** @description Relatório do turno (spec 07, seção 4). */
+        ShiftReport: {
+            /** @description Só no turno contratado. */
+            agreement: components["schemas"]["ShiftReportAgreement"] | null;
+            cancellations: {
+                items: components["schemas"]["ReportCanceledItem"][];
+                tabs: components["schemas"]["ReportCanceledTab"][];
+                wasteCents: number;
+                wasteQuantity: number;
+            };
+            cashRegisters: components["schemas"]["ReportCashRegister"][];
+            credit: {
+                onCreditCents: number;
+                /** @description Quitações não estornadas recebidas no turno. */
+                settlements: components["schemas"]["ReportSettlement"][];
+                settlementsCents: number;
+                /** @description Comandas do turno penduradas (hoje `on_credit` ou já `settled`). */
+                tabs: components["schemas"]["ReportCreditTab"][];
+            };
+            /** @description Turno aberto: o app mostra a faixa "Turno em andamento — valores parciais" (RN-07.06). */
+            partial: boolean;
+            /** @description Sempre as quatro formas, na ordem `cash`, `pix`, `credit_card`, `debit_card`. */
+            paymentMethods: components["schemas"]["ReportPaymentMethodLine"][];
+            /** @description Por produto, maior valor primeiro. */
+            products: components["schemas"]["ReportProductLine"][];
+            shift: {
+                closedAt: string | null;
+                closedBy: components["schemas"]["ReportActor"] | null;
+                /**
+                 * Format: date
+                 * @description Dia da abertura em America/Sao_Paulo.
+                 */
+                date: string;
+                /** Format: uuid */
+                id: string;
+                /** Format: date-time */
+                openedAt: string;
+                openedBy: components["schemas"]["ReportActor"];
+                status: components["schemas"]["ShiftStatus"];
+                type: components["schemas"]["ShiftType"];
+                /** Format: uuid */
+                unitId: string;
+                unitName: string;
+            };
+            /** @description Por colaborador, maior recebido primeiro. */
+            staff: components["schemas"]["ReportStaffLine"][];
+            summary: components["schemas"]["ShiftReportSummary"];
+            /** @enum {string} */
+            timeZone: "America/Sao_Paulo";
+        };
+        /** @description Acordo do turno contratado (RN-04.05). */
+        ShiftReportAgreement: {
+            agreedAmountCents: number | null;
+            agreedQuantity: number | null;
+            /** @description Valor consumido (= venda do turno). */
+            consumedCents: number;
+            /** @description Unidades não canceladas das comandas que contam na venda. */
+            consumedQuantity: number;
+            contractorName: string;
+            limits: string | null;
+            modality: components["schemas"]["AgreementModality"];
+            notes: string | null;
+            /** @description Quantidade combinada − consumida (CA-07.03); negativa se passou do combinado; `null` sem quantidade combinada. */
+            quantityDifference: number | null;
+        };
+        ShiftReportSummary: {
+            /** @description Venda ÷ comandas, arredondado para baixo; 0 sem comandas. */
+            averageTicketCents: number;
+            canceledTabCount: number;
+            /** @description Diferença de caixa: soma de informado − esperado dos caixas fechados, em todas as formas (CA-07.04). */
+            cashDifferenceCents: number;
+            /** @description Descontos das comandas que contam na venda. */
+            discountsCents: number;
+            /** @description Pendurado: saldo das comandas do turno no momento em que foram penduradas (RN-07.03). */
+            onCreditCents: number;
+            /** @description Recebido: pagamentos não estornados que entraram no turno, vendas e quitações (RN-07.02). */
+            receivedCents: number;
+            /** @description Parte do recebido que é de comandas do turno. */
+            receivedSalesCents: number;
+            /** @description Parte do recebido que é quitação de fiado, de qualquer turno (RN-07.02). */
+            receivedSettlementsCents: number;
+            /** @description Venda: total, após desconto, das comandas `paid`, `on_credit` e `settled` do turno (RN-07.01). */
+            salesCents: number;
+            /** @description Comandas que contam na venda (RN-07.01). */
+            tabCount: number;
+            /** @description Perdas: valor dos itens cancelados marcados como perda (RN-07.04). */
+            wasteCents: number;
+            /** @description Unidades perdidas (RN-07.04). */
+            wasteQuantity: number;
         };
         /** @enum {string} */
         ShiftStatus: "open" | "closed";
@@ -8287,6 +8629,82 @@ export interface operations {
             };
         };
     };
+    ReportsController_history: {
+        parameters: {
+            query?: {
+                /** @description Itens por página (1 a 100, padrão 50). */
+                limit?: number;
+                /** @description Valor de `nextCursor` da página anterior. Opaco: não monte à mão. */
+                cursor?: string;
+                /** @description Unidade; sem ela, todas da organização. */
+                unitId?: string;
+                /** @description Primeiro dia (AAAA-MM-DD, horário de Brasília). Padrão: 29 dias antes de `to`. */
+                from?: string;
+                /** @description Último dia, inclusive (AAAA-MM-DD, horário de Brasília). Padrão: hoje. */
+                to?: string;
+                type?: components["schemas"]["ShiftType"];
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ShiftHistory"];
+                };
+            };
+            /** @description `VALIDATION_FAILED`: datas, período de 1 a 366 dias ou cursor inválido. */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description `UNAUTHENTICATED`: sem sessão do app ou sessão encerrada. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description `FORBIDDEN`: só o dono pode usar esta rota. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description `NOT_FOUND`: não existe ou é de outra organização. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Erro no formato `ErrorResponse` (spec 01, seção 5). */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
     CashController_listRegisters: {
         parameters: {
             query?: never;
@@ -8562,6 +8980,63 @@ export interface operations {
              *     `IDEMPOTENCY_KEY_REUSED` (mesma chave com outro corpo) ou `IDEMPOTENCY_REQUEST_IN_PROGRESS`.
              */
             409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Erro no formato `ErrorResponse` (spec 01, seção 5). */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    ReportsController_shiftReport: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ShiftReport"];
+                };
+            };
+            /** @description `UNAUTHENTICATED`: sem sessão do app ou sessão encerrada. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description `FORBIDDEN`: só o dono pode usar esta rota. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description `NOT_FOUND`: não existe ou é de outra organização. */
+            404: {
                 headers: {
                     [name: string]: unknown;
                 };
@@ -10337,10 +10812,12 @@ export interface operations {
     CreditController_list: {
         parameters: {
             query?: {
+                /** @description Clientes por página (1 a 100, padrão 50), em ordem de nome; `nextCursor` traz a próxima página. */
+                limit?: number;
+                /** @description Valor de `nextCursor` da página anterior. Opaco: não monte à mão. */
+                cursor?: string;
                 /** @description Busca por nome, telefone, CPF ou referência (RN-06.02); vazio lista todos. Removidos não aparecem. */
                 q?: string;
-                /** @description Quantidade máxima de resultados (1 a 100, padrão 50), em ordem de nome. */
-                limit?: number;
             };
             header?: never;
             path: {

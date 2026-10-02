@@ -27,6 +27,12 @@ const sections: { to: string; title: string; text: string; icon: IconName }[] = 
     icon: 'users',
   },
   {
+    to: '/painel/relatorios',
+    title: 'Relatórios',
+    text: 'Venda, recebido, fiado, perdas e caixa de cada turno e do período.',
+    icon: 'chart',
+  },
+  {
     to: '/painel/unidades',
     title: 'Unidades',
     text: 'Barracas, tempo de atraso, estações e fluxo de etapas.',
@@ -83,7 +89,6 @@ const sections: { to: string; title: string; text: string; icon: IconName }[] = 
         </NuxtLink>
       </li>
     </ul>
-    <AppAlert>Caixa, fiado e relatórios chegam nas próximas versões.</AppAlert>
     <AppButton to="/estacoes">Abrir estações</AppButton>
     <InstallHint />
   </PanelShell>

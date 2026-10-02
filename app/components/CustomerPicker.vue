@@ -23,47 +23,46 @@ const emit = defineEmits<{ choose: [customer: Customer] }>()
 const { $api } = useNuxtApp()
 const connection = useConnectionStore()
 const query = ref('')
-const results = ref<Customer[]>([])
-const searched = ref(false)
-const loading = ref(false)
-const error = ref('')
+/** Texto da busca em andamento: o "Carregar mais" continua a mesma busca. */
+const searchedText = ref('')
+const offlineError = ref('')
 const creating = ref(false)
 const action = useApiAction()
 const idempotency = useIdempotencyKey()
-let generation = 0
+
+/** Página de clientes da busca, em ordem de nome, paginada por cursor (spec 06, seção 7). */
+const PICKER_PAGE = 20
+const list = useCursorList<Customer>(
+  (page) =>
+    $api.GET('/api/v1/units/{id}/customers', {
+      params: { path: { id: props.unitId }, query: { q: searchedText.value, ...page } },
+    }),
+  { pageSize: PICKER_PAGE },
+)
+const searched = computed(() => query.value.trim() !== '' && !list.loading.value)
+const error = computed(() => offlineError.value || list.error.value)
 
 async function search(text: string): Promise<Customer[]> {
   const { data, error: failure } = await $api.GET('/api/v1/units/{id}/customers', {
-    params: { path: { id: props.unitId }, query: { q: text, limit: 20 } },
+    params: { path: { id: props.unitId }, query: { q: text, limit: 50 } },
   })
   if (!data) throw new Error(apiErrorMessage(failure))
   return data.data
 }
 
 async function runSearch() {
-  const text = query.value.trim()
-  const current = ++generation
-  if (!text) {
-    results.value = []
-    searched.value = false
+  offlineError.value = ''
+  searchedText.value = query.value.trim()
+  if (!searchedText.value) {
+    list.clear()
     return
   }
   if (!connection.online) {
-    error.value = 'Sem conexão: a busca de clientes precisa de internet.'
+    list.clear()
+    offlineError.value = 'Sem conexão: a busca de clientes precisa de internet.'
     return
   }
-  loading.value = true
-  error.value = ''
-  try {
-    const found = await search(text)
-    if (current !== generation) return
-    results.value = found
-    searched.value = true
-  } catch (cause) {
-    if (current === generation) error.value = apiErrorMessage(cause)
-  } finally {
-    if (current === generation) loading.value = false
-  }
+  await list.reset()
 }
 const searchSoon = useDebounceFn(runSearch, 250)
 watch(query, () => void searchSoon())
@@ -113,16 +112,16 @@ function findSameName(name: string) {
         </span>
       </label>
       <p class="min-h-lh text-sm text-text-muted" role="status">
-        <template v-if="loading">Buscando…</template>
+        <template v-if="query.trim() && list.loading.value && !error">Buscando…</template>
         <template v-else-if="error"
           ><span class="text-error">{{ error }}</span></template
         >
-        <template v-else-if="searched && results.length === 0">
+        <template v-else-if="searched && list.items.value.length === 0">
           Nenhum cliente encontrado. Cadastre abaixo.
         </template>
       </p>
-      <ul v-if="results.length" class="flex flex-col gap-2">
-        <li v-for="customer in results" :key="customer.id">
+      <ul v-if="list.items.value.length" class="flex flex-col gap-2">
+        <li v-for="customer in list.items.value" :key="customer.id">
           <button
             type="button"
             class="flex min-h-14 w-full flex-col items-start gap-0.5 rounded-card border-2 border-border bg-surface px-3 py-2 text-left hover:border-primary"
@@ -136,6 +135,11 @@ function findSameName(name: string) {
           </button>
         </li>
       </ul>
+      <LoadMoreButton
+        v-if="list.hasMore.value"
+        :loading="list.loadingMore.value"
+        @click="list.loadMore"
+      />
       <AppButton
         variant="secondary"
         :disabled="!connection.online"

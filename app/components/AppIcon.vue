@@ -151,6 +151,8 @@ const paths = {
     'M17 15a2 2 0 1 0 0 4 2 2 0 0 0 0-4Z',
   ],
   backspace: ['M8 5h12v14H8l-6-7 6-7Z', 'M12 9l5 6', 'M17 9l-5 6'],
+  /** Relatórios: barras. */
+  chart: ['M4 20h16', 'M7 16v-4', 'M12 16V6', 'M17 16v-7'],
 } as const
 
 export type IconName = keyof typeof paths
