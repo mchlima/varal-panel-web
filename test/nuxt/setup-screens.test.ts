@@ -26,9 +26,27 @@ const DELIVERY = '0192f000-0000-7000-8000-0000000000a2'
 const CATEGORY = '0192f000-0000-7000-8000-0000000000b1'
 const PRODUCT = '0192f000-0000-7000-8000-0000000000d1'
 
+const limits = { attentionAfterMinutes: 7, lateAfterMinutes: 15 }
 const stations: Schemas['Station'][] = [
-  { id: COUNTER, unitId: UNIT, name: 'Balcão', kind: 'counter', sortOrder: 1, active: true },
-  { id: KITCHEN, unitId: UNIT, name: 'Cozinha', kind: 'queue', sortOrder: 2, active: true },
+  {
+    id: COUNTER,
+    unitId: UNIT,
+    name: 'Balcão',
+    kind: 'counter',
+    sortOrder: 1,
+    active: true,
+    attentionAfterMinutes: null,
+    lateAfterMinutes: null,
+  },
+  {
+    id: KITCHEN,
+    unitId: UNIT,
+    name: 'Cozinha',
+    kind: 'queue',
+    sortOrder: 2,
+    active: true,
+    ...limits,
+  },
   {
     id: DELIVERY,
     unitId: UNIT,
@@ -36,6 +54,7 @@ const stations: Schemas['Station'][] = [
     kind: 'queue',
     sortOrder: 3,
     active: true,
+    ...limits,
   },
 ]
 
@@ -79,6 +98,8 @@ function product(overrides: Partial<MenuProduct> = {}): MenuProduct {
     name: 'Espeto de carne',
     description: null,
     priceCents: 1200,
+    effectivePriceCents: 1200,
+    prices: [],
     stationId: null,
     prepStationId: KITCHEN,
     sortOrder: 1,
@@ -90,10 +111,30 @@ function product(overrides: Partial<MenuProduct> = {}): MenuProduct {
   }
 }
 
-function menuWith(products: MenuProduct[]): Menu {
+const EVENT_LIST = '0192f000-0000-7000-8000-0000000000e9'
+
+function priceList(overrides: Partial<Schemas['PriceList']> = {}): Schemas['PriceList'] {
+  return {
+    id: EVENT_LIST,
+    unitId: UNIT,
+    name: 'Evento',
+    sortOrder: 1,
+    active: true,
+    current: false,
+    productCount: 1,
+    version: 2,
+    ...overrides,
+  }
+}
+
+function menuWith(products: MenuProduct[], priceLists: Schemas['PriceList'][] = []): Menu {
   return {
     unitId: UNIT,
     version: 7,
+    currentPriceListId: null,
+    effectivePriceListId: null,
+    effectivePriceListName: 'Normal',
+    priceLists,
     categories: [
       {
         id: CATEGORY,
@@ -341,6 +382,52 @@ describe('editor de produto (spec 03, seção 5)', () => {
     await flushPromises()
     expect(post).not.toHaveBeenCalled()
     expect(wrapper.text()).toContain('Informe o preço em reais')
+  })
+})
+
+describe('preços por tabela no editor do produto (RN-03.22)', () => {
+  it('mostra um campo por tabela ativa e envia só o que mudou; vazio volta ao preço normal', async () => {
+    const menu = useMenuStore()
+    menu.unitId = UNIT
+    const inactive = priceList({ id: 'pl-off', name: 'Antiga', active: false })
+    menu.menu = menuWith(
+      [product({ prices: [{ priceListId: EVENT_LIST, priceCents: 1500 }] })],
+      [priceList(), inactive],
+    )
+    menu.stations = stations
+    vi.spyOn(menu, 'reload').mockResolvedValue()
+    const put = vi
+      .spyOn(useNuxtApp().$api, 'PUT')
+      .mockImplementation(() => ok({ productId: PRODUCT, prices: [] }) as never)
+    const wrapper = await mountSuspended(ProductEditor, {
+      props: { unitId: UNIT, productId: PRODUCT, categoryId: CATEGORY },
+    })
+    const section = wrapper.find('[data-testid="list-prices"]')
+    expect(section.text()).toContain('Evento')
+    expect(section.text()).not.toContain('Antiga')
+    const field = section.find('input')
+    expect((field.element as HTMLInputElement).value).toBe('15,00')
+    await field.setValue('')
+    await section.trigger('submit')
+    await flushPromises()
+    expect(put).toHaveBeenCalledOnce()
+    const [path, options] = put.mock.calls[0] as unknown as [
+      string,
+      { body: Schemas['PutProductPricesRequestInput'] },
+    ]
+    expect(path).toBe('/api/v1/products/{id}/prices')
+    expect(options.body.prices).toEqual([{ priceListId: EVENT_LIST, priceCents: null }])
+  })
+
+  it('sem tabelas, explica onde criar', async () => {
+    const menu = useMenuStore()
+    menu.unitId = UNIT
+    menu.menu = menuWith([product()])
+    const wrapper = await mountSuspended(ProductEditor, {
+      props: { unitId: UNIT, productId: PRODUCT, categoryId: CATEGORY },
+    })
+    expect(wrapper.text()).toContain('Nenhuma tabela de preço ainda.')
+    expect(wrapper.find('a[href="/painel/cardapio/tabelas"]').exists()).toBe(true)
   })
 })
 

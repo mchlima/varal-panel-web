@@ -1,7 +1,7 @@
 <script setup lang="ts">
 /**
  * Atalho de esgotado (spec 03, seção 9; RN-03.11): o dono no cardápio e o colaborador no
- * balcão ou na estação marcam e desmarcam a qualquer momento, inclusive com turno aberto.
+ * balcão ou na estação marcam e desmarcam a qualquer momento, inclusive com caixa aberto.
  * A mudança vai pela fila offline e chega aos balcões por `product.sold_out_changed`.
  */
 const props = defineProps<{ product: { id: string; name: string; soldOut: boolean } }>()

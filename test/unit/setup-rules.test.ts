@@ -37,11 +37,19 @@ describe('modificadores (RN-03.13)', () => {
 })
 
 describe('erros da configuração explicados', () => {
-  it('RN-03.02: SHIFT_OPEN e LAST_ACTIVE_UNIT trazem a mensagem da API e o que fazer', () => {
-    const shift = explainError(apiError('SHIFT_OPEN'))
-    expect(shift.message).toBe('mensagem de SHIFT_OPEN')
-    expect(shift.hint).toContain('Feche o turno')
+  it('RN-03.02, RN-03.07: CASH_REGISTER_OPEN e LAST_ACTIVE_UNIT trazem a mensagem da API e o que fazer', () => {
+    const open = explainError(apiError('CASH_REGISTER_OPEN'))
+    expect(open.message).toBe('mensagem de CASH_REGISTER_OPEN')
+    expect(open.hint).toContain('Feche o caixa')
+    expect(explainError(apiError('ITEMS_IN_PROGRESS')).hint).toContain('itens sendo preparados')
     expect(explainError(apiError('LAST_ACTIVE_UNIT')).hint).toContain('outra unidade')
+  })
+
+  it('CA-03.10: nome reservado, repetido e tabela em uso explicam o que fazer', () => {
+    expect(explainError(apiError('PRICE_LIST_NAME_RESERVED')).hint).toContain('"Normal"')
+    expect(explainError(apiError('PRICE_LIST_NAME_TAKEN')).hint).toContain('outro nome')
+    expect(explainError(apiError('PRICE_LIST_IN_USE')).hint).toContain('tabela vigente')
+    expect(explainError(apiError('EVENT_ALREADY_IN_PROGRESS')).hint).toContain('Encerre')
   })
 
   it('STATION_IN_USE diz quem usa a estação', () => {
