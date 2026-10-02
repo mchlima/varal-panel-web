@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.6.0](https://github.com/mchlima/varal-panel-web/compare/v0.5.0...v0.6.0) (2026-10-02)
+
+
+### Features
+
+* **reports:** telas de histórico e relatório do turno e busca de clientes paginada (fase 7) ([#24](https://github.com/mchlima/varal-panel-web/issues/24)) ([5ce8cf2](https://github.com/mchlima/varal-panel-web/commit/5ce8cf21713ce05f2cf2bb22c2df22054864a41c))
+
 ## [0.5.0](https://github.com/mchlima/varal-panel-web/compare/v0.4.0...v0.5.0) (2026-10-01)
 
 
