@@ -5,9 +5,10 @@ import { LATE_AFTER_MAX, LATE_AFTER_MIN, parseInteger } from '~/lib/setup'
 type Unit = components['schemas']['Unit']
 
 /**
- * Uma unidade na lista (spec 03, seção 3): renomear, tempo de atraso, ativar e desativar.
- * RN-03.02: a API recusa desativar com turno aberto (`SHIFT_OPEN`) ou a última unidade
- * ativa (`LAST_ACTIVE_UNIT`); a tela explica o motivo.
+ * Uma unidade na lista (spec 03, seção 3): renomear, tempo de atraso padrão, ativar e desativar,
+ * e os atalhos para estações e fluxo e para os caixas (spec 05, seção 8). RN-03.02: a API recusa
+ * desativar com caixa aberto (`CASH_REGISTER_OPEN`), com comandas em aberto
+ * (`UNIT_HAS_OPEN_TABS`) ou a última unidade ativa (`LAST_ACTIVE_UNIT`); a tela explica o motivo.
  */
 const props = defineProps<{ unit: Unit }>()
 const emit = defineEmits<{ changed: [] }>()
@@ -66,7 +67,7 @@ function save() {
     </div>
     <p class="flex items-center gap-2 text-text-muted">
       <AppIcon name="clock" />
-      Item aparece como atrasado depois de
+      Atraso padrão das estações novas:
       <strong class="text-text">{{ unit.lateAfterMinutes }} min</strong>
     </p>
 
@@ -79,9 +80,9 @@ function save() {
       />
       <AppTextField
         v-model="form.late"
-        label="Tempo de atraso (minutos)"
+        label="Atraso padrão das estações novas (minutos)"
         inputmode="numeric"
-        :hint="`De ${LATE_AFTER_MIN} a ${LATE_AFTER_MAX} minutos. Padrão: 15.`"
+        :hint="`De ${LATE_AFTER_MIN} a ${LATE_AFTER_MAX} minutos. Padrão: 15. Cada estação tem o seu tempo, em Estações e fluxo.`"
         :error="errors.late"
       />
       <div class="flex flex-wrap gap-2">
@@ -103,6 +104,16 @@ function save() {
       >
         <AppIcon name="flow" />
         Estações e fluxo
+      </AppButton>
+      <AppButton
+        v-if="unit.active"
+        variant="secondary"
+        :block="false"
+        :to="`/painel/unidades/${unit.id}/caixas`"
+        data-testid="unit-registers"
+      >
+        <AppIcon name="wallet" />
+        Caixas
       </AppButton>
       <AppButton variant="ghost" :block="false" @click="startEdit">
         <AppIcon name="edit" />

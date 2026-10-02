@@ -9,8 +9,9 @@ type Unit = components['schemas']['Unit']
 
 /**
  * Estações e fluxo de uma unidade (spec 03, seção 4; rota `/painel/unidades/{id}/fluxo`).
- * RN-03.07: com turno aberto, a API recusa mudar estações e fluxo (`SHIFT_OPEN`) e a tela
- * explica o motivo junto do erro.
+ * RN-03.07: com caixa aberto (`CASH_REGISTER_OPEN`) ou com itens em preparo de comandas que
+ * seguem abertas (`ITEMS_IN_PROGRESS`), a API recusa mudar estações e fluxo e a tela explica o
+ * motivo junto do erro. Os limites de tempo das estações (RN-03.25) mudam a qualquer momento.
  */
 const route = useRoute()
 const unitId = computed(() => String(route.params.id))
@@ -76,8 +77,9 @@ useRealtimeEvent('unit.config_updated', (event) => {
     </div>
 
     <AppAlert>
-      Com um turno aberto, estações e fluxo ficam travados para não bagunçar os pedidos em
-      andamento. Faça as mudanças com o turno fechado.
+      Com caixa aberto ou com itens ainda em preparo, as etapas e as estações ficam travadas para
+      não bagunçar os pedidos em andamento: feche o caixa e conclua os itens antes. Os tempos de
+      atenção e de atraso de cada estação podem ser mudados a qualquer hora.
     </AppAlert>
 
     <AppAlert v-if="loadError" tone="error">{{ loadError }}</AppAlert>

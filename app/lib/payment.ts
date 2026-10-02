@@ -11,7 +11,9 @@ export type Payment = Schemas['Payment']
 export type PaymentResult = Schemas['PaymentResult']
 export type DiscountType = Schemas['DiscountType']
 export type CashRegister = Schemas['CashRegister']
-export type CashRegisterDetail = Schemas['CashRegisterDetail']
+export type CashRegisterSession = Schemas['CashRegisterSession']
+export type CashRegisterSessionDetail = Schemas['CashRegisterSessionDetail']
+export type CashRegisterClosePreview = Schemas['CashRegisterClosePreview']
 export type CashRegisterCount = Schemas['CashRegisterCount']
 export type CashMovement = Schemas['CashMovement']
 export type CashMovementType = Schemas['CashMovementType']
@@ -197,7 +199,7 @@ export function applyDraftPayments(
   return { lines, remainingCents: remaining, changeCents: change, covered: remaining === 0 }
 }
 
-/** Corpo do `POST /shifts/{id}/tabs/pay-first` (RN-05.12). */
+/** Corpo do `POST /units/{id}/tabs/pay-first` (RN-05.12). */
 export function toPayFirstBody(input: {
   customerName: string
   items: PayFirstBody['items']
@@ -231,18 +233,18 @@ export function toPaymentBody(
 
 /** Esperado de uma forma no caixa (RN-05.19 para o dinheiro). */
 export function expectedOf(
-  register: Pick<CashRegister, 'expected'>,
+  register: Pick<CashRegisterSession, 'expected'>,
   method: PaymentMethod,
 ): number {
   return register.expected.find((entry) => entry.method === method)?.expectedCents ?? 0
 }
 
 /**
- * Esperado de uma forma separado em vendas do turno e quitações de fiado (RN-05.22): as
+ * Esperado de uma forma separado em vendas e quitações de fiado (RN-05.22): as
  * quitações entram no caixa em que foram recebidas, mas aparecem à parte na conferência.
  */
 export function expectedSplit(
-  register: Pick<CashRegister, 'expected'>,
+  register: Pick<CashRegisterSession, 'expected'>,
   method: PaymentMethod,
 ): { salesCents: number; creditSettlementsCents: number } {
   const entry = register.expected.find((item) => item.method === method)
@@ -271,7 +273,7 @@ export interface CountRow {
  * informado e a diferença (informado − esperado), calculada ao vivo.
  */
 export function closingRows(
-  register: Pick<CashRegister, 'expected'>,
+  register: Pick<CashRegisterSession, 'expected'>,
   informed: Partial<Record<PaymentMethod, number | null>>,
 ): CountRow[] {
   return PAYMENT_METHODS.map((method) => {
@@ -332,4 +334,88 @@ export function actorLabel(
   if (actor.type === 'owner') return 'Dono'
   if (actor.type === 'staff' && actor.id && staffNames[actor.id]) return staffNames[actor.id]!
   return 'Colaborador'
+}
+
+/** Abertura em andamento do caixa, ou `null` (caixa fechado ou nunca aberto). */
+export function openSessionOf(register: Pick<CashRegister, 'session'>): CashRegisterSession | null {
+  return register.session?.status === 'open' ? register.session : null
+}
+
+/** Caixas com abertura em andamento, na ordem do cadastro (RN-05.05). */
+export function openRegisters<T extends Pick<CashRegister, 'session' | 'sortOrder'>>(
+  registers: readonly T[],
+): T[] {
+  return registers
+    .filter((register) => register.session?.status === 'open')
+    .sort((a, b) => a.sortOrder - b.sortOrder)
+}
+
+/** Situação de um caixa cadastrado para a tela (spec 05, seção 5.1). */
+export type RegisterState = 'open' | 'closed' | 'never' | 'inactive'
+
+export function registerState(register: Pick<CashRegister, 'active' | 'session'>): RegisterState {
+  if (register.session?.status === 'open') return 'open'
+  if (!register.active) return 'inactive'
+  return register.session ? 'closed' : 'never'
+}
+
+export const REGISTER_STATE_LABELS: Record<RegisterState, string> = {
+  open: 'Aberto',
+  closed: 'Fechado',
+  never: 'Nunca aberto',
+  inactive: 'Desativado',
+}
+
+/**
+ * O que fazer quando a API recusa uma ação de caixa (spec 05; RN-05.17, RN-05.23, RN-05.24,
+ * RN-05.27). Complementa a `message` da API, que já vem em pt-BR.
+ */
+export function cashRegisterHint(code: string | undefined): string | undefined {
+  switch (code) {
+    case 'LAST_ACTIVE_CASH_REGISTER':
+      return 'Cadastre ou ative outro caixa antes de desativar este.'
+    case 'CASH_REGISTER_OPEN':
+      return 'Feche o caixa antes de desativá-lo.'
+    case 'CASH_REGISTER_NAME_TAKEN':
+      return 'Já existe um caixa com esse nome nesta unidade. Use outro nome, como "Caixa 2".'
+    case 'CASH_REGISTER_ALREADY_OPEN':
+      return 'Este caixa já foi aberto, talvez em outro aparelho. Volte aos caixas para ver quem abriu.'
+    case 'CASH_REGISTER_INACTIVE':
+      return 'Este caixa está desativado. Ative-o em Unidades → Caixas ou abra outro.'
+    case 'CASH_REGISTER_CLOSED':
+      return 'Este caixa já foi fechado. Para voltar a vender, abra o caixa de novo.'
+    case 'ORGANIZATION_SUSPENDED':
+      return 'Com a assinatura suspensa, não dá para abrir caixa. Fale com o suporte do Varal.'
+    case 'UNIT_INACTIVE':
+      return 'A unidade está desativada. Ative-a em Unidades para abrir o caixa.'
+    case 'CLOSING_NOTE_REQUIRED':
+      return 'Há diferença entre o conferido e o esperado: explique na observação.'
+    case 'VERSION_CONFLICT':
+      return 'Entrou pagamento ou movimento neste caixa enquanto você conferia. Confira de novo os valores.'
+    default:
+      return undefined
+  }
+}
+
+/** Corpo do `POST /cash-register-sessions/{id}/close` (RN-05.20, RN-05.29). */
+export function toCloseBody(input: {
+  informed: Partial<Record<PaymentMethod, number | null>>
+  note: string
+  lastOpenRegister: boolean
+  finishPendingItems: boolean
+  finishEvent: boolean
+  version?: number
+}): Schemas['CloseCashRegisterRequestInput'] {
+  const note = input.note.trim()
+  return {
+    counts: PAYMENT_METHODS.map((method) => ({
+      method,
+      informedCents: input.informed[method] ?? 0,
+    })),
+    ...(note ? { note } : {}),
+    // Só no último caixa aberto a API leva o preparo à etapa final e encerra o evento.
+    finishPendingItems: input.lastOpenRegister ? input.finishPendingItems : false,
+    finishEvent: input.lastOpenRegister ? input.finishEvent : false,
+    ...(input.version !== undefined ? { version: input.version } : {}),
+  }
 }

@@ -3,7 +3,8 @@ import type { CashRegister } from '~/lib/payment'
 
 /**
  * Caixa que recebe (RN-05.05, RN-05.06, CA-05.08): sem caixa aberto, orienta ("Abra um caixa
- * para receber"); com um, nada a escolher; com mais de um, a escolha (lembrada no aparelho).
+ * para vender"), com o atalho de abrir para quem pode; com um, nada a escolher; com mais de um,
+ * a escolha (lembrada no aparelho).
  */
 withDefaults(
   defineProps<{
@@ -22,15 +23,16 @@ const emit = defineEmits<{ choose: [id: string] }>()
 <template>
   <AppAlert v-if="loaded && registers.length === 0" tone="error">
     <div data-testid="no-register">
-      <p class="font-bold">Abra um caixa para receber.</p>
+      <p class="font-bold">Abra um caixa para vender.</p>
+      <p>Sem caixa aberto, não dá para receber pagamentos.</p>
       <p v-if="canOpen">
         <NuxtLink
-          :to="unitId ? `/caixas?unidade=${unitId}` : '/caixas'"
+          :to="unitId ? `/caixas?unidade=${unitId}&volta=balcao` : '/caixas?volta=balcao'"
           class="inline-flex min-h-12 items-center font-bold underline"
           >Abrir caixa</NuxtLink
         >
       </p>
-      <p v-else>Peça a quem opera o caixa para abrir um.</p>
+      <p v-else>Peça para quem cuida do caixa abri-lo. A tela atualiza sozinha.</p>
     </div>
   </AppAlert>
   <fieldset v-else-if="registers.length > 1" class="flex flex-col gap-2">
