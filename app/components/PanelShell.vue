@@ -10,6 +10,8 @@ interface NavItem {
   label: string
   short: string
   icon: IconName
+  /** Só para o dono (o painel também abre para colaborador no turno e no fiado). */
+  ownerOnly?: boolean
 }
 
 const items: NavItem[] = [
@@ -24,6 +26,14 @@ const items: NavItem[] = [
 const sideOnly: NavItem[] = [
   { to: '/caixas', label: 'Caixas', short: 'Caixas', icon: 'wallet' },
   { to: '/painel/fiado', label: 'Fiado', short: 'Fiado', icon: 'users' },
+  // Relatórios só do dono (RN-07.07).
+  {
+    to: '/painel/relatorios',
+    label: 'Relatórios',
+    short: 'Relatórios',
+    icon: 'chart',
+    ownerOnly: true,
+  },
   { to: '/painel/acesso-da-equipe', label: 'Acesso da equipe', short: 'Acesso', icon: 'qr' },
   {
     to: '/painel/acessos-de-suporte',
@@ -34,6 +44,10 @@ const sideOnly: NavItem[] = [
 ]
 
 const route = useRoute()
+const session = useSessionStore()
+const sideItems = computed(() =>
+  [...items, ...sideOnly].filter((item) => !item.ownerOnly || session.isOwner),
+)
 function isActive(item: NavItem): boolean {
   if (item.to === '/painel') return route.path === '/painel' || route.path === '/painel/'
   return route.path === item.to || route.path.startsWith(`${item.to}/`)
@@ -51,7 +65,7 @@ function isActive(item: NavItem): boolean {
         class="sticky top-[var(--top-banners,0px)] hidden h-[calc(100dvh-var(--top-banners,0px))] w-60 shrink-0 flex-col gap-1 self-start border-r border-border px-3 py-6 lg:flex"
       >
         <NuxtLink
-          v-for="item in [...items, ...sideOnly]"
+          v-for="item in sideItems"
           :key="item.to"
           :to="item.to"
           :aria-current="isActive(item) ? 'page' : undefined"
